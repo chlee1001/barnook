@@ -1,6 +1,6 @@
 // Modified by Chaehyeon Lee (2026): keep pinned items visible during rehide checks.
 import AppKit
-import EllipsisCore
+import BarNookCore
 
 /// Hides the shown sets again after a timeout, a click outside the menu bar,
 /// or a focus change. Each condition has its own setting. Armed while the
@@ -73,7 +73,7 @@ final class RehideMonitor {
             focusObservers = [
                 center.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] note in
                     let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-                    // Opening Settings activates Ellipsis. That is not a focus change.
+                    // Opening Settings activates BarNook. That is not a focus change.
                     guard app?.processIdentifier != ownPID else { return }
                     Task { @MainActor in
                         self?.requestHide()

@@ -1,4 +1,4 @@
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
@@ -33,26 +33,26 @@ struct RehideTests {
     }
 
     @Test func timeoutHides() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
         try showA()
         try guest.waitUntil("A hides on its own", timeout: 5) { try !guest.appItems().contains(Fixture.a) }
     }
 
     @Test func noTimeoutKeepsTheSetShown() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnTimeout": .bool(false), "rehideTimeout": .double(1)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnTimeout": .bool(false), "rehideTimeout": .double(1)]) { $1 })
         try showA()
         try guest.expectStable("A stays shown", for: 3) { try guest.appItems().contains(Fixture.a) }
     }
 
     @Test func clickOutsideHides() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnClickOutside": .bool(true)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnClickOutside": .bool(true)]) { $1 })
         try showA()
         try guest.probe("click 500 400")
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
     }
 
     @Test func clickOnAnotherItemKeepsTheSetShown() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnClickOutside": .bool(true)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnClickOutside": .bool(true)]) { $1 })
         try showA()
         let menu = try openMenu(of: Fixture.c)
         try guest.expectStable("A stays shown with C's menu open") { try guest.appItems().contains(Fixture.a) }
@@ -62,7 +62,7 @@ struct RehideTests {
     }
 
     @Test func focusChangeHides() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnFocusChange": .bool(true)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnFocusChange": .bool(true)]) { $1 })
         try showA()
         try guest.run("open -a TextEdit")
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
@@ -70,7 +70,7 @@ struct RehideTests {
     }
 
     @Test func openMenuDefersTheTimeout() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
         try showA()
         let menu = try openMenu(of: Fixture.a)
         try guest.expectStable("A stays shown while its menu is open", for: 4) { try guest.appItems().contains(Fixture.a) }
@@ -79,7 +79,7 @@ struct RehideTests {
     }
 
     @Test func menuActionRunsThenTheSetHides() throws {
-        try guest.launchEllipsis(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
+        try guest.launchBarNook(hidden.merging(["rehideOnTimeout": .bool(true), "rehideTimeout": .double(2)]) { $1 })
         try guest.run("rm -f \(Fixture.markerPath(Fixture.a))")
         try showA()
         let menu = try openMenu(of: Fixture.a)

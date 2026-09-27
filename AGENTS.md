@@ -6,16 +6,16 @@ BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 deriva
 
 ## Architecture & Data Flow
 
-- `Sources/Ellipsis/EllipsisApp.swift` starts the AppKit application. `AppDelegate.swift` registers defaults, wires `AppState`, hidden sets, menu-bar restriction, divider, clock zone, and `MenuBarManager`, and opens settings lazily.
-- `AppState.swift` is `@MainActor @Observable`: properties mirror `UserDefaults`; hidden-set state is separate. The manager coordinates status items, reveal/rehide, pinning, and `FloatingBar`. Settings UI lives under `Sources/Ellipsis/Settings/`.
-- `Sources/EllipsisCore/MenuBarLayout.swift` reads Accessibility menu-bar windows into item/display snapshots and settles asynchronous samples. `MenuBarGeometry.swift` computes screen/menu bounds. Layout frames use AX top-left coordinates; geometry uses Cocoa coordinates—convert deliberately at the boundary.
+- `Sources/BarNook/BarNookApp.swift` starts the AppKit application. `AppDelegate.swift` registers defaults, wires `AppState`, hidden sets, menu-bar restriction, divider, clock zone, and `MenuBarManager`, and opens settings lazily.
+- `AppState.swift` is `@MainActor @Observable`: properties mirror `UserDefaults`; hidden-set state is separate. The manager coordinates status items, reveal/rehide, pinning, and `FloatingBar`. Settings UI lives under `Sources/BarNook/Settings/`.
+- `Sources/BarNookCore/MenuBarLayout.swift` reads Accessibility menu-bar windows into item/display snapshots and settles asynchronous samples. `MenuBarGeometry.swift` computes screen/menu bounds. Layout frames use AX top-left coordinates; geometry uses Cocoa coordinates—convert deliberately at the boundary.
 - `Sources/Probe/` and `Sources/Fixture/` provide guest-test instrumentation and menu-bar fixtures, not app UI.
 
 ## Key Directories
 
-- `Sources/Ellipsis/MenuBar/`: status-item control, hidden sets, rehide, floating bar, placement and policies.
-- `Sources/Ellipsis/Accessibility/`: Accessibility permission handling; `Sources/Ellipsis/Settings/`: persisted settings and UI.
-- `Sources/EllipsisCore/`: reusable layout/geometry logic; `Tests/EllipsisTests/`: in-process tests; `Tests/EllipsisVMTests/`: Tart guest tests.
+- `Sources/BarNook/MenuBar/`: status-item control, hidden sets, rehide, floating bar, placement and policies.
+- `Sources/BarNook/Accessibility/`: Accessibility permission handling; `Sources/BarNook/Settings/`: persisted settings and UI.
+- `Sources/BarNookCore/`: reusable layout/geometry logic; `Tests/BarNookTests/`: in-process tests; `Tests/BarNookVMTests/`: Tart guest tests.
 - `Resources/`: app metadata, icon, entitlements; `scripts/`: bundling, development installation, VM, signing and release; `docs/`: specification, development and QA checklists.
 
 ## Development Commands
@@ -26,13 +26,13 @@ BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 deriva
 
 ## Code Conventions & Common Patterns
 
-- Swift 6 language mode; follow existing type/file names and Swift Testing conventions. Keep pure layout/policy decisions in `EllipsisCore` or small menu-bar policy types rather than embedding them in AppKit event handlers.
+- Swift 6 language mode; follow existing type/file names and Swift Testing conventions. Keep pure layout/policy decisions in `BarNookCore` or small menu-bar policy types rather than embedding them in AppKit event handlers.
 - UI and observable settings are main-actor isolated; AX reads use bounded IPC and settled async sampling. Handle unavailable AX data and permission denial explicitly. For settings imports, validate all known values before changing `UserDefaults`; unknown keys are ignored.
 - Wire shared state explicitly at launch rather than creating independent settings stores. Respect AX-versus-Cocoa coordinate systems and the distinction between a whole-app hidden set and an individual status item.
 
 ## Important Files
 
-`Package.swift` defines targets and Sparkle dependency; `Resources/Info.plist` sets the agent app identity, minimum OS, update feed and Sparkle public key. `Sources/Ellipsis/AppDelegate.swift`, `AppState.swift`, `MenuBar/MenuBarManager.swift`, and `EllipsisCore/MenuBarLayout.swift` are primary entry points for behavioral changes. Consult `docs/spec.md`, `docs/development.md`, and `docs/testing.md` for product limits and procedures.
+`Package.swift` defines targets and Sparkle dependency; `Resources/Info.plist` sets the agent app identity, minimum OS, update feed and Sparkle public key. `Sources/BarNook/AppDelegate.swift`, `AppState.swift`, `MenuBar/MenuBarManager.swift`, and `BarNookCore/MenuBarLayout.swift` are primary entry points for behavioral changes. Consult `docs/spec.md`, `docs/development.md`, and `docs/testing.md` for product limits and procedures.
 
 ## Runtime/Tooling Preferences
 
@@ -41,7 +41,7 @@ Use macOS 27, Xcode Command Line Tools with Swift 6.4, SwiftPM, and optional mis
 ## Testing & QA
 
 - Unit tests use Swift Testing (`@Test`, `#expect`) and isolated fixtures/UserDefaults suites. Run `swift test` and `swift build --build-tests`; hosted CI runs both on `xcode-27` and ShellCheck on Ubuntu.
-- VM tests require Tart, a prepared macOS guest, installed fixture/probe and `ELLIPSIS_VM`; run `mise run vm-test` (focused example: `mise run vm-test -- --filter RehideTests`). Bare `swift test` skips VM behavior. Report VM and manual permission/UI/release checks separately; use `docs/testing.md` for the checklist. No blanket coverage percentage is defined.
+- VM tests require Tart, a prepared macOS guest, installed fixture/probe and `BARNOOK_VM`; run `mise run vm-test` (focused example: `mise run vm-test -- --filter RehideTests`). Bare `swift test` skips VM behavior. Report VM and manual permission/UI/release checks separately; use `docs/testing.md` for the checklist. No blanket coverage percentage is defined.
 - For release-script changes, perform a dry preflight, shell syntax checks and artifact inspection before publishing. Never claim unrun checks.
 
 ## Changes, Reviews & Releases

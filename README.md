@@ -15,7 +15,7 @@ BarNook hides selected menu bar items on macOS 27. Click its icon to show them. 
 
 1. Download `BarNook-X.Y.Z.zip` from [GitHub Releases](../../releases).
 2. Open the zip. Move `BarNook.app` to `/Applications`.
-3. Open BarNook. The `…` icon appears in the menu bar.
+3. Open BarNook. Its small nook icon appears in the menu bar.
 4. Right-click the icon. Select "Settings…". Put apps in the hidden set. Or, with the Accessibility permission, turn on "Hide apps left of the BarNook icon" and Cmd-drag items to the left of the icon.
 
 On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the BarNook icon first. So on a notch display, BarNook shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar pins its item for you to click in the menu bar. Settings › General › "Show hidden items" switches between the bar and the menu bar on any display.

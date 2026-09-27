@@ -4,7 +4,7 @@
 # Usage: scripts/notarize.sh [path/to/BarNook.app]
 # NOTARY_PROFILE names your notarytool keychain profile.
 # Create it once:
-#   xcrun notarytool store-credentials ellipsis \
+#   xcrun notarytool store-credentials barnook \
 #     --apple-id you@example.com --team-id TEAMID --password app-specific-password
 set -euo pipefail
 

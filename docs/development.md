@@ -16,7 +16,7 @@ mise run run
 
 ## VM tests
 
-`Tests/EllipsisVMTests` drives the app in a macOS guest, so a test run never touches your own menu bar or pointer. The guest is a [Tart](https://tart.run) VM cloned from `ghcr.io/cirruslabs/macos-golden-gate-base`, on which the image already grants Accessibility to `sshd`. The tests run on the host and reach the guest over `ssh`, through `scripts/vm.sh`. Every step is in `docs/plan.md`, Phase 7, and the spike in `docs/phase7.md`.
+`Tests/BarNookVMTests` drives the app in a macOS guest, so a test run never touches your own menu bar or pointer. The guest is a [Tart](https://tart.run) VM cloned from `ghcr.io/cirruslabs/macos-golden-gate-base`, on which the image already grants Accessibility to `sshd`. The tests run on the host and reach the guest over `ssh`, through `scripts/vm.sh`. Every step is in `docs/plan.md`, Phase 7, and the spike in `docs/phase7.md`.
 
 Once:
 
@@ -24,8 +24,10 @@ Once:
 curl -sSL https://github.com/cirruslabs/tart/releases/latest/download/tart.tar.gz | tar xz -C ~/.local/opt
 ln -s ~/.local/opt/tart.app/Contents/MacOS/tart ~/.local/bin/tart
 tart pull ghcr.io/cirruslabs/macos-golden-gate-base:latest   # about 40 GB
-scripts/vm.sh prepare                                          # the golden VM, 20 seconds
+scripts/vm.sh prepare                                          # barnook-golden, 20 seconds
 ```
+
+Older `ellipsis-golden` guests authorize a different SSH key and are not reused by the new defaults. `prepare` creates `barnook-golden` with `~/.tart/barnook_ed25519`; it deletes the VM named by `BARNOOK_VM_GOLDEN` before cloning, so never point it at an existing guest you need to keep. Leave the old guest intact until the new one is verified.
 
 The Homebrew formula for `tart` does not install on current Homebrew, hence the tarball.
 
@@ -49,9 +51,9 @@ mise run vm-test                                # clone, install, test, delete: 
 mise run vm-test -- --filter RehideTests        # one suite
 ```
 
-`scripts/vm-test.sh` clones the golden VM as `ELLIPSIS_VM` (default `ellipsis-test`), copies `BarNookDev.app`, five fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter EllipsisVMTests` (or the requested VM suite), copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `ELLIPSIS_VM_KEEP=1` leaves the VM running after the run. `ELLIPSIS_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `ELLIPSIS_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run ellipsis-test --vnc` after `scripts/vm.sh stop` shows its screen.
+`scripts/vm-test.sh` clones `BARNOOK_VM_GOLDEN` (default `barnook-golden`) as `BARNOOK_VM` (default `barnook-test`), copies `BarNookDev.app`, five fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter BarNookVMTests` (or the requested VM suite), copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `BARNOOK_VM_KEEP=1` leaves the VM running after the run. `BARNOOK_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `BARNOOK_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run barnook-test --vnc` after `scripts/vm.sh stop` shows its screen. `scripts/vm.sh` uses `~/.tart/barnook_ed25519` as its SSH key.
 
-Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest grants Accessibility; the no-permission case F5 remains manual. The guest has no notch.
+Without `BARNOOK_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest grants Accessibility; the no-permission case F5 remains manual. The guest has no notch.
 
 ## Make a release
 

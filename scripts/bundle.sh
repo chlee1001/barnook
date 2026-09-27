@@ -17,7 +17,7 @@ set -euo pipefail
 
 config="${1:-debug}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
-bin="$(swift build -c "$config" --package-path "$root" --show-bin-path)/Ellipsis"
+bin="$(swift build -c "$config" --package-path "$root" --show-bin-path)/BarNook"
 
 name="BarNook"
 [[ "$config" == "release" ]] || name="BarNookDev"

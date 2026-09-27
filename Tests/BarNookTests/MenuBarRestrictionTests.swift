@@ -1,10 +1,10 @@
 import Foundation
 import Testing
-@testable import Ellipsis
+@testable import BarNook
 
 /// MenuBarAgent matches the allow-list only against apps in /Applications.
 /// An app anywhere else stays hidden while any restriction is active, so
-/// Ellipsis must not treat it as a pin it can draw. See docs/spec.md.
+/// BarNook must not treat it as a pin it can draw. See docs/spec.md.
 @MainActor
 struct MenuBarRestrictionTests {
     @Test func anAppInApplicationsIsReachable() {

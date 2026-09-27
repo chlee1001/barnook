@@ -9,7 +9,7 @@ enum DividerPolicy {
     /// its way out and must not be read as "visible on the right". An app
     /// with an item on each side hides: hiding is per app. Apps that are
     /// not visible keep their membership, and the always-hidden set and
-    /// Ellipsis itself are not touched.
+    /// BarNook itself are not touched.
     static func hiddenSet(
         current: Set<String>,
         alwaysHidden: Set<String>,

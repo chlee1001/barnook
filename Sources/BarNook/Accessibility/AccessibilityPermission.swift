@@ -3,8 +3,8 @@ import AppKit
 import ApplicationServices
 import Observation
 
-/// The optional Accessibility permission. With it, Ellipsis can ask each app
-/// whether it has a menu bar item. Without it, Ellipsis works the same but
+/// The optional Accessibility permission. With it, BarNook can ask each app
+/// whether it has a menu bar item. Without it, BarNook works the same but
 /// the app pickers list every running app.
 @MainActor
 @Observable
@@ -17,7 +17,7 @@ final class AccessibilityPermission {
     private(set) var isTrusted: Bool
     private var observer: NSObjectProtocol?
 
-    /// The user chose "Not Now" in the explanation dialog. Ellipsis does not
+    /// The user chose "Not Now" in the explanation dialog. BarNook does not
     /// ask again at launch, only from Settings.
     var hasDeclined: Bool {
         didSet { store.set(hasDeclined, forKey: Key.declined) }

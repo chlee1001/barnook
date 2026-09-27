@@ -26,6 +26,6 @@ plist="$app/Contents/Info.plist"
 plutil -replace CFBundleExecutable -string "$name" "$plist"
 plutil -replace CFBundleName -string "$name" "$plist"
 plutil -replace CFBundleIdentifier -string "$identifier" "$plist"
-[[ -z "${2:-}" ]] || { plutil -replace EllipsisFixtureMenuCount -integer "$2" "$plist"; plutil -remove LSUIElement "$plist"; }
+[[ -z "${2:-}" ]] || { plutil -replace BarNookFixtureMenuCount -integer "$2" "$plist"; plutil -remove LSUIElement "$plist"; }
 codesign --force --sign - --identifier "$identifier" "$app"
 echo "$app"

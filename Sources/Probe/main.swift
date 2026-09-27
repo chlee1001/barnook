@@ -1,5 +1,5 @@
 import AppKit
-import EllipsisCore
+import BarNookCore
 import Foundation
 
 // The one process that touches the guest's screen in a VM test. The tests

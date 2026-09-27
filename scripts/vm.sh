@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Tart guest for the VM tests. See docs/plan.md, Phase 7.
+# Tart guest for the BarNook VM tests. See docs/plan.md, Phase 7.
 # Usage: scripts/vm.sh prepare          clone the base image as the golden VM and put the ssh key in it
-#        scripts/vm.sh clone            clone the golden VM as $ELLIPSIS_VM and boot it headless
+#        scripts/vm.sh clone            clone the golden VM as $BARNOOK_VM and boot it headless
 #        scripts/vm.sh ip               print the guest IP, waiting for it
 #        scripts/vm.sh ssh [CMD...]     run a command in the guest, or open a shell
 #        scripts/vm.sh scp SRC... DST   copy into the guest; DST is a guest path
 #        scripts/vm.sh scp-from SRC DST copy a guest path out to DST on the host
-#        scripts/vm.sh stop | delete    stop, or stop and delete, $ELLIPSIS_VM
+#        scripts/vm.sh stop | delete    stop, or stop and delete, $BARNOOK_VM
 set -euo pipefail
 
 base="ghcr.io/cirruslabs/macos-golden-gate-base:latest"
-golden="${ELLIPSIS_VM_GOLDEN:-ellipsis-golden}"
-vm="${ELLIPSIS_VM:-ellipsis-test}"
+golden="${BARNOOK_VM_GOLDEN:-barnook-golden}"
+vm="${BARNOOK_VM:-barnook-test}"
 user="admin"
-key="$HOME/.tart/ellipsis_ed25519"
+key="$HOME/.tart/barnook_ed25519"
 # The control socket keeps one connection open across the many short ssh
 # calls of a test run, so each one costs milliseconds, not a handshake.
 ssh_opts=(-i "$key" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR
@@ -29,7 +29,7 @@ case "${1:-}" in
     # The image grants Accessibility, Full Disk Access and Apple Events to
     # sshd, so the guest needs nothing but our key. See docs/phase7.md.
     if [[ ! -f "$key" ]]; then
-      ssh-keygen -t ed25519 -N "" -C ellipsis-vm -f "$key" -q
+      ssh-keygen -t ed25519 -N "" -C barnook-vm -f "$key" -q
     fi
     tart delete "$golden" 2>/dev/null || true
     tart clone "$base" "$golden"
