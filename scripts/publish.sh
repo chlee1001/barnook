@@ -55,6 +55,7 @@ else
 fi
 if git -C "$root" ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
   remote_commit="$(git -C "$root" ls-remote --tags origin "refs/tags/$tag^{}")"
+  [[ -n "$remote_commit" ]] || remote_commit="$(git -C "$root" ls-remote --tags origin "refs/tags/$tag")"
   [[ "${remote_commit%%[[:space:]]*}" == "$(git -C "$root" rev-parse HEAD)" ]] || {
     echo "Remote tag $tag does not point to this release commit." >&2; exit 1;
   }

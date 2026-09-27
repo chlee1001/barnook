@@ -24,12 +24,13 @@ struct ReleaseAppcastTests {
         try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: plist)
 
         func feed(build: String = "123", length: Int? = nil, url: String? = nil,
-                  enclosureVersion: String = "", extraItem: String = "") -> String {
+                  namespace: String = "", enclosureVersion: String = "",
+                  extraVersion: String = "", extraItem: String = "") -> String {
             let download = url ?? "https://github.com/chlee1001/barnook/releases/download/v\(version)/BarNook-\(version).zip"
             return """
             <?xml version="1.0"?>
-            <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0"><channel>
-            <item><sparkle:version>\(build)</sparkle:version><sparkle:shortVersionString>\(version)</sparkle:shortVersionString>
+            <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" \(namespace) version="2.0"><channel>
+            <item><sparkle:version>\(build)</sparkle:version><sparkle:shortVersionString>\(version)</sparkle:shortVersionString>\(extraVersion)
             <enclosure url="\(download)" length="\(length ?? archive.count)" sparkle:edSignature="\(signature)" \(enclosureVersion)/></item>
             \(extraItem)</channel></rss>
             """
@@ -53,6 +54,9 @@ struct ReleaseAppcastTests {
         #expect(try !accepts(feed(length: archive.count + 1)))
         #expect(try !accepts(feed(url: "https://example.com/BarNook-0.1.0.zip")))
         #expect(try !accepts(feed(enclosureVersion: "sparkle:version=\"999\"")))
+        let alias = "xmlns:alt=\"http://www.andymatuschak.org/xml-namespaces/sparkle\""
+        #expect(try !accepts(feed(namespace: alias, enclosureVersion: "alt:version=\"0\"")))
+        #expect(try !accepts(feed(namespace: alias, extraVersion: "<alt:version>0</alt:version>")))
         #expect(try !accepts(feed(extraItem: "<item/>")))
 
         try Data("signed archivE".utf8).write(to: zip)

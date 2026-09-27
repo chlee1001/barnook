@@ -7,6 +7,7 @@ struct ValidationError: Error {
 
 private let sparkleVersion = "sparkle:version"
 private let sparkleShortVersion = "sparkle:shortVersionString"
+private let sparkleNamespace = "http://www.andymatuschak.org/xml-namespaces/sparkle"
 
 private final class AppcastParser: NSObject, XMLParserDelegate {
     private(set) var channelCount = 0
@@ -18,6 +19,13 @@ private final class AppcastParser: NSObject, XMLParserDelegate {
 
     private var elementStack: [String] = []
     private var capturedField: (name: String, text: String)?
+
+    func parser(_ parser: XMLParser, didStartMappingPrefix prefix: String, toURI namespaceURI: String) {
+        if (namespaceURI == sparkleNamespace && prefix != "sparkle") ||
+           (prefix == "sparkle" && namespaceURI != sparkleNamespace) {
+            failure = "Appcast must use the canonical Sparkle namespace prefix."
+        }
+    }
 
     func parser(
         _ parser: XMLParser,
@@ -91,6 +99,7 @@ private final class AppcastParser: NSObject, XMLParserDelegate {
         namespaceURI: String?,
         qualifiedName qName: String?
     ) {
+        guard failure == nil else { return }
         let name = qName ?? elementName
         guard elementStack.popLast() == name else {
             failure = "Appcast XML has an invalid element structure."
@@ -133,7 +142,8 @@ private func validate(appcastPath: String, zipPath: String, plistPath: String, r
     }
     let delegate = AppcastParser()
     parser.delegate = delegate
-    parser.shouldProcessNamespaces = false
+    parser.shouldProcessNamespaces = true
+    parser.shouldReportNamespacePrefixes = true
     parser.shouldResolveExternalEntities = false
     guard parser.parse(), delegate.failure == nil else {
         throw ValidationError(message: delegate.failure ?? "Appcast XML is malformed.")
