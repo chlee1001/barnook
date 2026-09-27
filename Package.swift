@@ -1,5 +1,5 @@
 // swift-tools-version: 6.4
-// Modified by Chaehyeon Lee (2026): BarNook package branding; inherited target names remain internal.
+// Modified by Chaehyeon Lee (2026): BarNook package branding.
 import PackageDescription
 
 let package = Package(
@@ -10,21 +10,21 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "EllipsisCore",
-            path: "Sources/EllipsisCore",
+            name: "BarNookCore",
+            path: "Sources/BarNookCore",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .executableTarget(
-            name: "Ellipsis",
-            dependencies: ["EllipsisCore", "Sparkle"],
-            path: "Sources/Ellipsis",
+            name: "BarNook",
+            dependencies: ["BarNookCore", "Sparkle"],
+            path: "Sources/BarNook",
             swiftSettings: [.swiftLanguageMode(.v6)],
             // bundle.sh puts Sparkle.framework in Contents/Frameworks.
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
         ),
         .executableTarget(
             name: "Probe",
-            dependencies: ["EllipsisCore"],
+            dependencies: ["BarNookCore"],
             path: "Sources/Probe",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
@@ -34,17 +34,17 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
-            name: "EllipsisTests",
-            dependencies: ["Ellipsis", "EllipsisCore"],
-            path: "Tests/EllipsisTests",
+            name: "BarNookTests",
+            dependencies: ["BarNook", "BarNookCore"],
+            path: "Tests/BarNookTests",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
-        // Drives the app in a Tart guest. Skipped unless ELLIPSIS_VM is set.
+        // Drives the app in a Tart guest. Skipped unless BARNOOK_VM is set.
         // scripts/vm-test.sh runs it.
         .testTarget(
-            name: "EllipsisVMTests",
-            dependencies: ["EllipsisCore"],
-            path: "Tests/EllipsisVMTests",
+            name: "BarNookVMTests",
+            dependencies: ["BarNookCore"],
+            path: "Tests/BarNookVMTests",
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]

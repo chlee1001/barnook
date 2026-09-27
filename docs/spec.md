@@ -33,7 +33,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 | Hidden set | Apps that BarNook hides until you click the BarNook icon. |
 | Always-hidden set | Apps that BarNook hides until you Option+click the BarNook icon. |
 | Restriction | The macOS 27 assessment-mode allow-list that BarNook holds while it hides apps. |
-| BarNook icon | The clickable `NSStatusItem` that BarNook owns. Shows `…` or `‹`. |
+| BarNook icon | The clickable `NSStatusItem` that BarNook owns. Shows a nook or `‹`. |
 
 ## How it hides
 
@@ -66,7 +66,7 @@ BarNook releases the restriction when it shows the hidden set. BarNook holds a r
 
 ### F1: Hide and show the hidden set
 
-- The BarNook icon shows `…` when the hidden set is hidden. It shows `‹` when the set is shown.
+- The BarNook icon shows a nook when the hidden set is hidden. It shows `‹` when the set is shown.
 - Click the icon to toggle the hidden set.
 - The state persists across restarts.
 

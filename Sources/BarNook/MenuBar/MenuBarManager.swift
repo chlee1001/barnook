@@ -1,6 +1,6 @@
 // Modified by Chaehyeon Lee (2026): added temporary floating-bar pins and fit checks.
 import AppKit
-import EllipsisCore
+import BarNookCore
 import Observation
 import os
 
@@ -37,18 +37,24 @@ final class MenuBarManager {
     private var clockHoverRestore: Task<Void, Never>?
     private var isPointerInClockZone = false
 
-    private static let hiddenImage = ellipsisImage()
+    private static let hiddenImage = nookImage()
     private static let shownImage = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: "Hide items")?
         .withSymbolConfiguration(.init(pointSize: 15, weight: .bold))
 
-    /// Three 4-point dots, like the Ice control item. SF Symbol `ellipsis`
-    /// is too small at menu bar sizes.
-    private static func ellipsisImage() -> NSImage {
+    /// A monochrome bar and sheltered item, matching the app icon.
+    private static func nookImage() -> NSImage {
         let image = NSImage(size: NSSize(width: 20, height: 20), flipped: false) { _ in
-            NSColor.black.setFill()
-            for x in stride(from: 2.0, through: 14.0, by: 6.0) {
-                NSBezierPath(ovalIn: NSRect(x: x, y: 8, width: 4, height: 4)).fill()
-            }
+            NSColor.black.set()
+            let nook = NSBezierPath()
+            nook.lineWidth = 2
+            nook.lineCapStyle = .round
+            nook.move(to: NSPoint(x: 4.5, y: 4.5))
+            nook.line(to: NSPoint(x: 4.5, y: 11))
+            nook.curve(to: NSPoint(x: 15.5, y: 11), controlPoint1: NSPoint(x: 4.5, y: 18), controlPoint2: NSPoint(x: 15.5, y: 18))
+            nook.line(to: NSPoint(x: 15.5, y: 4.5))
+            nook.stroke()
+            NSBezierPath(roundedRect: NSRect(x: 2, y: 13, width: 16, height: 2.5), xRadius: 1.25, yRadius: 1.25).fill()
+            NSBezierPath(roundedRect: NSRect(x: 8.5, y: 6, width: 3, height: 3), xRadius: 0.8, yRadius: 0.8).fill()
             return true
         }
         image.isTemplate = true

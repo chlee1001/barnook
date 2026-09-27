@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # Modified by Chaehyeon Lee (2026): fork accessibility identity.
-# Run the VM tests: build, clone the golden VM, install the app, the
-# fixtures and the probe in the guest, run Tests/EllipsisVMTests against it,
+# Run the BarNook VM tests: build, clone the golden VM, install the app, the
+# fixtures and the probe in the guest, run BarNookVMTests against it,
 # fetch the screenshots, delete the VM. See docs/plan.md, Phase 7.
 # Usage: scripts/vm-test.sh [swift test args...]
-#   ELLIPSIS_VM       the clone's name (default ellipsis-test)
-#   ELLIPSIS_VM_KEEP  set to keep the VM running after the run, for a look
-#                     over VNC (tart run ELLIPSIS_VM --vnc after tart stop)
-#   ELLIPSIS_VM_REUSE set to run against an ELLIPSIS_VM that is already up,
+#   BARNOOK_VM       the clone's name (default barnook-test)
+#   BARNOOK_VM_KEEP  set to keep the VM running after the run, for a look
+#                    over VNC (tart run BARNOOK_VM --vnc after tart stop)
+#   BARNOOK_VM_REUSE set to run against a BARNOOK_VM that is already up,
 #                     with the bundles copied again; implies KEEP
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-export ELLIPSIS_VM="${ELLIPSIS_VM:-ellipsis-test}"
+export BARNOOK_VM="${BARNOOK_VM:-barnook-test}"
 vm="$root/scripts/vm.sh"
-filter=EllipsisVMTests
+filter=BarNookVMTests
 if [[ "${1:-}" == --filter ]]; then
   [[ $# -ge 2 && -n "$2" ]] || { echo 'Expected a VM suite after --filter.' >&2; exit 2; }
-  filter="EllipsisVMTests.$2"
+  filter="BarNookVMTests.$2"
   shift 2
 fi
 for argument in "$@"; do
@@ -34,7 +34,7 @@ fixtures+=("$("$root/scripts/bundle-fixture.sh" V 9)")
 swift build --package-path "$root" --product Probe >&2
 probe="$(swift build --package-path "$root" --product Probe --show-bin-path)/Probe"
 
-if [[ "$filter" != EllipsisVMTests ]]; then
+if [[ "$filter" != BarNookVMTests ]]; then
   listed="$(swift test --package-path "$root" list)"
   [[ "$listed" == *"$filter/"* ]] || { echo "No VM tests match $filter." >&2; exit 2; }
 fi
@@ -43,13 +43,13 @@ cloned=0
 cleanup_vm() {
   local result=${1:-$?}
   trap - EXIT
-  if [[ "$cloned" == 1 && -z "${ELLIPSIS_VM_KEEP:-}" ]]; then
+  if [[ "$cloned" == 1 && -z "${BARNOOK_VM_KEEP:-}" ]]; then
     "$vm" delete || { [[ "$result" != 0 ]] || result=1; }
   fi
   exit "$result"
 }
 trap cleanup_vm EXIT
-if [[ -z "${ELLIPSIS_VM_REUSE:-}" ]]; then
+if [[ -z "${BARNOOK_VM_REUSE:-}" ]]; then
   cloned=1
   "$vm" clone >&2
 fi
@@ -83,7 +83,7 @@ swift test --package-path "$root" --no-parallel --filter "$filter" "$@" || statu
 mkdir -p "$root/build/vm-screenshots"
 "$vm" scp-from screenshots "$root/build/vm-screenshots/" 2>/dev/null || true
 
-if [[ -n "${ELLIPSIS_VM_KEEP:-}${ELLIPSIS_VM_REUSE:-}" ]]; then
-  echo "$ELLIPSIS_VM is still running: scripts/vm.sh ssh, or scripts/vm.sh delete" >&2
+if [[ -n "${BARNOOK_VM_KEEP:-}${BARNOOK_VM_REUSE:-}" ]]; then
+  echo "$BARNOOK_VM is still running: scripts/vm.sh ssh, or scripts/vm.sh delete" >&2
 fi
 cleanup_vm "$status"

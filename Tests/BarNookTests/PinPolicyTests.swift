@@ -1,5 +1,5 @@
 import Testing
-@testable import Ellipsis
+@testable import BarNook
 
 struct PinPolicyTests {
     @Test func aClickPins() {

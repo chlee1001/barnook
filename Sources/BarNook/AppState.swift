@@ -99,7 +99,7 @@ final class AppState {
     var clockZoneWidth: Double {
         didSet { store.set(clockZoneWidth, forKey: Key.clockZoneWidth) }
     }
-    /// The Ellipsis icon is the divider: apps left of it are the hidden set.
+    /// The BarNook icon is the divider: apps left of it are the hidden set.
     /// Needs the Accessibility permission. See `IconDivider`.
     var hidesAppsLeftOfIcon: Bool {
         didSet { store.set(hidesAppsLeftOfIcon, forKey: Key.hidesAppsLeftOfIcon) }

@@ -1,9 +1,9 @@
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
 /// Acceptance criteria 2, 3, 4, 4b, 9 and 9a: hide, show, the always-hidden
-/// set, and every item returning when Ellipsis stops. Numbers are the rows
+/// set, and every item returning when BarNook stops. Numbers are the rows
 /// of docs/testing.md.
 @Suite(.serialized, .enabled(if: Guest.isConfigured))
 struct HideShowTests {
@@ -14,13 +14,13 @@ struct HideShowTests {
     }
 
     @Test func hiddenSetHidesAtLaunch() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         #expect(try guest.appItems().isSuperset(of: [Fixture.b, Fixture.c]))
     }
 
     @Test func clickTogglesTheHiddenSet() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a, Fixture.b])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a, Fixture.b])])
         try guest.waitUntil("A and B hide") { try guest.appItems().isDisjoint(with: [Fixture.a, Fixture.b]) }
 
         try guest.clickIcon()
@@ -33,7 +33,7 @@ struct HideShowTests {
     }
 
     @Test func shownStateSurvivesARelaunch() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         try guest.clickIcon()
         try guest.waitUntil("A shows") { try guest.appItems().contains(Fixture.a) }
@@ -46,7 +46,7 @@ struct HideShowTests {
     }
 
     @Test func alwaysHiddenNeedsOption() throws {
-        try guest.launchEllipsis([
+        try guest.launchBarNook([
             "hiddenBundleIdentifiers": .strings([Fixture.a]),
             "alwaysHiddenBundleIdentifiers": .strings([Fixture.b]),
         ])
@@ -64,7 +64,7 @@ struct HideShowTests {
     }
 
     @Test func disablingTheAlwaysHiddenSetShowsIt() throws {
-        try guest.launchEllipsis([
+        try guest.launchBarNook([
             "alwaysHiddenBundleIdentifiers": .strings([Fixture.b]),
             "isAlwaysHiddenEnabled": .bool(false),
         ])
@@ -75,7 +75,7 @@ struct HideShowTests {
     /// launches later needs a new one.
     @Test func appLaunchedWhileHiddenStaysVisible() throws {
         try guest.quit(Fixture.name(Fixture.c))
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         try guest.launch(Fixture.name(Fixture.c))
         try guest.waitUntil("C appears") { try guest.appItems().contains(Fixture.c) }
@@ -83,14 +83,14 @@ struct HideShowTests {
     }
 
     @Test func quitReturnsEveryItem() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         try guest.quit(Guest.appName)
         try guest.waitUntil("A returns") { try guest.appItems().contains(Fixture.a) }
     }
 
     @Test func killReturnsEveryItem() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         try guest.kill(Guest.appName)
         try guest.waitUntil("A returns") { try guest.appItems().contains(Fixture.a) }

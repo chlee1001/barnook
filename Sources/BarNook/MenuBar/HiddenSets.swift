@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The two sets of bundle identifiers Ellipsis hides, and which of them are
+/// The two sets of bundle identifiers BarNook hides, and which of them are
 /// currently shown. The sets and `isHiddenSetShown` persist in `UserDefaults`.
 @MainActor
 @Observable

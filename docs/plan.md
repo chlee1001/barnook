@@ -1,8 +1,8 @@
 # BarNook — implementation history
 
-Modified by Chaehyeon Lee (2026): documented pins and the BarNook identity. Internal SwiftPM target names retain their original names.
+Modified by Chaehyeon Lee (2026): documented pins, BarNook identity and renamed internal targets.
 
-This records the original Ellipsis implementation phases. For the current Git-based release flow, see `docs/development.md`.
+This records the original implementation phases. Earlier spike paths and behaviors are historical, not current instructions; the file layout below reflects BarNook. For the current Git-based release flow, see `docs/development.md`.
 
 ## Phase 0: Spike — done
 
@@ -26,7 +26,7 @@ Exit criteria: the app runs, shows the icon, and applies the persisted sets at l
 ## Phase 2: F1 and F2 — hide, show, always-hidden — done
 
 1. Implement `MenuBarManager.toggle()`. Hidden: restriction hides both sets. Shown: restriction hides only the always-hidden set. Shown with Option: no restriction.
-2. Icon image switches between `…` and `‹`. Use SF Symbols `ellipsis` and `chevron.left`. Ice is GPL-3, so its Ellipsis asset stays out of this repository.
+2. The original icon switched between `…` and `‹`. The current hidden-state icon is a hand-drawn nook and the shown-state icon uses SF Symbol `chevron.left`. Ice is GPL-3, so its original asset stays out of this repository.
 3. Persist `isHiddenSetShown` and restore it at launch.
 4. Right-click on the icon opens an `NSMenu` with "Show always-hidden items", "Settings…", "Quit".
 5. Setting: always-hidden set on or off. Off means the always-hidden set is never hidden. `MenuBarManager` observes the sets and this setting with `withObservationTracking`, so any writer, including the Settings window, changes the restriction at once.
@@ -59,8 +59,8 @@ Exit criteria: every control changes behavior at once, no restart. `MenuBarManag
 
 ## Phase 5: Release pipeline — done
 
-1. App icon: `scripts/make-icon-art.swift` draws `Resources/AppIcon.png` (three dots on a dark rounded square). `scripts/make-icon.sh` turns it into `Resources/AppIcon.icns` with `sips` and `iconutil`. Both files are committed.
-2. `Resources/Ellipsis.entitlements`: hardened runtime, no sandbox, no entitlements. `MenuBarClientCore` is Apple-signed, so library validation permits the `dlopen`. Tested: the hardened build hides items.
+1. App icon: `scripts/make-icon-art.swift` draws `Resources/AppIcon.png` (a bar above a sheltered item on a dark rounded square). `scripts/make-icon.sh` turns it into `Resources/AppIcon.icns` with `sips` and `iconutil`. Both files are committed.
+2. `Resources/BarNook.entitlements`: hardened runtime, no sandbox, no entitlements. `MenuBarClientCore` is Apple-signed, so library validation permits the `dlopen`. Tested: the hardened build hides items.
 3. `scripts/sign.sh`: `codesign --force --options runtime --timestamp`. `DEVELOPER_ID` must explicitly name the owner's Developer ID Application identity. A revoked certificate is refused.
 4. `scripts/notarize.sh`: `notarytool submit --wait`, `stapler staple`, `stapler validate`, `spctl --assess`. `NOTARY_PROFILE` must name a keychain profile for the owner's team.
 5. `scripts/release.sh X.Y.Z`: bundle a release build with `VERSION` and `BUILD` (the commit count), sign, notarize, zip with `ditto` to `build/BarNook-X.Y.Z.zip`; `scripts/publish.sh` tags only after verifying the signed artifacts.
@@ -86,13 +86,13 @@ The acceptance criteria are tested by hand, on the developer's own menu bar. Tha
 The VM is a [Tart](https://tart.run) guest, cloned from `ghcr.io/cirruslabs/macos-golden-gate-base` (macOS 27, `admin`/`admin`, auto-login, sshd, VNC, Gatekeeper off, SIP on). The host builds everything. The guest gets the app, the fixture app and the probe over `scp`, and runs them over `ssh`. `tart clone` is an APFS clone, so one clone per test run is cheap and every run starts from the same state.
 
 1. Spike — done. Every answer is yes: a process under `sshd` posts `CGEvent`s to the auto-login session, the image grants Accessibility to `sshd-keygen-wrapper` so nothing is granted by hand, a restriction hides an app in the guest, and `screencapture` returns the screen. `docs/phase7.md` has the record. The Homebrew formula for `tart` is broken on current Homebrew (`depends_on :macos`); the release tarball from GitHub installs as `~/.local/bin/tart`.
-2. Golden VM — done. `scripts/vm.sh prepare` clones the base image as `ellipsis-golden`, boots it, puts the key `~/.tart/ellipsis_ed25519` in it, and shuts it down. 20 seconds, no hand. `scripts/vm.sh` also has `clone` (from the golden VM, headless, prints the IP once `ssh` answers; 20 seconds), `ip`, `ssh`, `scp`, `stop` and `delete`. The VM name comes from `ELLIPSIS_VM`, default `ellipsis-test`.
+2. Golden VM — done with the original names; current `scripts/vm.sh prepare` clones the base image as `barnook-golden`, boots it, puts the key `~/.tart/barnook_ed25519` in it, and shuts it down. `scripts/vm.sh` also has `clone` (from the golden VM, headless, prints the IP once `ssh` answers), `ip`, `ssh`, `scp`, `stop` and `delete`. The VM name comes from `BARNOOK_VM`, default `barnook-test`.
 3. Fixture app — done. `Sources/Fixture/main.swift`: one status item with a menu. Its title and bundle identifier come from `Info.plist`, so `scripts/bundle-fixture.sh N` writes `FixtureN.app` with `com.chlee1001.BarNookFixture.N`. Tests need apps that own menu bar items with known identifiers, and a guest has none. "Mark" in the item's menu writes `~/com.chlee1001.BarNookFixture.N.marked`, so a test can see that a click reached the app's menu.
-4. Probe — done. `Sources/Probe/main.swift`, an executable target with no UI. Subcommands: `layout` (`MenuBarLayout.read()` as JSON), `menus` (`MenuBarGeometry.openMenuFrames()`), `screens` (frame and safe area top of each screen), `move X Y`, `click X Y [--option] [--command] [--right]` and `drag X1 Y1 X2 Y2 [--command]` (`CGEvent`s at a point in Accessibility coordinates). `MenuBarLayout` and `MenuBarGeometry` moved to a library target `EllipsisCore` that `Ellipsis`, `Probe` and the tests link, and `MenuBarLayout` is `Codable`, so the tests decode the probe's output into the same type. The probe is the only thing that touches the guest's screen.
-5. Test target — done. `Tests/EllipsisVMTests`, swift-testing, on the host. `Guest` wraps `scripts/vm.sh ssh`: `run`, `probe` decoded from JSON, `launch`, `quit`, `kill`, `launchEllipsis(settings)` (quit, `defaults delete`, `defaults write` each setting plus the ones a test needs to run unattended, launch, wait for the icon), `items`, `appItems`, `iconFrame`, `clickIcon(option:)`, `openMenus`, `screenshot`, `waitUntil` and `expectStable` with polling, since `MenuBarAgent` lays out after the event. `startFixtures` puts the guest in the same state before every test. Every suite has `.enabled(if: Guest.isConfigured)`, so `mise run test` skips them, and `.serialized`, since there is one menu bar.
-6. Test run — done. `scripts/vm-test.sh`: build, bundle the app, three fixtures and the probe, `vm.sh clone`, copy the bundles to `/Applications` and the probe to the home directory, `swift test --filter EllipsisVMTests`, copy `~/screenshots` out to `build/vm-screenshots`, `vm.sh delete`. `mise run vm-test` runs it: 46 seconds for the first suite, 22 of them tests. `ELLIPSIS_VM_KEEP` leaves the VM running; `ELLIPSIS_VM_REUSE` runs against a VM that is already up, which is the loop while writing a test. The ssh control socket in `vm.sh` makes each guest command cost about 40 ms.
+4. Probe — done. `Sources/Probe/main.swift`, an executable target with no UI. Subcommands: `layout` (`MenuBarLayout.read()` as JSON), `menus` (`MenuBarGeometry.openMenuFrames()`), `screens` (frame and safe area top of each screen), `move X Y`, `click X Y [--option] [--command] [--right]` and `drag X1 Y1 X2 Y2 [--command]` (`CGEvent`s at a point in Accessibility coordinates). `MenuBarLayout` and `MenuBarGeometry` live in `BarNookCore`, linked by `BarNook`, `Probe` and the tests, and `MenuBarLayout` is `Codable`, so the tests decode the probe's output into the same type. The probe is the only thing that touches the guest's screen.
+5. Test target — done. `Tests/BarNookVMTests`, swift-testing, on the host. `Guest` wraps `scripts/vm.sh ssh`: `run`, `probe` decoded from JSON, `launch`, `quit`, `kill`, `launchBarNook(settings)` (quit, `defaults delete`, `defaults write` each setting plus the ones a test needs to run unattended, launch, wait for the icon), `items`, `appItems`, `iconFrame`, `clickIcon(option:)`, `openMenus`, `screenshot`, `waitUntil` and `expectStable` with polling, since `MenuBarAgent` lays out after the event. `startFixtures` puts the guest in the same state before every test. Every suite has `.enabled(if: Guest.isConfigured)`, so `mise run test` skips them, and `.serialized`, since there is one menu bar.
+6. Test run — done. `scripts/vm-test.sh`: build, bundle the app, three fixtures and the probe, `vm.sh clone`, copy the bundles to `/Applications` and the probe to the home directory, `swift test --filter BarNookVMTests`, copy `~/screenshots` out to `build/vm-screenshots`, `vm.sh delete`. `BARNOOK_VM_KEEP` leaves the VM running; `BARNOOK_VM_REUSE` runs against a VM that is already up, which is the loop while writing a test. The ssh control socket in `vm.sh` makes each guest command cost about 40 ms.
 7. Settings — done. Tests write them with `defaults write com.chlee1001.BarNookDev` before the launch, not through the Settings window; each test launches the app with the settings it needs. `AppState` does not see a `defaults write` while the app runs, so row 5a (a timeout change while shown) stays manual.
-8. Tests — done. `HideShowTests` (2, 3, 4, 4b, 9, 9a), `RehideTests` (5, 5b, 6, 6a, 6b, 7, 7a), `ClockZoneTests` (8, 8b) and `DividerTests` (D1 to D5): 21 tests, 85 seconds. Two things the tests had to learn about `MenuBarAgent`: it remembers each item's position in its layout table (`docs/phase0.md`) across launches, so `Guest` writes the icon's position before every launch and puts the fixtures back after a drag; and a new item appears first, then moves to its remembered place, so `launchEllipsis` waits for two equal reads. Rows that stay manual, with the reason in the checklist: 1 to 1b (the permission dialog), 4a and 6c (the right-click menu), 5a, 8a and S1 to S9 (the Settings window), 10 and 11 (release scripts). The tests found one bug: `NSWorkspace.didLaunchApplicationNotification` is not posted for `LSUIElement` apps, so the divider never read the menu bar after a menu bar app launched, and the Settings pickers never refreshed for one. Both now watch `NSWorkspace.runningApplications`.
+8. Tests — done. `HideShowTests` (2, 3, 4, 4b, 9, 9a), `RehideTests` (5, 5b, 6, 6a, 6b, 7, 7a), `ClockZoneTests` (8, 8b) and `DividerTests` (D1 to D5): 21 tests, 85 seconds. Two things the tests had to learn about `MenuBarAgent`: it remembers each item's position in its layout table (`docs/phase0.md`) across launches, so `Guest` writes the icon's position before every launch and puts the fixtures back after a drag; and a new item appears first, then moves to its remembered place, so `launchBarNook` waits for two equal reads. Rows that stay manual, with the reason in the checklist: 1 to 1b (the permission dialog), 4a and 6c (the right-click menu), 5a, 8a and S1 to S9 (the Settings window), 10 and 11 (release scripts). The tests found one bug: `NSWorkspace.didLaunchApplicationNotification` is not posted for `LSUIElement` apps, so the divider never read the menu bar after a menu bar app launched, and the Settings pickers never refreshed for one. Both now watch `NSWorkspace.runningApplications`.
 9. CI — hosted `xcode-27` runs the Swift build and unit tests; Tart VM tests still need a local guest and remain under `mise run vm-test`.
 10. Docs — done. `docs/development.md` ("VM tests"), `docs/testing.md` (rows marked `vm`), this file.
 
@@ -102,7 +102,7 @@ Exit criteria — met: `mise run vm-test` passes on a clean checkout with the go
 
 Displays with a notch drop the shown items that do not fit. Spec F8. The bar works on every display, so every step but the spike is built on the desktop and tested in the VM (Phase 7). A virtual display has no notch, but the same drop happens when the status item region ends at the front app's menus: a narrow VM display (`tart set --display`) and a fixture with a wide menu bar reproduce it. `NSScreen.safeAreaInsets` stays zero in the VM, so the placement default takes the insets as a parameter and has a unit test.
 
-1. Spike — done in the VM, host check pending. `docs/phase8.md`. macOS 27 collapses the items that do not fit behind a system `«` button and the Ellipsis icon collapses first. `MenuBarLayout` reports collapsed items with stacked frames. What the host has to answer: whether a notch region behaves like the app-menu region, whether `«` opens with a real mouse, and `NSScreen.safeAreaInsets` on that display.
+1. Spike — done in the VM, host check pending. `docs/phase8.md`. macOS 27 collapses the items that do not fit behind a system `«` button and the BarNook icon collapses first. `MenuBarLayout` reports collapsed items with stacked frames. What the host has to answer: whether a notch region behaves like the app-menu region, whether `«` opens with a real mouse, and `NSScreen.safeAreaInsets` on that display.
 2. `AppState.hiddenItemsPlacement` — done. `menuBar` or `floatingBar`, the "Show hidden items" picker in General, and a key in the settings file. The default is registered, not written: `registerDefaults(hasNotch:)` picks the bar when a screen has a notch at launch, so a user who never chose follows the display.
 3. `FloatingBarPlacement` — done, with unit tests. Right edge under the icon's right edge, top just below the menu bar, kept on screen; the screen's right edge when the icon has no frame.
 4. `FloatingBar` — done. A non-activating borderless `NSPanel` at the status bar level, on every Space, with an `NSHostingView`: 18-point app icons, tooltips, hover. Only running apps in the set are listed. The bar moves again 400 ms after it opens, since the icon can move once `MenuBarAgent` lays out.
@@ -119,15 +119,15 @@ Exit criteria — met: on the laptop, a click on the icon shows every hidden app
 
 ```
 Package.swift
-Sources/EllipsisCore/
+Sources/BarNookCore/
   MenuBarLayout.swift
   MenuBarGeometry.swift
 Sources/Fixture/
   main.swift
 Sources/Probe/
   main.swift
-Sources/Ellipsis/
-  EllipsisApp.swift
+Sources/BarNook/
+  BarNookApp.swift
   AppDelegate.swift
   AppState.swift
   RunningApplicationChanges.swift
@@ -151,8 +151,8 @@ Sources/Ellipsis/
     AppPicker.swift
     RunningApps.swift
     LaunchAtLogin.swift
-Tests/EllipsisTests/
-Tests/EllipsisVMTests/
+Tests/BarNookTests/
+Tests/BarNookVMTests/
   Guest.swift
   HideShowTests.swift
   RehideTests.swift
@@ -162,7 +162,7 @@ Tests/EllipsisVMTests/
 Resources/
   Info.plist
   Fixture-Info.plist
-  Ellipsis.entitlements
+  BarNook.entitlements
   AppIcon.png
   AppIcon.icns
 scripts/

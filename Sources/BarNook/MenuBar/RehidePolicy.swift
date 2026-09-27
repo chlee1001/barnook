@@ -1,4 +1,4 @@
-import EllipsisCore
+import BarNookCore
 import Foundation
 
 /// Pure decisions for auto-rehide, kept apart from the monitors so tests

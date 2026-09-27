@@ -1,5 +1,5 @@
 // Modified by Chaehyeon Lee (2026): BarNook VM diagnostics.
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
@@ -23,7 +23,7 @@ struct DividerTests {
 
     @Test func switchOnHidesAppsLeftOfTheIcon() throws {
         try guest.quit(Fixture.name(Fixture.a))
-        try guest.launchEllipsis(divider)
+        try guest.launchBarNook(divider)
         try guest.placeFixture(Fixture.a, pointsFromRight: Guest.iconPosition + 100)
         try guest.launch(Fixture.name(Fixture.a))
         try guest.waitUntil("A appears left of the icon and joins the set") {
@@ -34,7 +34,7 @@ struct DividerTests {
     }
 
     @Test func draggingTheIconRightOfAnItemHidesIt() throws {
-        try guest.launchEllipsis(divider)
+        try guest.launchBarNook(divider)
         let fixtures = try guest.items().filter { Fixture.all.contains($0.bundleIdentifier ?? "") }
         guard let icon = try guest.iconFrame(), let first = fixtures.first(where: { $0.frame.minX >= icon.maxX }) else {
             Issue.record("expected a fixture right of the icon")
@@ -46,7 +46,7 @@ struct DividerTests {
     }
 
     @Test func draggingTheIconFarLeftWhileShownEmptiesTheSet() throws {
-        try guest.launchEllipsis(divider.merging(["hiddenBundleIdentifiers": .strings([Fixture.a, Fixture.b])]) { $1 })
+        try guest.launchBarNook(divider.merging(["hiddenBundleIdentifiers": .strings([Fixture.a, Fixture.b])]) { $1 })
         try guest.waitUntil("A and B hide") { try guest.appItems().isDisjoint(with: [Fixture.a, Fixture.b]) }
         try guest.clickIcon()
         try guest.waitUntil("A and B show") { try guest.appItems().isSuperset(of: [Fixture.a, Fixture.b]) }
@@ -57,7 +57,7 @@ struct DividerTests {
     }
 
     @Test func draggingAnItemLeftOfTheIconHidesIt() throws {
-        try guest.launchEllipsis(divider)
+        try guest.launchBarNook(divider)
         guard let icon = try guest.iconFrame(), let c = try guest.frame(of: Fixture.c) else {
             Issue.record("expected the icon and C")
             return
@@ -67,9 +67,9 @@ struct DividerTests {
     }
 
     @Test func switchOffKeepsTheSet() throws {
-        try guest.launchEllipsis(divider.merging(["hiddenBundleIdentifiers": .strings([Fixture.a])]) { $1 })
+        try guest.launchBarNook(divider.merging(["hiddenBundleIdentifiers": .strings([Fixture.a])]) { $1 })
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a]), "hidesAppsLeftOfIcon": .bool(false)])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a]), "hidesAppsLeftOfIcon": .bool(false)])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         try guest.expectStable("A stays hidden") { try !guest.appItems().contains(Fixture.a) }
         #expect(try guest.setting("hiddenBundleIdentifiers").contains(Fixture.a))

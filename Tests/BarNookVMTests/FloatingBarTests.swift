@@ -1,5 +1,5 @@
 // Modified by Chaehyeon Lee (2026): cover floating-bar pin interactions.
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
@@ -20,7 +20,7 @@ struct FloatingBarTests {
     }
 
     private func launchInBarMode(_ extra: [String: Guest.Setting] = [:]) throws {
-        try guest.launchEllipsis(bar.merging(extra) { $1 })
+        try guest.launchBarNook(bar.merging(extra) { $1 })
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
     }
 
@@ -77,7 +77,7 @@ struct FloatingBarTests {
     }
 
     @Test func aShortRegionCollapsesItemsInMenuBarMode() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings(Fixture.all)])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings(Fixture.all)])
         try guest.waitUntil("the set hides") { try guest.appItems().isDisjoint(with: Fixture.all) }
         try bringWideFixtureToFront()
         #expect(try !guest.hasOverflowButton())

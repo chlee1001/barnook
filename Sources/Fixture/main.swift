@@ -4,14 +4,14 @@ import AppKit
 /// one binary serves FixtureA.app, FixtureB.app and so on with their own
 /// bundle identifiers. "Mark" writes a file named after the bundle
 /// identifier in the home directory, so a test can tell that a click
-/// reached this app's menu. With EllipsisFixtureMenuCount in Info.plist
+/// reached this app's menu. With BarNookFixtureMenuCount in Info.plist
 /// the app is a regular app with that many menus, so it takes most of the
 /// menu bar while it is frontmost: the stand-in for a notch.
 final class Fixture: NSObject, NSApplicationDelegate {
     private var item: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if let count = Bundle.main.object(forInfoDictionaryKey: "EllipsisFixtureMenuCount") as? Int, count > 0 {
+        if let count = Bundle.main.object(forInfoDictionaryKey: "BarNookFixtureMenuCount") as? Int, count > 0 {
             let mainMenu = NSMenu()
             for number in 1...count {
                 let title = NSMenuItem(title: "Menu \(number)", action: nil, keyEquivalent: "")

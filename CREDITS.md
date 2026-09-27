@@ -14,9 +14,9 @@ upstream files carry individual change notices.
 
 The app bundles [Sparkle 2](https://sparkle-project.org) for updates. Its
 license and included third-party notices are in the bundle as `Sparkle-LICENSE`.
-The app icon is three circles on a gradient, drawn by
-`scripts/make-icon-art.swift`. The menu bar icons are the SF Symbols
-`ellipsis` and `chevron.left`, used under the Apple SDK licence.
+The `AppIcon` asset is a bar over a sheltered item on a gradient, drawn by
+`scripts/make-icon-art.swift`. The matching menu bar nook icon is hand-drawn.
+`chevron.left` is the only SF Symbol, used under the Apple SDK licence.
 
 ## Apple frameworks
 

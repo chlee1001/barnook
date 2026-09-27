@@ -49,7 +49,7 @@ A test tool activated an assertion from a plain process. Results:
 
 ## Tools
 
-The scripts from this phase are not in the repository. `Sources/Ellipsis/main.swift` is the spike for the working method. Copy `build/Ellipsis.app` to `/Applications` before you run it.
+The scripts and `Sources/Ellipsis/main.swift` from this spike are no longer in the repository; `build/Ellipsis.app` was the historical bundle name. The current app builds from `Sources/BarNook/` as `BarNook.app` (see `docs/development.md`).
 
 ## Sources
 

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Where the floating bar goes: under the Ellipsis icon, just below the
+/// Where the floating bar goes: under the BarNook icon, just below the
 /// menu bar, and always on screen. Cocoa coordinates. Pure, for tests.
 enum FloatingBarPlacement {
     static let gap: CGFloat = 4

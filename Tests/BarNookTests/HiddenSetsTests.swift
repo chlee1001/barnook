@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Ellipsis
+@testable import BarNook
 
 @MainActor
 struct HiddenSetsTests {

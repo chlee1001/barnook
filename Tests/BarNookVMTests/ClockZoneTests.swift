@@ -1,4 +1,4 @@
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
@@ -20,7 +20,7 @@ struct ClockZoneTests {
     }
 
     @Test func pointerOverTheClockShowsHiddenItems() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         let clock = try clock()
         try guest.probe("move \(Int(clock.midX)) \(Int(clock.midY))")
@@ -30,7 +30,7 @@ struct ClockZoneTests {
     }
 
     @Test func measuredZoneStopsBeforeControlCenter() throws {
-        try guest.launchEllipsis(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         let width = Double(try guest.setting("clockZoneWidth")) ?? 0
         let clock = try clock()

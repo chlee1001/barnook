@@ -29,6 +29,6 @@ fi
 echo "Signing with $identity" >&2
 "$root/scripts/sign-sparkle.sh" "$app" "$identity"
 codesign --force --options runtime --timestamp \
-  --entitlements "$root/Resources/Ellipsis.entitlements" \
+  --entitlements "$root/Resources/BarNook.entitlements" \
   --sign "$identity" "$app"
 codesign --verify --strict --verbose=2 "$app"

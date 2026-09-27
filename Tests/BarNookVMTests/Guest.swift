@@ -1,13 +1,13 @@
 // Modified by Chaehyeon Lee (2026): fork bundle IDs for guest fixtures.
-import EllipsisCore
+import BarNookCore
 import Foundation
 import Testing
 
-/// The Tart guest named by `ELLIPSIS_VM`, reached through `scripts/vm.sh`.
+/// The Tart guest named by `BARNOOK_VM`, reached through `scripts/vm.sh`.
 /// The apps and the probe are already in the guest: `scripts/vm-test.sh`
 /// puts them there before `swift test` starts.
 struct Guest: Sendable {
-    static let name = ProcessInfo.processInfo.environment["ELLIPSIS_VM"]
+    static let name = ProcessInfo.processInfo.environment["BARNOOK_VM"]
     static var isConfigured: Bool { name != nil }
 
     static let appIdentifier = "com.chlee1001.BarNookDev"
@@ -84,7 +84,7 @@ struct Guest: Sendable {
         try run("defaults write \(Self.layoutTable) TrailingItemPreferredPositions -dict-add '\(key)' -float \(pointsFromRight)")
     }
 
-    /// Where the icon lands when Ellipsis launches, left of the fixtures.
+    /// Where the icon lands when BarNook launches, left of the fixtures.
     static let iconPosition = 500
 
     /// Where a quit fixture lands at its next launch.
@@ -107,7 +107,7 @@ struct Guest: Sendable {
         try items().compactMap(\.bundleIdentifier).filter { Fixture.all.contains($0) }
     }
 
-    /// Every test starts with no Ellipsis and the three fixtures in the
+    /// Every test starts with no BarNook and the three fixtures in the
     /// menu bar in the order A, B, C, right of where the icon will launch,
     /// whatever the last test left behind. A test that moved a fixture, or
     /// relaunched one elsewhere, gets them all relaunched in place. The
@@ -143,12 +143,12 @@ struct Guest: Sendable {
         try waitUntil("the fixtures are in the menu bar in order") { try visibleFixtures() == Fixture.all }
     }
 
-    // MARK: Ellipsis
+    // MARK: BarNook
 
-    /// Quits Ellipsis, replaces its settings with `settings` plus what a test
+    /// Quits BarNook, replaces its settings with `settings` plus what a test
     /// needs to run unattended (no permission dialog, no rehide unless asked
     /// for), and launches it again.
-    func launchEllipsis(_ settings: [String: Setting] = [:]) throws {
+    func launchBarNook(_ settings: [String: Setting] = [:]) throws {
         try quit(Self.appName)
         try run("defaults delete \(Self.appIdentifier) 2>/dev/null || true")
         try setPosition("status:\(Self.appIdentifier)::barnook.icon", Self.iconPosition)

@@ -1,7 +1,7 @@
 import Foundation
 import Testing
-@testable import Ellipsis
-import EllipsisCore
+@testable import BarNook
+import BarNookCore
 
 struct MenuBarLayoutTests {
     @Test func clockOffsetIsMeasuredFromTheRightEdge() {

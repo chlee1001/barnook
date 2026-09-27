@@ -1,7 +1,7 @@
 // Modified by Chaehyeon Lee (2026): BarNook status item key coverage.
 import Foundation
 import Testing
-@testable import Ellipsis
+@testable import BarNook
 
 struct SettingsFileTests {
     private func makeStore() -> UserDefaults {

@@ -1,8 +1,8 @@
 import AppKit
-import EllipsisCore
+import BarNookCore
 import Observation
 
-/// The Ellipsis icon as the divider, like the Ice and Bartender icons:
+/// The BarNook icon as the divider, like the Ice and Bartender icons:
 /// Cmd-drag items across it. Apps left of it join the hidden set, apps
 /// right of it leave. Positions come from `MenuBarLayout`, so this needs
 /// the Accessibility permission. The icon's own window frame gives the

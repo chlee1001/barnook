@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Ellipsis
+@testable import BarNook
 
 struct FloatingBarPlacementTests {
     let screen = NSRect(x: 0, y: 0, width: 1024, height: 768)
