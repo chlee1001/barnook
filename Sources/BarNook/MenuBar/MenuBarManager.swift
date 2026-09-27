@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): added temporary floating-bar pins and fit checks.
+// Modified by Chaehyeon Lee (2026): added temporary floating-bar pins, fit checks and selectable icons.
 import AppKit
 import BarNookCore
 import Observation
@@ -37,31 +37,6 @@ final class MenuBarManager {
     private var clockHoverRestore: Task<Void, Never>?
     private var isPointerInClockZone = false
 
-    private static let hiddenImage = nookImage()
-    private static let shownImage = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: "Hide items")?
-        .withSymbolConfiguration(.init(pointSize: 15, weight: .bold))
-
-    /// A monochrome bar and sheltered item, matching the app icon.
-    private static func nookImage() -> NSImage {
-        let image = NSImage(size: NSSize(width: 20, height: 20), flipped: false) { _ in
-            NSColor.black.set()
-            let nook = NSBezierPath()
-            nook.lineWidth = 2
-            nook.lineCapStyle = .round
-            nook.move(to: NSPoint(x: 4.5, y: 4.5))
-            nook.line(to: NSPoint(x: 4.5, y: 11))
-            nook.curve(to: NSPoint(x: 15.5, y: 11), controlPoint1: NSPoint(x: 4.5, y: 18), controlPoint2: NSPoint(x: 15.5, y: 18))
-            nook.line(to: NSPoint(x: 15.5, y: 4.5))
-            nook.stroke()
-            NSBezierPath(roundedRect: NSRect(x: 2, y: 13, width: 16, height: 2.5), xRadius: 1.25, yRadius: 1.25).fill()
-            NSBezierPath(roundedRect: NSRect(x: 8.5, y: 6, width: 3, height: 3), xRadius: 0.8, yRadius: 0.8).fill()
-            return true
-        }
-        image.isTemplate = true
-        image.accessibilityDescription = "Show hidden items"
-        return image
-    }
-
     init(
         restriction: MenuBarRestriction,
         sets: HiddenSets,
@@ -89,6 +64,7 @@ final class MenuBarManager {
 
         applyCurrentState()
         observeChanges()
+        observeIconChanges()
         installClockHover()
 
         // A newly launched app is not in the allow-list snapshot, so it would hide.
@@ -163,7 +139,7 @@ final class MenuBarManager {
         } else {
             restriction.apply(hiddenBundleIdentifiers: hidden)
         }
-        icon.button?.image = sets.isHiddenSetShown ? Self.shownImage : Self.hiddenImage
+        updateIcon()
         updateFloatingBar(inBar: inBar)
 
         // Arm once per show, not on every reapply, so the timeout is not reset
@@ -208,6 +184,26 @@ final class MenuBarManager {
                 self.observeChanges()
             }
         }
+    }
+
+    private func observeIconChanges() {
+        withObservationTracking {
+            _ = state.hiddenMenuBarIcon
+            _ = state.shownMenuBarIcon
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.updateIcon()
+                self.observeIconChanges()
+            }
+        }
+    }
+
+    private func updateIcon() {
+        guard let button = icon.button else { return }
+        let isShown = sets.isHiddenSetShown
+        button.image = (isShown ? state.shownMenuBarIcon : state.hiddenMenuBarIcon).image
+        button.setAccessibilityLabel(isShown ? "Hide items" : "Show hidden items")
     }
 
     // MARK: The floating bar

@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): persisted menu bar icon choices.
 import Foundation
 import Observation
 
@@ -15,6 +16,8 @@ final class AppState {
         static let clockZoneWidth = "clockZoneWidth"
         static let hidesAppsLeftOfIcon = "hidesAppsLeftOfIcon"
         static let hiddenItemsPlacement = "hiddenItemsPlacement"
+        static let hiddenMenuBarIcon = "hiddenMenuBarIcon"
+        static let shownMenuBarIcon = "shownMenuBarIcon"
     }
 
     /// Where a shown set goes. See spec F8.
@@ -34,6 +37,8 @@ final class AppState {
         Key.clockZoneWidth: 300.0,
         Key.hidesAppsLeftOfIcon: false,
         Key.hiddenItemsPlacement: HiddenItemsPlacement.menuBar.rawValue,
+        Key.hiddenMenuBarIcon: MenuBarIcon.nook.rawValue,
+        Key.shownMenuBarIcon: MenuBarIcon.chevronLeft.rawValue,
     ]
 
     /// `hasNotch` picks the placement default: a notch collapses shown items
@@ -59,10 +64,16 @@ final class AppState {
         clockZoneWidth = store.double(forKey: Key.clockZoneWidth)
         hidesAppsLeftOfIcon = store.bool(forKey: Key.hidesAppsLeftOfIcon)
         hiddenItemsPlacement = Self.placement(in: store)
+        hiddenMenuBarIcon = Self.icon(in: store, forKey: Key.hiddenMenuBarIcon, default: .nook)
+        shownMenuBarIcon = Self.icon(in: store, forKey: Key.shownMenuBarIcon, default: .chevronLeft)
     }
 
     private static func placement(in store: UserDefaults) -> HiddenItemsPlacement {
         store.string(forKey: Key.hiddenItemsPlacement).flatMap(HiddenItemsPlacement.init) ?? .menuBar
+    }
+
+    private static func icon(in store: UserDefaults, forKey key: String, default fallback: MenuBarIcon) -> MenuBarIcon {
+        store.string(forKey: key).flatMap(MenuBarIcon.init) ?? fallback
     }
 
     /// Reads every value from the store again, after an import wrote to it.
@@ -75,6 +86,8 @@ final class AppState {
         clockZoneWidth = store.double(forKey: Key.clockZoneWidth)
         hidesAppsLeftOfIcon = store.bool(forKey: Key.hidesAppsLeftOfIcon)
         hiddenItemsPlacement = Self.placement(in: store)
+        hiddenMenuBarIcon = Self.icon(in: store, forKey: Key.hiddenMenuBarIcon, default: .nook)
+        shownMenuBarIcon = Self.icon(in: store, forKey: Key.shownMenuBarIcon, default: .chevronLeft)
     }
 
     var isAlwaysHiddenEnabled: Bool {
@@ -106,5 +119,11 @@ final class AppState {
     }
     var hiddenItemsPlacement: HiddenItemsPlacement {
         didSet { store.set(hiddenItemsPlacement.rawValue, forKey: Key.hiddenItemsPlacement) }
+    }
+    var hiddenMenuBarIcon: MenuBarIcon {
+        didSet { store.set(hiddenMenuBarIcon.rawValue, forKey: Key.hiddenMenuBarIcon) }
+    }
+    var shownMenuBarIcon: MenuBarIcon {
+        didSet { store.set(shownMenuBarIcon.rawValue, forKey: Key.shownMenuBarIcon) }
     }
 }
