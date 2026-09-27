@@ -71,7 +71,7 @@ public struct MenuBarLayout: Sendable, Codable {
 
     /// The `«` button macOS 27 draws where it collapsed the items that did
     /// not fit. Not a menu extra: the identifier is ours.
-    public static let overflowIdentifier = "com.chlee1001.Ellipsis.overflow"
+    public static let overflowIdentifier = "com.chlee1001.BarNook.overflow"
 
     /// Points from the right edge of the menu bar to the left edge of the
     /// clock. System items sit at the same offset on every display.

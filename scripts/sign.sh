@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Modified by Chaehyeon Lee (2026): require an explicit Developer ID identity.
-# Sign build/Ellipsis.app with a Developer ID and the hardened runtime.
-# Usage: scripts/sign.sh [path/to/Ellipsis.app]
+# Sign build/BarNook.app with a Developer ID and the hardened runtime.
+# Usage: scripts/sign.sh [path/to/BarNook.app]
 # DEVELOPER_ID names the identity. Default: the first "Developer ID
 # Application" identity in the keychain.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-app="${1:-$root/build/Ellipsis.app}"
+app="${1:-$root/build/BarNook.app}"
 
 identity="${DEVELOPER_ID:-}"
 if [[ -z "$identity" ]]; then

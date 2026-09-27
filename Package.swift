@@ -1,8 +1,9 @@
 // swift-tools-version: 6.4
+// Modified by Chaehyeon Lee (2026): BarNook package branding; inherited target names remain internal.
 import PackageDescription
 
 let package = Package(
-    name: "Ellipsis",
+    name: "BarNook",
     platforms: [.macOS(.v27)],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),

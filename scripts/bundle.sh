@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Modified by Chaehyeon Lee (2026): fork identity and bundled licenses.
 # Assemble the app bundle from the SwiftPM binary and sign it.
-# A debug build is build/EllipsisDev.app with the identifier
-# com.chlee1001.EllipsisDev, so it sits next to the release app in /Applications
+# A debug build is build/BarNookDev.app with the identifier
+# com.chlee1001.BarNookDev, so it sits next to the release app in /Applications
 # and in the Accessibility list, with its own settings. A release build is
-# build/Ellipsis.app with com.chlee1001.Ellipsis; sign.sh signs it for release.
+# build/BarNook.app with com.chlee1001.BarNook; sign.sh signs it for release.
 # The signature here uses the first Developer ID Application identity in the
 # keychain, else the first Apple Development one, else ad hoc. An ad hoc
 # signature changes with every build, and macOS ties the Accessibility grant
@@ -19,8 +19,8 @@ config="${1:-debug}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 bin="$(swift build -c "$config" --package-path "$root" --show-bin-path)/Ellipsis"
 
-name="Ellipsis"
-[[ "$config" == "release" ]] || name="EllipsisDev"
+name="BarNook"
+[[ "$config" == "release" ]] || name="BarNookDev"
 identifier="com.chlee1001.$name"
 app="$root/build/$name.app"
 

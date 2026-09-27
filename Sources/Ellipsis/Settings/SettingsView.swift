@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook settings labels and export name.
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -16,7 +17,7 @@ struct SettingsView: View {
                 @Bindable var state = state
                 Form {
                     Section {
-                        Toggle("Hide apps left of the Ellipsis icon", isOn: $state.hidesAppsLeftOfIcon)
+                        Toggle("Hide apps left of the BarNook icon", isOn: $state.hidesAppsLeftOfIcon)
                             .disabled(!permission.isTrusted)
                         if !permission.isTrusted {
                             LabeledContent("Needs the Accessibility permission") {
@@ -38,7 +39,7 @@ struct SettingsView: View {
                     } footer: {
                         Text(isDividerActive
                             ? "The icon's position manages this list. Cmd-drag an item to change it."
-                            : "These apps hide until you click the Ellipsis icon.")
+                            : "These apps hide until you click the BarNook icon.")
                     }
                     .disabled(isDividerActive)
                 }
@@ -50,7 +51,7 @@ struct SettingsView: View {
                     Section {
                         Toggle("Keep an always-hidden set", isOn: $state.isAlwaysHiddenEnabled)
                     } footer: {
-                        Text("Option-click the Ellipsis icon to show these apps.")
+                        Text("Option-click the BarNook icon to show these apps.")
                     }
                     Section("Always-hidden apps") {
                         AppPicker(
@@ -161,7 +162,7 @@ private struct GeneralSettings: View {
                 Toggle("Check for updates automatically", isOn: $updater.automaticallyChecksForUpdates)
                 Button("Check for Updates…", action: updater.checkForUpdates)
                     .disabled(!updater.canCheckForUpdates)
-                Button("Quit Ellipsis") {
+                Button("Quit BarNook") {
                     NSApp.terminate(nil)
                 }
             }
@@ -198,7 +199,7 @@ private struct SettingsFileSection: View {
     private func exportSettings() async {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.propertyList]
-        panel.nameFieldStringValue = "Ellipsis Settings.plist"
+        panel.nameFieldStringValue = "BarNook Settings.plist"
         guard await panel.begin() == .OK, let url = panel.url else { return }
         do {
             try SettingsFile.export(from: .standard).write(to: url)

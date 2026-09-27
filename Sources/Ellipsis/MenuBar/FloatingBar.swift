@@ -156,7 +156,7 @@ private struct AppButton: View {
 
     private var helpText: String {
         if isUnreachable {
-            return "\(app.name) — runs outside /Applications, so macOS hides it whenever Ellipsis hides anything"
+            return "\(app.name) — runs outside /Applications, so macOS hides it whenever BarNook hides anything"
         }
         let pin = isPinned ? "pinned — click to unpin" : "click to pin"
         return hint.map { "\(app.name) — \(pin); \($0)" } ?? "\(app.name) — \(pin)"

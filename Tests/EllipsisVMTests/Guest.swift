@@ -10,8 +10,8 @@ struct Guest: Sendable {
     static let name = ProcessInfo.processInfo.environment["ELLIPSIS_VM"]
     static var isConfigured: Bool { name != nil }
 
-    static let appIdentifier = "com.chlee1001.EllipsisDev"
-    static let appName = "EllipsisDev"
+    static let appIdentifier = "com.chlee1001.BarNookDev"
+    static let appName = "BarNookDev"
 
     struct CommandFailure: Error, CustomStringConvertible {
         var command: String
@@ -151,7 +151,7 @@ struct Guest: Sendable {
     func launchEllipsis(_ settings: [String: Setting] = [:]) throws {
         try quit(Self.appName)
         try run("defaults delete \(Self.appIdentifier) 2>/dev/null || true")
-        try setPosition("status:\(Self.appIdentifier)::ellipsis.icon", Self.iconPosition)
+        try setPosition("status:\(Self.appIdentifier)::barnook.icon", Self.iconPosition)
         var all: [String: Setting] = [
             "accessibilityDeclined": .bool(true),
             "rehideOnTimeout": .bool(false),
@@ -166,7 +166,7 @@ struct Guest: Sendable {
             try run("defaults write \(Self.appIdentifier) \(key) \(value.argument)")
         }
         try launch(Self.appName)
-        try waitUntil("the Ellipsis icon appears") { try iconFrame() != nil }
+        try waitUntil("the BarNook icon appears") { try iconFrame() != nil }
         try waitUntilSettled()
     }
 
@@ -239,7 +239,7 @@ struct Guest: Sendable {
     /// Clicks the icon and parks the pointer on the desktop, out of the
     /// clock zone and off the menu bar.
     func clickIcon(option: Bool = false) throws {
-        guard let frame = try iconFrame() else { throw CommandFailure(command: "icon", status: 1, output: "no Ellipsis icon") }
+        guard let frame = try iconFrame() else { throw CommandFailure(command: "icon", status: 1, output: "no BarNook icon") }
         try click(frame, option: option)
         try probe("move 400 400")
     }
@@ -320,9 +320,9 @@ struct Guest: Sendable {
 }
 
 enum Fixture {
-    static let a = "com.chlee1001.EllipsisFixture.A"
-    static let b = "com.chlee1001.EllipsisFixture.B"
-    static let c = "com.chlee1001.EllipsisFixture.C"
+    static let a = "com.chlee1001.BarNookFixture.A"
+    static let b = "com.chlee1001.BarNookFixture.B"
+    static let c = "com.chlee1001.BarNookFixture.C"
     static let all = [a, b, c]
     /// A regular app with seven menus: frontmost, it leaves about 240
     /// points for status items on the guest's display. Room for the icon,
@@ -331,8 +331,8 @@ enum Fixture {
     /// Nine menus, about 113 points: room for the icon and one fixture
     /// (106), not for the app's own item as well (176).
     static let widerName = "FixtureV"
-    static let w = "com.chlee1001.EllipsisFixture.W"
-    static let v = "com.chlee1001.EllipsisFixture.V"
+    static let w = "com.chlee1001.BarNookFixture.W"
+    static let v = "com.chlee1001.BarNookFixture.V"
 
     static func name(_ identifier: String) -> String {
         "Fixture" + identifier.split(separator: ".").last!

@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook permission wording.
 import AppKit
 import ApplicationServices
 import Observation
@@ -49,16 +50,16 @@ final class AccessibilityPermission {
         ask()
     }
 
-    /// The explanation dialog. "Grant Permission" adds Ellipsis to the
+    /// The explanation dialog. "Grant Permission" adds BarNook to the
     /// Accessibility list and shows the system prompt with its "Open System
     /// Settings" button. "Not Now" records an opt-out.
     func ask() {
         let alert = NSAlert()
-        alert.messageText = "Let Ellipsis see which apps have a menu bar item?"
+        alert.messageText = "Let BarNook see which apps have a menu bar item?"
         alert.informativeText = """
             With the Accessibility permission, the app pickers in Settings list only the apps that have a menu bar item. Without it, they list every running app.
 
-            This is optional. Ellipsis hides and shows items the same way either way. It never reads or controls anything else, and you can change your mind in Settings at any time.
+            This is optional. BarNook hides and shows items the same way either way. It never reads or controls anything else, and you can change your mind in Settings at any time.
             """
         alert.addButton(withTitle: "Grant Permission")
         alert.addButton(withTitle: "Not Now")

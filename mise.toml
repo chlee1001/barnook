@@ -12,11 +12,11 @@ description = "Rebuild Resources/AppIcon.icns from Resources/AppIcon.png"
 run = "scripts/make-icon.sh"
 
 [tasks.run]
-description = "Bundle a debug build as EllipsisDev.app, install it to /Applications, and open it"
+description = "Bundle a debug build as BarNookDev.app, install it to /Applications, and open it"
 run = "scripts/run.sh"
 
 [tasks.install]
-description = "Bundle a release build as Ellipsis.app, install it to /Applications, and open it"
+description = "Bundle a release build as BarNook.app, install it to /Applications, and open it"
 run = "scripts/run.sh release"
 
 [tasks.release]
@@ -29,7 +29,7 @@ scripts/publish.sh "${usage_version}"
 """
 
 [tasks.publish]
-description = "Create the GitHub release for vX.Y.Z from build/Ellipsis-X.Y.Z.zip and build/appcast.xml"
+description = "Create the GitHub release for vX.Y.Z from build/BarNook-X.Y.Z.zip and build/appcast.xml"
 usage = 'arg "<version>" help="X.Y.Z, without the v"'
 run = 'scripts/publish.sh "${usage_version}"'
 

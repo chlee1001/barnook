@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook launch alert.
 import AppKit
 
 @MainActor
@@ -50,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private static func quit(with error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Ellipsis cannot run on this version of macOS"
+        alert.messageText = "BarNook cannot run on this version of macOS"
         alert.informativeText = error.localizedDescription
         alert.alertStyle = .critical
         alert.addButton(withTitle: "Quit")

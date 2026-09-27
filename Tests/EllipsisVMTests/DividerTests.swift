@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook VM diagnostics.
 import EllipsisCore
 import Foundation
 import Testing
@@ -16,7 +17,7 @@ struct DividerTests {
 
     /// Cmd-drags the icon so that its left edge lands at `x`.
     private func cmdDragIcon(leftEdgeTo x: CGFloat) throws {
-        guard let icon = try guest.iconFrame() else { throw Guest.CommandFailure(command: "icon", status: 1, output: "no Ellipsis icon") }
+        guard let icon = try guest.iconFrame() else { throw Guest.CommandFailure(command: "icon", status: 1, output: "no BarNook icon") }
         try guest.probe("drag \(Int(icon.midX)) \(Int(icon.midY)) \(Int(x + icon.width / 2)) \(Int(icon.midY)) --command")
     }
 

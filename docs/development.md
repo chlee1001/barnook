@@ -1,6 +1,6 @@
 # Development
 
-Modified by Chaehyeon Lee (2026): fork signing and release instructions.
+Modified by Chaehyeon Lee (2026): BarNook signing, branding and release instructions.
 
 ## Build from source
 
@@ -12,7 +12,7 @@ mise run test
 mise run run
 ```
 
-`mise run run` bundles a debug build as `EllipsisDev.app` with the identifier `com.chlee1001.EllipsisDev`, signs it with a local certificate (ad hoc without one), copies it to `/Applications` and opens it. A stable certificate keeps its Accessibility grant across rebuilds. The debug build has its own settings and its own row in the Accessibility list, so it runs next to a release `Ellipsis.app`. `mise run install` does the same with a release build as `Ellipsis.app`, signed but not notarized. Without mise, use `swift build`, `swift test`, `scripts/run.sh` and `scripts/run.sh release`.
+`mise run run` bundles a debug build as `BarNookDev.app` with the identifier `com.chlee1001.BarNookDev`, signs it with a local certificate (ad hoc without one), copies it to `/Applications` and opens it. A stable certificate keeps its Accessibility grant across rebuilds. The debug build has its own settings and its own row in the Accessibility list, so it runs next to a release `BarNook.app`. `mise run install` does the same with a release build as `BarNook.app`, signed but not notarized. Without mise, use `swift build`, `swift test`, `scripts/run.sh` and `scripts/run.sh release`.
 
 ## VM tests
 
@@ -49,7 +49,7 @@ mise run vm-test                                # clone, install, test, delete: 
 mise run vm-test -- --filter RehideTests        # one suite
 ```
 
-`scripts/vm-test.sh` clones the golden VM as `ELLIPSIS_VM` (default `ellipsis-test`), copies `EllipsisDev.app`, the three fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter EllipsisVMTests`, copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `ELLIPSIS_VM_KEEP=1` leaves the VM running after the run. `ELLIPSIS_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `ELLIPSIS_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run ellipsis-test --vnc` after `scripts/vm.sh stop` shows its screen.
+`scripts/vm-test.sh` clones the golden VM as `ELLIPSIS_VM` (default `ellipsis-test`), copies `BarNookDev.app`, the three fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter EllipsisVMTests`, copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `ELLIPSIS_VM_KEEP=1` leaves the VM running after the run. `ELLIPSIS_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `ELLIPSIS_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run ellipsis-test --vnc` after `scripts/vm.sh stop` shows its screen.
 
 Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest has no notch.
 
@@ -58,21 +58,21 @@ Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests
 1. Install your "Developer ID Application" identity in the login keychain. Do not use the original author's signing identity.
 2. Create a notarytool profile for your Apple Developer team once, or reuse an existing profile for the same team:
    ```sh
-   xcrun notarytool store-credentials ellipsis-chlee1001 \
+   xcrun notarytool store-credentials barnook-chlee1001 \
      --apple-id you@example.com --team-id TEAMID --password app-specific-password
    ```
-3. Keep the fork's EdDSA private key at `~/.local/share/ellipsis/eddsa-private.key` (mode 600). Its public half is `SUPublicEDKey` in `Resources/Info.plist`; the release script verifies they match. Do not regenerate the key after shipping updates. Never commit or share the private key.
+3. Keep BarNook's EdDSA private key at `~/.local/share/barnook/eddsa-private.key` (mode 600). Its public half is `SUPublicEDKey` in `Resources/Info.plist`; the release script verifies they match. Do not regenerate the key after shipping updates. Never commit or share the private key.
 4. Put machine-local settings in the gitignored `.release-env` (or export them in the shell):
    ```sh
    DEVELOPER_ID='Developer ID Application: YOUR NAME (YOUR TEAM ID)'
-   NOTARY_PROFILE=ellipsis-chlee1001  # or an existing profile for the same team
-   # ELLIPSIS_SPARKLE_ED_KEY_FILE=/absolute/path/to/eddsa-private.key  # optional
+   NOTARY_PROFILE=barnook-chlee1001  # or an existing profile for the same team
+   # BARNOOK_SPARKLE_ED_KEY_FILE=/absolute/path/to/eddsa-private.key  # optional
    ```
 5. Make sure `gh auth status` shows your account. Merge reviewed changes into `main`, then run `mise run archive X.Y.Z` to prepare and inspect the signed ZIP and appcast. Run `mise run publish X.Y.Z` to tag and upload, or `mise run release X.Y.Z` for both. Release preparation requires a clean, current `main`. No tag is pushed until signed artifacts pass verification.
 
 `scripts/release.sh X.Y.Z` does the build, sign, notarize, zip and appcast steps without the tag. `scripts/publish.sh X.Y.Z` (or `mise run publish X.Y.Z`) creates the GitHub release from the two files.
 
-`DEVELOPER_ID` and `NOTARY_PROFILE` are required for a release. The archive includes the original Apache 2.0 license and Sparkle's license. `build/Ellipsis-X.Y.Z.commit` binds the prepared artifacts to the reviewed commit; publication refuses a different head. The scripts are `bundle.sh`, `sign.sh`, `sign-sparkle.sh`, `notarize.sh`, `release.sh`, `publish.sh` and `make-icon.sh`.
+`DEVELOPER_ID` and `NOTARY_PROFILE` are required for a release. The archive includes the original Apache 2.0 license and Sparkle's license. `build/BarNook-X.Y.Z.commit` binds the prepared artifacts to the reviewed commit; publication refuses a different head. The scripts are `bundle.sh`, `sign.sh`, `sign-sparkle.sh`, `notarize.sh`, `release.sh`, `publish.sh` and `make-icon.sh`.
 
 ## A second machine
 
@@ -81,22 +81,22 @@ Signing and notary credentials live in the keychain; the Sparkle private key liv
 On the release machine:
 
 1. Certificates with their private keys: Xcode › Settings › Accounts › your Apple ID › ⚙ › "Export Apple ID and Code Signing Assets…" writes a `.developerprofile` with every certificate and key, the Developer ID Application identity among them. Keychain Access › My Certificates › right-click the identity › Export writes a `.p12` with only that one.
-2. The file `~/.local/share/ellipsis/eddsa-private.key`; transfer it securely and set its permissions to 600.
+2. The file `~/.local/share/barnook/eddsa-private.key`; transfer it securely and set its permissions to 600.
 3. The app-specific password for notarytool cannot be exported. Use the one you have, or make a new one at appleid.apple.com.
 
 On the new machine:
 
 1. Open the `.developerprofile` (Xcode imports it) or the `.p12`. `security find-identity -v -p codesigning` then lists "Developer ID Application".
-2. Install the Sparkle key file at `~/.local/share/ellipsis/eddsa-private.key` with mode 600. The release script checks it against `SUPublicEDKey`; a different key strands installed copies (see "The update key").
-3. `xcrun notarytool store-credentials ellipsis-chlee1001 --apple-id you@example.com --team-id TEAMID --password <app-specific-password>`.
+2. Install the Sparkle key file at `~/.local/share/barnook/eddsa-private.key` with mode 600. The release script checks it against `SUPublicEDKey`; a different key strands installed copies (see "The update key").
+3. `xcrun notarytool store-credentials barnook-chlee1001 --apple-id you@example.com --team-id TEAMID --password <app-specific-password>`.
 
 Without the Developer ID identity, `scripts/bundle.sh` signs a debug build with an Apple Development identity if there is one, else ad hoc. Only a certificate keeps the Accessibility grant across rebuilds. A new Developer ID Application certificate can be made in Xcode › Settings › Accounts › Manage Certificates (account holder only, five per team) and signs future releases as well as the old one; only the Sparkle key has to be the original.
 
 ## Updates
 
-Ellipsis uses [Sparkle 2](https://sparkle-project.org) from SwiftPM. `SUFeedURL` in `Resources/Info.plist` is `https://github.com/chlee1001/ellipsis/releases/latest/download/appcast.xml`. GitHub serves the `appcast.xml` asset of the newest release that is not a draft or a pre-release. Each release has an appcast with one item, itself, so the newest release is the only update that Sparkle sees.
+BarNook uses [Sparkle 2](https://sparkle-project.org) from SwiftPM. `SUFeedURL` in `Resources/Info.plist` is `https://github.com/chlee1001/barnook/releases/latest/download/appcast.xml`. GitHub serves the `appcast.xml` asset of the newest release that is not a draft or a pre-release. Each release has an appcast with one item, itself, so the newest release is the only update that Sparkle sees.
 
-`generate_appcast` signs the zip with the EdDSA key in the login keychain. `SUPublicEDKey` in `Resources/Info.plist` is the public half. An app can only install an update that this key signed.
+`generate_appcast` signs the zip with BarNook's EdDSA private key file. `SUPublicEDKey` in `Resources/Info.plist` is the public half. An app can only install an update that this key signed.
 
 ### The update key
 
@@ -106,7 +106,7 @@ If the key is lost, create a new Ed25519 key and put its public half in `Resourc
 
 ## Documentation
 
-- `docs/spec.md`: what Ellipsis does.
+- `docs/spec.md`: what BarNook does.
 - `docs/plan.md`: how it is built, phase by phase.
 - `docs/phase0.md`: what was tried against `MenuBarAgent`, and what worked.
 - `docs/phase7.md`: what was tried in a Tart guest, and what worked.

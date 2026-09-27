@@ -16,20 +16,20 @@ fi
 : "${DEVELOPER_ID:?Set DEVELOPER_ID to your Developer ID Application identity}"
 : "${NOTARY_PROFILE:?Set NOTARY_PROFILE to your notarytool keychain profile}"
 export DEVELOPER_ID NOTARY_PROFILE
-key="${ELLIPSIS_SPARKLE_ED_KEY_FILE:-$HOME/.local/share/ellipsis/eddsa-private.key}"
+key="${BARNOOK_SPARKLE_ED_KEY_FILE:-$HOME/.local/share/barnook/eddsa-private.key}"
 [[ -f "$key" ]] || { echo "Missing Sparkle private key: $key" >&2; exit 1; }
 
 # Refuse to sign an app that cannot verify its own updates. Never print the key.
-ELLIPSIS_KEY_FILE="$key" ELLIPSIS_PLIST="$root/Resources/Info.plist" swift -e '
+BARNOOK_KEY_FILE="$key" BARNOOK_PLIST="$root/Resources/Info.plist" swift -e '
 import CryptoKit
 import Foundation
 let env = ProcessInfo.processInfo.environment
-let encoded = try String(contentsOfFile: env["ELLIPSIS_KEY_FILE"]!, encoding: .utf8)
+let encoded = try String(contentsOfFile: env["BARNOOK_KEY_FILE"]!, encoding: .utf8)
     .trimmingCharacters(in: .whitespacesAndNewlines)
 guard let data = Data(base64Encoded: encoded) else { fatalError("Invalid Sparkle private key") }
 let publicKey = try Curve25519.Signing.PrivateKey(rawRepresentation: data)
     .publicKey.rawRepresentation.base64EncodedString()
-let plist = NSDictionary(contentsOfFile: env["ELLIPSIS_PLIST"]!)!
+let plist = NSDictionary(contentsOfFile: env["BARNOOK_PLIST"]!)!
 precondition(plist["SUPublicEDKey"] as? String == publicKey, "Sparkle key does not match SUPublicEDKey")
 '
 
@@ -66,17 +66,17 @@ app="$(VERSION="$version" BUILD="$build" "$root/scripts/bundle.sh" release)"
 "$root/scripts/sign.sh" "$app"
 "$root/scripts/notarize.sh" "$app"
 
-zip="$root/build/Ellipsis-$version.zip"
+zip="$root/build/BarNook-$version.zip"
 ditto -c -k --keepParent "$app" "$zip"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 cp "$zip" "$work/"
 "$root/.build/artifacts/sparkle/Sparkle/bin/generate_appcast" \
   --ed-key-file "$key" \
-  --download-url-prefix "https://github.com/chlee1001/ellipsis/releases/download/v$version/" \
-  --link "https://github.com/chlee1001/ellipsis/releases" \
+  --download-url-prefix "https://github.com/chlee1001/barnook/releases/download/v$version/" \
+  --link "https://github.com/chlee1001/barnook/releases" \
   -o "$root/build/appcast.xml" "$work"
 [[ -s "$root/build/appcast.xml" ]] || { echo "Missing signed appcast" >&2; exit 1; }
-git -C "$root" rev-parse HEAD > "$root/build/Ellipsis-$version.commit"
+git -C "$root" rev-parse HEAD > "$root/build/BarNook-$version.commit"
 echo "$zip"
 echo "$root/build/appcast.xml"

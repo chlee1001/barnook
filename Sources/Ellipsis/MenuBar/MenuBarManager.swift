@@ -4,7 +4,7 @@ import EllipsisCore
 import Observation
 import os
 
-/// Owns the Ellipsis icon and the restriction, and keeps the restriction in
+/// Owns the BarNook icon and the restriction, and keeps the restriction in
 /// step with the hidden sets.
 @MainActor
 @Observable
@@ -29,7 +29,7 @@ final class MenuBarManager {
     /// the item in the menu bar; the icon brings it back for another pin.
     private var isBarOpen = false
     private var barPlacement: Task<Void, Never>?
-    private static let log = Logger(subsystem: "com.chlee1001.Ellipsis", category: "pins")
+    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "pins")
     private let openSettingsHandler: () -> Void
     private let icon = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var launchObserver: Task<Void, Never>?
@@ -74,7 +74,7 @@ final class MenuBarManager {
         rehide.panelFrame = { [weak self] in self?.floatingBar?.frame }
         rehide.hasPins = { [weak self] in self?.pins.isEmpty == false }
 
-        icon.autosaveName = "ellipsis.icon"
+        icon.autosaveName = "barnook.icon"
         if let button = icon.button {
             button.target = self
             button.action = #selector(iconClicked)
@@ -390,7 +390,7 @@ final class MenuBarManager {
 
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "Quit Ellipsis", action: #selector(NSApplication.terminate), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit BarNook", action: #selector(NSApplication.terminate), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
 
