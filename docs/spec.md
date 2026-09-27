@@ -1,6 +1,6 @@
 # BarNook — specification
 
-Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins.
+Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins and selectable menu bar icons.
 
 BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://github.com/ronny/ellipsis). It hides and shows menu bar items of other apps on macOS 27 (Golden Gate).
 
@@ -17,7 +17,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 
 - Menu bar appearance changes (tint, shadow, border, shape).
 - Menu bar item search or spotlight.
-- Custom icons or profiles.
+- User-supplied icons or profiles.
 - Per-display rules.
 - Global hotkeys (not in v1).
 - Item rearrangement. BarNook never moves an item.
@@ -33,7 +33,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 | Hidden set | Apps that BarNook hides until you click the BarNook icon. |
 | Always-hidden set | Apps that BarNook hides until you Option+click the BarNook icon. |
 | Restriction | The macOS 27 assessment-mode allow-list that BarNook holds while it hides apps. |
-| BarNook icon | The clickable `NSStatusItem` that BarNook owns. Shows a nook or `‹`. |
+| BarNook icon | The clickable `NSStatusItem` that BarNook owns. Its glyph can be chosen separately for hidden and shown items. |
 
 ## How it hides
 
@@ -66,7 +66,7 @@ BarNook releases the restriction when it shows the hidden set. BarNook holds a r
 
 ### F1: Hide and show the hidden set
 
-- The BarNook icon shows a nook when the hidden set is hidden. It shows `‹` when the set is shown.
+- The BarNook icon defaults to a nook when the hidden set is hidden and `‹` when the set is shown. Each state has an independent choice of bundled template glyphs: nook, ellipsis, left or right chevron, dot, or star.
 - Click the icon to toggle the hidden set.
 - The state persists across restarts.
 
@@ -93,6 +93,7 @@ BarNook does not rehide while a menu from a shown item is open.
 A SwiftUI window with these controls:
 
 - Launch at login (`SMAppService`).
+- Menu bar icon: separate pickers for the hidden and shown states; changes take effect immediately and are included in settings export/import.
 - Hidden set: a list of running apps with a checkbox per app. BarNook lists apps with a `.regular` or `.accessory` activation policy.
 - Always-hidden set: the same list, and a switch to enable the set.
 - "Hide apps left of the BarNook icon": a switch (F7). Off without the Accessibility permission.

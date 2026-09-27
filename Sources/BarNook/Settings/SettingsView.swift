@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook settings labels and export name.
+// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers.
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -132,6 +132,18 @@ private struct GeneralSettings: View {
             } footer: {
                 Text("A notch, or a long app menu, leaves no room for every item. The bar shows the hidden apps below the menu bar instead, and a click on one opens its menu bar item.")
             }
+            Section {
+                Picker("When items are hidden", selection: $state.hiddenMenuBarIcon) {
+                    iconOptions
+                }
+                Picker("When items are shown", selection: $state.shownMenuBarIcon) {
+                    iconOptions
+                }
+            } header: {
+                Text("Menu bar icon")
+            } footer: {
+                Text("Choose the icon shown in the menu bar for each state. Changes take effect immediately.")
+            }
             Section("Hide again") {
                 Toggle("After a timeout", isOn: $state.rehideOnTimeout)
                 Stepper(value: $state.rehideTimeout, in: 1...300, step: 1) {
@@ -169,6 +181,17 @@ private struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .onAppear(perform: loginItem.refresh)
+    }
+
+    private var iconOptions: some View {
+        ForEach(MenuBarIcon.allCases, id: \.self) { icon in
+            Label {
+                Text(icon.title)
+            } icon: {
+                Image(nsImage: icon.image)
+            }
+            .tag(icon)
+        }
     }
 
     private static var version: String {

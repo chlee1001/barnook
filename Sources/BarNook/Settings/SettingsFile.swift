@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook import diagnostics.
+// Modified by Chaehyeon Lee (2026): BarNook import diagnostics and menu bar icon choices.
 import Foundation
 
 /// The settings as a property list, for "Export…" and "Import…" in General.
@@ -6,8 +6,13 @@ import Foundation
 /// opt-out, and none of AppKit's own keys in the defaults domain.
 enum SettingsFile {
     enum ValueKind {
-        case bool, number, string, stringArray
+        case bool, number, stringArray
+        /// A string from a fixed set, such as an enum's raw values.
+        case choice(Set<String>)
     }
+
+    private static let placements = Set(AppState.HiddenItemsPlacement.allCases.map(\.rawValue))
+    private static let icons = Set(MenuBarIcon.allCases.map(\.rawValue))
 
     static let keys: [String: ValueKind] = [
         AppState.Key.isAlwaysHiddenEnabled: .bool,
@@ -17,7 +22,9 @@ enum SettingsFile {
         AppState.Key.rehideTimeout: .number,
         AppState.Key.clockZoneWidth: .number,
         AppState.Key.hidesAppsLeftOfIcon: .bool,
-        AppState.Key.hiddenItemsPlacement: .string,
+        AppState.Key.hiddenItemsPlacement: .choice(placements),
+        AppState.Key.hiddenMenuBarIcon: .choice(icons),
+        AppState.Key.shownMenuBarIcon: .choice(icons),
         HiddenSets.Key.hidden: .stringArray,
         HiddenSets.Key.alwaysHidden: .stringArray,
     ]
@@ -31,7 +38,7 @@ enum SettingsFile {
             switch self {
             case .notADictionary: "The file is not a property list of settings."
             case .noKnownKeys: "The file has no BarNook settings."
-            case .wrongType(let key): "The value of “\(key)” has the wrong type."
+            case .wrongType(let key): "The value of “\(key)” has the wrong type or an unknown value."
             }
         }
     }
@@ -70,8 +77,8 @@ extension SettingsFile.ValueKind {
         switch self {
         case .bool: value is Bool
         case .number: value is NSNumber && !(value is Bool)
-        case .string: value is String
         case .stringArray: value is [String]
+        case .choice(let allowed): (value as? String).map(allowed.contains) ?? false
         }
     }
 }
