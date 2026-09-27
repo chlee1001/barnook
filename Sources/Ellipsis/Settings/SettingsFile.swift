@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook import diagnostics.
 import Foundation
 
 /// The settings as a property list, for "Export…" and "Import…" in General.
@@ -29,7 +30,7 @@ enum SettingsFile {
         var errorDescription: String? {
             switch self {
             case .notADictionary: "The file is not a property list of settings."
-            case .noKnownKeys: "The file has no Ellipsis settings."
+            case .noKnownKeys: "The file has no BarNook settings."
             case .wrongType(let key): "The value of “\(key)” has the wrong type."
             }
         }

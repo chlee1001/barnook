@@ -1,3 +1,4 @@
+# Modified by Chaehyeon Lee (2026): Git-based release flow for the fork.
 [tasks.build]
 description = "Compile with swift build"
 run = "swift build"
@@ -11,53 +12,32 @@ description = "Rebuild Resources/AppIcon.icns from Resources/AppIcon.png"
 run = "scripts/make-icon.sh"
 
 [tasks.run]
-description = "Bundle a debug build as EllipsisDev.app, install it to /Applications, and open it"
+description = "Bundle a debug build as BarNookDev.app, install it to /Applications, and open it"
 run = "scripts/run.sh"
 
 [tasks.install]
-description = "Bundle a release build as Ellipsis.app, install it to /Applications, and open it"
+description = "Bundle a release build as BarNook.app, install it to /Applications, and open it"
 run = "scripts/run.sh release"
 
-[tasks.tag]
-description = "Tag the parent of @ as vX.Y.Z and push the tag"
-usage = 'arg "<version>" help="X.Y.Z, without the v"'
-run = """
-set -euo pipefail
-tag="v${usage_version}"
-jj tag set "${tag}" -r @-
-jj git push --tag "${tag}"
-"""
-
 [tasks.release]
-description = "Tag, then build, sign, notarize, write build/Ellipsis-X.Y.Z.zip and the appcast, and publish the GitHub release"
+description = "Build, sign, notarize and publish the current main commit as vX.Y.Z"
 usage = 'arg "<version>" help="X.Y.Z, without the v"'
 run = """
 set -euo pipefail
-mise run tag "${usage_version}"
 scripts/release.sh "${usage_version}"
 scripts/publish.sh "${usage_version}"
 """
 
 [tasks.publish]
-description = "Create the GitHub release for vX.Y.Z from build/Ellipsis-X.Y.Z.zip and build/appcast.xml"
+description = "Create the GitHub release for vX.Y.Z from build/BarNook-X.Y.Z.zip and build/appcast.xml"
 usage = 'arg "<version>" help="X.Y.Z, without the v"'
 run = 'scripts/publish.sh "${usage_version}"'
 
 [tasks.archive]
-description = "Build, sign, notarize, zip and write the appcast for the parent of @ using its existing tag"
-run = """
-set -euo pipefail
-version="$(jj log -r @- --no-graph -T 'tags' | sed -n 's/^v\\([0-9][^ ]*\\).*/\\1/p')"
-if [[ -z "${version}" ]]; then
-  echo "error: @- has no vX.Y.Z tag. Run: mise run release X.Y.Z" >&2
-  exit 1
-fi
-scripts/release.sh "${version}"
-"""
+description = "Prepare signed release artifacts without tagging or publishing"
+usage = 'arg "<version>" help="X.Y.Z, without the v"'
+run = 'scripts/release.sh "${usage_version}"'
 
-[tasks.sparkle-keys]
-description = "Run Sparkle's generate_keys (the EdDSA update key in the login keychain). Args pass through: -p prints the public key, -x/-f export/import"
-run = ".build/artifacts/sparkle/Sparkle/bin/generate_keys"
 
 [tasks.vm-test]
 description = "Run the VM tests in a fresh Tart clone of the golden VM (scripts/vm.sh prepare makes it). Args pass through to swift test"

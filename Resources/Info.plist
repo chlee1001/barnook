@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Modified by Chaehyeon Lee (2026): BarNook identity and update signing. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>Ellipsis</string>
+	<string>BarNook</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>au.ronny.Ellipsis</string>
+	<string>com.chlee1001.BarNook</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Ellipsis</string>
+	<string>BarNook</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,14 +28,14 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
-	<string>Ellipsis asks each app whether it has a menu bar item, so the app pickers in Settings list only those apps. This is optional.</string>
+	<string>BarNook asks each app whether it has a menu bar item, so the app pickers in Settings list only those apps. This is optional.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>© Ronny Haryanto</string>
+	<string>© 2026 Ronny Haryanto; BarNook modifications © 2026 Chaehyeon Lee</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUFeedURL</key>
-	<string>https://github.com/ronny/ellipsis/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/chlee1001/barnook/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>nZmV9ayuPgQBVqfYy1S5/s5QwvQOB4euji6pXhIHWdc=</string>
+	<string>mN0nVFMiFCIbp55+0v6THJ+u1hjn1ewwr00AgzDaBtg=</string>
 </dict>
 </plist>

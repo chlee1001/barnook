@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook window title.
 import AppKit
 import SwiftUI
 
@@ -27,7 +28,7 @@ final class SettingsWindow {
             defer: false
         )
         window.contentViewController = host
-        window.title = "Ellipsis Settings"
+        window.title = "BarNook Settings"
         window.isReleasedWhenClosed = false
         window.center()
     }

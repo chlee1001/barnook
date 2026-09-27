@@ -99,7 +99,7 @@ final class MenuBarRestriction {
         isActivating = true
         let completion: @convention(block) (Any?) -> Void = { [weak self] error in
             if let error {
-                NSLog("Ellipsis: restriction failed: %@", String(describing: error))
+                NSLog("BarNook: restriction failed: %@", String(describing: error))
             }
             _ = previous?.perform(NSSelectorFromString("invalidate"))
             Task { @MainActor in

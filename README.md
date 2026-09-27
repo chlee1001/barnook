@@ -1,35 +1,35 @@
-# Ellipsis
+# BarNook
 
-Modified by Chaehyeon Lee (2026): floating-bar pins and pin fit handling.
+Modified by Chaehyeon Lee (2026): floating-bar pins, BarNook branding and an independent update channel.
 Original project: [ronny/ellipsis](https://github.com/ronny/ellipsis).
 
-Ellipsis hides selected menu bar items on macOS 27. Click its icon to show them. Click again, or wait, to hide them again.
+BarNook hides selected menu bar items on macOS 27. Click its icon to show them. Click again, or wait, to hide them again.
 
 ## Requirements
 
 - macOS 27.0 or later.
-- Ellipsis must run from `/Applications`. `MenuBarAgent` matches the allow-list against apps in that folder only. A copy in any other folder hides its own icon.
-- No permission is necessary. Ellipsis offers the Accessibility permission once, as an option. See Limits.
+- BarNook must run from `/Applications`. `MenuBarAgent` matches the allow-list against apps in that folder only. A copy in any other folder hides its own icon.
+- No permission is necessary. BarNook offers the Accessibility permission once, as an option. See Limits.
 
 ## Install a release
 
-1. Download `Ellipsis-X.Y.Z.zip` from [GitHub Releases](../../releases).
-2. Open the zip. Move `Ellipsis.app` to `/Applications`.
-3. Open Ellipsis. The `…` icon appears in the menu bar.
-4. Right-click the icon. Select "Settings…". Put apps in the hidden set. Or, with the Accessibility permission, turn on "Hide apps left of the Ellipsis icon" and Cmd-drag items to the left of the icon.
+1. Download `BarNook-X.Y.Z.zip` from [GitHub Releases](../../releases).
+2. Open the zip. Move `BarNook.app` to `/Applications`.
+3. Open BarNook. The `…` icon appears in the menu bar.
+4. Right-click the icon. Select "Settings…". Put apps in the hidden set. Or, with the Accessibility permission, turn on "Hide apps left of the BarNook icon" and Cmd-drag items to the left of the icon.
 
-On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the Ellipsis icon first. So on a notch display, Ellipsis shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar opens its menu bar item. Settings › General › "Show hidden items" switches between the bar and the menu bar on any display.
+On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the BarNook icon first. So on a notch display, BarNook shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar pins its item for you to click in the menu bar. Settings › General › "Show hidden items" switches between the bar and the menu bar on any display.
 
-Ellipsis checks GitHub Releases for updates with [Sparkle](https://sparkle-project.org). At the second launch, it asks whether it can check on its own. "Check for Updates…" in the icon menu checks now.
+This fork checks its own GitHub Releases for updates with [Sparkle](https://sparkle-project.org). At the second launch, it asks whether it can check on its own. "Check for Updates…" in the icon menu checks now. The original app uses a different signing and update key; it cannot update itself into this fork. Install this fork manually once and reconfigure its separate settings.
 
 ## Limits
 
-- Private API. Ellipsis loads `MenuBarClientCore.framework` and uses its `MBAssessmentMode` classes. A macOS update can rename or remove them. Ellipsis checks for the classes at launch and shows an alert if they are missing.
+- Private API. BarNook loads `MenuBarClientCore.framework` and uses its `MBAssessmentMode` classes. A macOS update can rename or remove them. BarNook checks for the classes at launch and shows an alert if they are missing.
 - Focus and the camera/microphone indicator are hidden while any set is hidden. No setting brings them back. This is a limit of the API.
 - The hidden sets hold whole apps, not single items. An app with two menu bar items hides both.
 - The bar below the menu bar shows app icons, not the items. An item that changes (a timer, a meter) shows only its app icon there. A click on an app in the bar pins its item in the menu bar for you to click, up to three at once; without the Accessibility permission the other items give way while a pin is up.
-- An app that runs from outside `/Applications` cannot be pinned into view. `MenuBarAgent` matches its allow-list against `/Applications` only, so macOS hides that item whenever Ellipsis hides anything. The bar marks such an app. Synology Drive, which runs from `~/Library/Application Support`, is one. Keep it out of the hidden set, or switch "Show hidden items" to "In the menu bar", which lifts the restriction while the set is shown.
-- The app pickers in Settings list every running app, not only apps with a menu bar item. With the Accessibility permission, they list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. The permission is optional. Ellipsis asks once at first launch, and again only from Settings.
+- An app that runs from outside `/Applications` cannot be pinned into view. `MenuBarAgent` matches its allow-list against `/Applications` only, so macOS hides that item whenever BarNook hides anything. The bar marks such an app. Synology Drive, which runs from `~/Library/Application Support`, is one. Keep it out of the hidden set, or switch "Show hidden items" to "In the menu bar", which lifts the restriction while the set is shown.
+- The app pickers in Settings list every running app, not only apps with a menu bar item. With the Accessibility permission, they list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. The permission is optional. BarNook asks once at first launch, and again only from Settings.
 
 ## Alternatives
 
@@ -46,5 +46,5 @@ See [docs/development.md](docs/development.md) for how to build, test and releas
 Based on [ronny/ellipsis](https://github.com/ronny/ellipsis) by Ronny Haryanto.
 Chaehyeon Lee modified the floating bar to pin menu bar items in 2026.
 These changes are noted in the modified files. The original copyright notice
-is retained; Ellipsis remains under the Apache License 2.0. See [LICENSE](LICENSE)
+is retained; BarNook remains under the Apache License 2.0. See [LICENSE](LICENSE)
 and [CREDITS.md](CREDITS.md).

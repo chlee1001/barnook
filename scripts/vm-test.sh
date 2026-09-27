@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Modified by Chaehyeon Lee (2026): fork accessibility identity.
 # Run the VM tests: build, clone the golden VM, install the app, the
 # fixtures and the probe in the guest, run Tests/EllipsisVMTests against it,
 # fetch the screenshots, delete the VM. See docs/plan.md, Phase 7.
@@ -28,7 +29,7 @@ if [[ -z "${ELLIPSIS_VM_REUSE:-}" ]]; then
   "$vm" clone >&2
 fi
 
-"$vm" ssh 'pkill -x EllipsisDev; pkill -x FixtureA; pkill -x FixtureB; pkill -x FixtureC; pkill -x FixtureW; pkill -x FixtureV; rm -rf screenshots; true'
+"$vm" ssh 'pkill -x BarNookDev; pkill -x FixtureA; pkill -x FixtureB; pkill -x FixtureC; pkill -x FixtureW; pkill -x FixtureV; rm -rf screenshots; true'
 "$vm" scp "$app" "${fixtures[@]}" /Applications/
 "$vm" scp "$probe" /Users/admin/probe
 
@@ -38,7 +39,7 @@ fi
 # image's own rows did; tccd restarts to read it.
 "$vm" ssh 'sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
   "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, indirect_object_identifier, flags)
-   VALUES (\"kTCCServiceAccessibility\", \"au.ronny.EllipsisDev\", 0, 2, 0, 1, \"UNUSED\", 0)" && sudo pkill tccd || true'
+   VALUES ("kTCCServiceAccessibility", "com.chlee1001.BarNookDev", 0, 2, 0, 1, "UNUSED", 0)" && sudo pkill tccd || true'
 
 status=0
 # One menu bar in the guest: suites must not run at the same time.

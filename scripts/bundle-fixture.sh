@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+# Modified by Chaehyeon Lee (2026): fork fixture identity.
 # Bundle the fixture app for the VM tests as build/FixtureN.app with the
-# identifier au.ronny.EllipsisFixture.N. The status item's title is FixtureN.
+# identifier com.chlee1001.BarNookFixture.N. The status item's title is FixtureN.
 # With a menu count the app is a regular app with that many menus, so it
 # takes most of the menu bar while it is frontmost: the stand-in for a notch.
 # Each menu is about 55 points wide on the guest's 1024-point display.
@@ -11,7 +12,7 @@ suffix="${1:?usage: bundle-fixture.sh N [MENUS]}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 bin="$(swift build --package-path "$root" --product Fixture --show-bin-path)/Fixture"
 name="Fixture$suffix"
-identifier="au.ronny.EllipsisFixture.$suffix"
+identifier="com.chlee1001.BarNookFixture.$suffix"
 app="$root/build/$name.app"
 
 swift build --package-path "$root" --product Fixture >&2

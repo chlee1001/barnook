@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): BarNook status item key coverage.
 import Foundation
 import Testing
 @testable import Ellipsis
@@ -29,7 +30,7 @@ struct SettingsFileTests {
     @Test func exportSkipsUnsetAndForeignKeys() throws {
         let source = makeStore()
         source.set(["a"], forKey: HiddenSets.Key.hidden)
-        source.set(123, forKey: "NSStatusItem Preferred Position ellipsis.icon")
+        source.set(123, forKey: "NSStatusItem Preferred Position barnook.icon")
 
         let data = try SettingsFile.export(from: source)
         let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]

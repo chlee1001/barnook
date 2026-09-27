@@ -1,35 +1,82 @@
 #!/usr/bin/env bash
-# Build, sign, notarize and zip a release, and write its Sparkle appcast.
+# Modified by Chaehyeon Lee (2026): own signing key, release gate and feed.
+# Build, sign, notarize and prepare a release; publishing is separate.
 # Usage: scripts/release.sh X.Y.Z
-# Writes build/Ellipsis-X.Y.Z.zip and build/appcast.xml. See sign.sh and
-# notarize.sh for the DEVELOPER_ID and NOTARY_PROFILE variables. The appcast
-# is signed with the EdDSA key in the login keychain (see docs/development.md)
-# and points at the GitHub release for the tag vX.Y.Z.
 set -euo pipefail
 
 version="${1:?usage: scripts/release.sh X.Y.Z}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version: $version" >&2; exit 2; }
 
-# The number of commits, so every release gets a larger CFBundleVersion.
-build="$(jj log -R "$root" -r '::@' --no-graph -T '"."' | wc -c | tr -d ' ')"
+# Per-machine paths and credential names. Never commit this file.
+if [[ -f "$root/.release-env" ]]; then
+  # shellcheck disable=SC1091
+  source "$root/.release-env"
+fi
+: "${DEVELOPER_ID:?Set DEVELOPER_ID to your Developer ID Application identity}"
+: "${NOTARY_PROFILE:?Set NOTARY_PROFILE to your notarytool keychain profile}"
+export DEVELOPER_ID NOTARY_PROFILE
+key="${BARNOOK_SPARKLE_ED_KEY_FILE:-$HOME/.local/share/barnook/eddsa-private.key}"
+[[ -f "$key" ]] || { echo "Missing Sparkle private key: $key" >&2; exit 1; }
 
+# Refuse to sign an app that cannot verify its own updates. Never print the key.
+BARNOOK_KEY_FILE="$key" BARNOOK_PLIST="$root/Resources/Info.plist" swift -e '
+import CryptoKit
+import Foundation
+let env = ProcessInfo.processInfo.environment
+let encoded = try String(contentsOfFile: env["BARNOOK_KEY_FILE"]!, encoding: .utf8)
+    .trimmingCharacters(in: .whitespacesAndNewlines)
+guard let data = Data(base64Encoded: encoded) else { fatalError("Invalid Sparkle private key") }
+let publicKey = try Curve25519.Signing.PrivateKey(rawRepresentation: data)
+    .publicKey.rawRepresentation.base64EncodedString()
+let plist = NSDictionary(contentsOfFile: env["BARNOOK_PLIST"]!)!
+precondition(plist["SUPublicEDKey"] as? String == publicKey, "Sparkle key does not match SUPublicEDKey")
+'
+
+# A release must come from the reviewed tip of main. Check before any signing.
+git -C "$root" fetch --quiet origin main --tags
+[[ "$(git -C "$root" branch --show-current)" == main &&
+   "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse origin/main)" &&
+   -z "$(git -C "$root" status --porcelain --untracked-files=no)" ]] || {
+  echo "Release requires clean, current main." >&2; exit 1;
+}
+git -C "$root" check-ref-format "refs/tags/v$version"
+if git -C "$root" ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+  echo "Tag v$version already exists on origin." >&2; exit 1
+fi
+latest="$(git -C "$root" tag --list 'v[0-9]*' --sort=-version:refname | awk 'NR == 1 { print; exit }')"
+if [[ -n "$latest" ]]; then
+  [[ "$latest" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Unexpected release tag: $latest" >&2; exit 1; }
+  IFS=. read -r major minor patch <<< "$version"
+  IFS=. read -r old_major old_minor old_patch <<< "${latest#v}"
+  (( 10#$major > 10#$old_major ||
+     (10#$major == 10#$old_major && 10#$minor > 10#$old_minor) ||
+     (10#$major == 10#$old_major && 10#$minor == 10#$old_minor && 10#$patch > 10#$old_patch) )) || {
+    echo "$version must be newer than $latest." >&2; exit 1;
+  }
+  git -C "$root" merge-base --is-ancestor "$latest" HEAD || {
+    echo "Latest release $latest is not an ancestor of main." >&2; exit 1;
+  }
+fi
+xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" --output-format json >/dev/null
+
+# Use Git's monotonically increasing commit count as CFBundleVersion.
+build="$(git -C "$root" rev-list --count HEAD)"
 app="$(VERSION="$version" BUILD="$build" "$root/scripts/bundle.sh" release)"
 "$root/scripts/sign.sh" "$app"
 "$root/scripts/notarize.sh" "$app"
 
-zip="$root/build/Ellipsis-$version.zip"
-rm -f "$zip"
+zip="$root/build/BarNook-$version.zip"
 ditto -c -k --keepParent "$app" "$zip"
-
-# generate_appcast lists every archive in a directory, so the zip goes in an
-# empty one and the appcast has one item: this release.
-sparkle="$root/.build/artifacts/sparkle/Sparkle/bin"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 cp "$zip" "$work/"
-"$sparkle/generate_appcast" \
-  --download-url-prefix "https://github.com/ronny/ellipsis/releases/download/v$version/" \
-  --link "https://github.com/ronny/ellipsis/releases" \
+"$root/.build/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+  --ed-key-file "$key" \
+  --download-url-prefix "https://github.com/chlee1001/barnook/releases/download/v$version/" \
+  --link "https://github.com/chlee1001/barnook/releases" \
   -o "$root/build/appcast.xml" "$work"
+[[ -s "$root/build/appcast.xml" ]] || { echo "Missing signed appcast" >&2; exit 1; }
+git -C "$root" rev-parse HEAD > "$root/build/BarNook-$version.commit"
 echo "$zip"
 echo "$root/build/appcast.xml"

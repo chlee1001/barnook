@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Modified by Chaehyeon Lee (2026): fork fixture identity. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
 	<string>Fixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>au.ronny.EllipsisFixture</string>
+	<string>com.chlee1001.BarNookFixture</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

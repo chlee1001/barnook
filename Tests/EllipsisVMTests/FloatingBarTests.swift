@@ -171,7 +171,7 @@ struct FloatingBarTests {
     @Test func clickOnAnAppPinsItAndItsMenuOpens() throws {
         try launchInBarMode()
         guard hasAccessibilityGrant else {
-            Issue.record("Ellipsis has no Accessibility grant in this guest; run scripts/vm-test.sh")
+            Issue.record("BarNook has no Accessibility grant in this guest; run scripts/vm-test.sh")
             return
         }
         try bringWideFixtureToFront()
@@ -195,7 +195,7 @@ struct FloatingBarTests {
     @Test func pinsHideTheOthersOnlyWhenTheyMust() throws {
         try launchInBarMode()
         guard hasAccessibilityGrant else {
-            Issue.record("Ellipsis has no Accessibility grant in this guest; run scripts/vm-test.sh")
+            Issue.record("BarNook has no Accessibility grant in this guest; run scripts/vm-test.sh")
             return
         }
         try bringWideFixtureToFront(Fixture.widerName)

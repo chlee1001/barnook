@@ -1,8 +1,8 @@
-# Ellipsis — implementation plan
+# BarNook — implementation history
 
-Modified by Chaehyeon Lee (2026): documented floating-bar pin implementation.
+Modified by Chaehyeon Lee (2026): documented pins and the BarNook identity. Internal SwiftPM target names retain their original names.
 
-Each phase ends with a jj change that builds and runs.
+This records the original Ellipsis implementation phases. For the current Git-based release flow, see `docs/development.md`.
 
 ## Phase 0: Spike — done
 
@@ -19,7 +19,7 @@ Deliverables: `Package.swift`, `Sources/Ellipsis/main.swift`, `scripts/bundle.sh
 5. Add `HiddenSets`: the hidden set, the always-hidden set, and `isHiddenSetShown`, persisted in `UserDefaults`.
 6. Add `AppState` for the other settings, backed by `UserDefaults` through `@AppStorage` keys.
 7. At launch, if the private classes do not exist, show an alert and quit.
-8. `scripts/run.sh`: bundle, copy to `/Applications`, launch. A debug build is `EllipsisDev.app` with the identifier `au.ronny.EllipsisDev`, so it runs next to a release build with its own settings. `MenuBarAgent` only matches apps in `/Applications` (see `docs/phase0.md`).
+8. `scripts/run.sh`: bundle, copy to `/Applications`, launch. A debug build is `BarNookDev.app` with the identifier `com.chlee1001.BarNookDev`, so it runs next to a release build with its own settings. `MenuBarAgent` only matches apps in `/Applications` (see `docs/phase0.md`).
 
 Exit criteria: the app runs, shows the icon, and applies the persisted sets at launch.
 
@@ -61,9 +61,9 @@ Exit criteria: every control changes behavior at once, no restart. `MenuBarManag
 
 1. App icon: `scripts/make-icon-art.swift` draws `Resources/AppIcon.png` (three dots on a dark rounded square). `scripts/make-icon.sh` turns it into `Resources/AppIcon.icns` with `sips` and `iconutil`. Both files are committed.
 2. `Resources/Ellipsis.entitlements`: hardened runtime, no sandbox, no entitlements. `MenuBarClientCore` is Apple-signed, so library validation permits the `dlopen`. Tested: the hardened build hides items.
-3. `scripts/sign.sh`: `codesign --force --options runtime --timestamp`. `DEVELOPER_ID` names the identity; default is the first Developer ID Application identity in the keychain. A revoked certificate is refused.
-4. `scripts/notarize.sh`: `notarytool submit --wait`, `stapler staple`, `stapler validate`, `spctl --assess`. `NOTARY_PROFILE` names the keychain profile; default `ellipsis`.
-5. `scripts/release.sh X.Y.Z`: bundle a release build with `VERSION` and `BUILD` (the commit count), sign, notarize, zip with `ditto` to `build/Ellipsis-X.Y.Z.zip`.
+3. `scripts/sign.sh`: `codesign --force --options runtime --timestamp`. `DEVELOPER_ID` must explicitly name the owner's Developer ID Application identity. A revoked certificate is refused.
+4. `scripts/notarize.sh`: `notarytool submit --wait`, `stapler staple`, `stapler validate`, `spctl --assess`. `NOTARY_PROFILE` must name a keychain profile for the owner's team.
+5. `scripts/release.sh X.Y.Z`: bundle a release build with `VERSION` and `BUILD` (the commit count), sign, notarize, zip with `ditto` to `build/BarNook-X.Y.Z.zip`; `scripts/publish.sh` tags only after verifying the signed artifacts.
 6. `README.md`: install, build and release instructions, the private-API risk and the Focus limit.
 
 Exit criteria: acceptance criteria 1, 10 and 11 pass on a clean checkout.
@@ -87,13 +87,13 @@ The VM is a [Tart](https://tart.run) guest, cloned from `ghcr.io/cirruslabs/maco
 
 1. Spike — done. Every answer is yes: a process under `sshd` posts `CGEvent`s to the auto-login session, the image grants Accessibility to `sshd-keygen-wrapper` so nothing is granted by hand, a restriction hides an app in the guest, and `screencapture` returns the screen. `docs/phase7.md` has the record. The Homebrew formula for `tart` is broken on current Homebrew (`depends_on :macos`); the release tarball from GitHub installs as `~/.local/bin/tart`.
 2. Golden VM — done. `scripts/vm.sh prepare` clones the base image as `ellipsis-golden`, boots it, puts the key `~/.tart/ellipsis_ed25519` in it, and shuts it down. 20 seconds, no hand. `scripts/vm.sh` also has `clone` (from the golden VM, headless, prints the IP once `ssh` answers; 20 seconds), `ip`, `ssh`, `scp`, `stop` and `delete`. The VM name comes from `ELLIPSIS_VM`, default `ellipsis-test`.
-3. Fixture app — done. `Sources/Fixture/main.swift`: one status item with a menu. Its title and bundle identifier come from `Info.plist`, so `scripts/bundle-fixture.sh N` writes `FixtureN.app` with `au.ronny.EllipsisFixture.N`. Tests need apps that own menu bar items with known identifiers, and a guest has none. "Mark" in the item's menu writes `~/au.ronny.EllipsisFixture.N.marked`, so a test can see that a click reached the app's menu.
+3. Fixture app — done. `Sources/Fixture/main.swift`: one status item with a menu. Its title and bundle identifier come from `Info.plist`, so `scripts/bundle-fixture.sh N` writes `FixtureN.app` with `com.chlee1001.BarNookFixture.N`. Tests need apps that own menu bar items with known identifiers, and a guest has none. "Mark" in the item's menu writes `~/com.chlee1001.BarNookFixture.N.marked`, so a test can see that a click reached the app's menu.
 4. Probe — done. `Sources/Probe/main.swift`, an executable target with no UI. Subcommands: `layout` (`MenuBarLayout.read()` as JSON), `menus` (`MenuBarGeometry.openMenuFrames()`), `screens` (frame and safe area top of each screen), `move X Y`, `click X Y [--option] [--command] [--right]` and `drag X1 Y1 X2 Y2 [--command]` (`CGEvent`s at a point in Accessibility coordinates). `MenuBarLayout` and `MenuBarGeometry` moved to a library target `EllipsisCore` that `Ellipsis`, `Probe` and the tests link, and `MenuBarLayout` is `Codable`, so the tests decode the probe's output into the same type. The probe is the only thing that touches the guest's screen.
 5. Test target — done. `Tests/EllipsisVMTests`, swift-testing, on the host. `Guest` wraps `scripts/vm.sh ssh`: `run`, `probe` decoded from JSON, `launch`, `quit`, `kill`, `launchEllipsis(settings)` (quit, `defaults delete`, `defaults write` each setting plus the ones a test needs to run unattended, launch, wait for the icon), `items`, `appItems`, `iconFrame`, `clickIcon(option:)`, `openMenus`, `screenshot`, `waitUntil` and `expectStable` with polling, since `MenuBarAgent` lays out after the event. `startFixtures` puts the guest in the same state before every test. Every suite has `.enabled(if: Guest.isConfigured)`, so `mise run test` skips them, and `.serialized`, since there is one menu bar.
 6. Test run — done. `scripts/vm-test.sh`: build, bundle the app, three fixtures and the probe, `vm.sh clone`, copy the bundles to `/Applications` and the probe to the home directory, `swift test --filter EllipsisVMTests`, copy `~/screenshots` out to `build/vm-screenshots`, `vm.sh delete`. `mise run vm-test` runs it: 46 seconds for the first suite, 22 of them tests. `ELLIPSIS_VM_KEEP` leaves the VM running; `ELLIPSIS_VM_REUSE` runs against a VM that is already up, which is the loop while writing a test. The ssh control socket in `vm.sh` makes each guest command cost about 40 ms.
-7. Settings — done. Tests write them with `defaults write au.ronny.EllipsisDev` before the launch, not through the Settings window; each test launches the app with the settings it needs. `AppState` does not see a `defaults write` while the app runs, so row 5a (a timeout change while shown) stays manual.
+7. Settings — done. Tests write them with `defaults write com.chlee1001.BarNookDev` before the launch, not through the Settings window; each test launches the app with the settings it needs. `AppState` does not see a `defaults write` while the app runs, so row 5a (a timeout change while shown) stays manual.
 8. Tests — done. `HideShowTests` (2, 3, 4, 4b, 9, 9a), `RehideTests` (5, 5b, 6, 6a, 6b, 7, 7a), `ClockZoneTests` (8, 8b) and `DividerTests` (D1 to D5): 21 tests, 85 seconds. Two things the tests had to learn about `MenuBarAgent`: it remembers each item's position in its layout table (`docs/phase0.md`) across launches, so `Guest` writes the icon's position before every launch and puts the fixtures back after a drag; and a new item appears first, then moves to its remembered place, so `launchEllipsis` waits for two equal reads. Rows that stay manual, with the reason in the checklist: 1 to 1b (the permission dialog), 4a and 6c (the right-click menu), 5a, 8a and S1 to S9 (the Settings window), 10 and 11 (release scripts). The tests found one bug: `NSWorkspace.didLaunchApplicationNotification` is not posted for `LSUIElement` apps, so the divider never read the menu bar after a menu bar app launched, and the Settings pickers never refreshed for one. Both now watch `NSWorkspace.runningApplications`.
-9. CI — dropped. GitHub's hosted macOS runners cannot run a VM, and a self-hosted runner costs a Mac. The VM tests are local: `mise run vm-test`. `mise run test` skips them.
+9. CI — hosted `xcode-27` runs the Swift build and unit tests; Tart VM tests still need a local guest and remain under `mise run vm-test`.
 10. Docs — done. `docs/development.md` ("VM tests"), `docs/testing.md` (rows marked `vm`), this file.
 
 Exit criteria — met: `mise run vm-test` passes on a clean checkout with the golden VM present, with no pointer or menu bar change on the host. Every row it covers is marked in `docs/testing.md`.
