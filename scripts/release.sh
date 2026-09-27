@@ -74,12 +74,15 @@ ditto -c -k --keepParent "$app" "$zip"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 cp "$zip" "$work/"
+# generate_appcast merges an existing output feed; each release publishes only its new archive.
 "$root/.build/artifacts/sparkle/Sparkle/bin/generate_appcast" \
   --ed-key-file "$key" \
   --download-url-prefix "https://github.com/chlee1001/barnook/releases/download/v$version/" \
   --link "https://github.com/chlee1001/barnook/releases" \
-  -o "$root/build/appcast.xml" "$work"
-[[ -s "$root/build/appcast.xml" ]] || { echo "Missing signed appcast" >&2; exit 1; }
+  -o "$work/appcast.xml" "$work"
+[[ -s "$work/appcast.xml" ]] || { echo "Missing signed appcast" >&2; exit 1; }
+swift "$root/scripts/verify-appcast.swift" "$work/appcast.xml" "$zip" "$app/Contents/Info.plist" "$version"
+mv "$work/appcast.xml" "$root/build/appcast.xml"
 git -C "$root" rev-parse HEAD > "$root/build/BarNook-$version.commit"
 echo "$zip"
 echo "$root/build/appcast.xml"
