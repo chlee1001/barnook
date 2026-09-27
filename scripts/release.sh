@@ -37,8 +37,11 @@ precondition(plist["SUPublicEDKey"] as? String == publicKey, "Sparkle key does n
 git -C "$root" fetch --quiet origin main --tags
 [[ "$(git -C "$root" branch --show-current)" == main &&
    "$(git -C "$root" rev-parse HEAD)" == "$(git -C "$root" rev-parse origin/main)" &&
-   -z "$(git -C "$root" status --porcelain --untracked-files=no)" ]] || {
+   -z "$(git -C "$root" status --porcelain)" ]] || {
   echo "Release requires clean, current main." >&2; exit 1;
+}
+[[ "$(git -C "$root" rev-parse --is-shallow-repository)" == false ]] || {
+  echo "Release requires a non-shallow repository." >&2; exit 1;
 }
 git -C "$root" check-ref-format "refs/tags/v$version"
 if git -C "$root" ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
