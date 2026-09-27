@@ -40,9 +40,9 @@ struct FloatingBarTests {
         try guest.waitUntilSettled()
     }
 
-    private var hasAccessibilityGrant: Bool {
-        // The measured clock zone means the app holds the permission.
-        (try? guest.setting("clockZoneWidth")) != "150"
+    private func hasAccessibilityGrant() throws -> Bool {
+        let value = try guest.run("sudo sqlite3 -bail \"/Library/Application Support/com.apple.TCC/TCC.db\" \"SELECT auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = 'com.chlee1001.BarNookDev' LIMIT 1;\"")
+        return value == "2"
     }
 
     /// Pins A from the bar; returns once its item is in the menu bar and
@@ -149,7 +149,7 @@ struct FloatingBarTests {
     /// tests after it need the grant.
     @Test func clickOnAnAppWithoutPermissionPinsIt() throws {
         try launchInBarMode()
-        guard !hasAccessibilityGrant else { return }
+        guard try !hasAccessibilityGrant() else { return }
         try bringWideFixtureToFront()
         try showBar()
         let button = try #require(try guest.barButtons()?.first { $0.name == "FixtureB" })
@@ -170,7 +170,7 @@ struct FloatingBarTests {
     /// item, and the set hides from the icon.
     @Test func clickOnAnAppPinsItAndItsMenuOpens() throws {
         try launchInBarMode()
-        guard hasAccessibilityGrant else {
+        guard try hasAccessibilityGrant() else {
             Issue.record("BarNook has no Accessibility grant in this guest; run scripts/vm-test.sh")
             return
         }
@@ -194,7 +194,7 @@ struct FloatingBarTests {
     /// icon with FixtureV frontmost; a second does not.
     @Test func pinsHideTheOthersOnlyWhenTheyMust() throws {
         try launchInBarMode()
-        guard hasAccessibilityGrant else {
+        guard try hasAccessibilityGrant() else {
             Issue.record("BarNook has no Accessibility grant in this guest; run scripts/vm-test.sh")
             return
         }

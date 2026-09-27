@@ -14,6 +14,15 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 export ELLIPSIS_VM="${ELLIPSIS_VM:-ellipsis-test}"
 vm="$root/scripts/vm.sh"
+filter=EllipsisVMTests
+if [[ "${1:-}" == --filter ]]; then
+  [[ $# -ge 2 && -n "$2" ]] || { echo 'Expected a VM suite after --filter.' >&2; exit 2; }
+  filter="EllipsisVMTests.$2"
+  shift 2
+fi
+for argument in "$@"; do
+  [[ "$argument" != --filter ]] || { echo 'Specify only one VM suite filter.' >&2; exit 2; }
+done
 
 app="$("$root/scripts/bundle.sh" debug)"
 fixtures=()
@@ -25,7 +34,23 @@ fixtures+=("$("$root/scripts/bundle-fixture.sh" V 9)")
 swift build --package-path "$root" --product Probe >&2
 probe="$(swift build --package-path "$root" --product Probe --show-bin-path)/Probe"
 
+if [[ "$filter" != EllipsisVMTests ]]; then
+  listed="$(swift test --package-path "$root" list)"
+  [[ "$listed" == *"$filter/"* ]] || { echo "No VM tests match $filter." >&2; exit 2; }
+fi
+
+cloned=0
+cleanup_vm() {
+  local result=${1:-$?}
+  trap - EXIT
+  if [[ "$cloned" == 1 && -z "${ELLIPSIS_VM_KEEP:-}" ]]; then
+    "$vm" delete || { [[ "$result" != 0 ]] || result=1; }
+  fi
+  exit "$result"
+}
+trap cleanup_vm EXIT
 if [[ -z "${ELLIPSIS_VM_REUSE:-}" ]]; then
+  cloned=1
   "$vm" clone >&2
 fi
 
@@ -33,24 +58,32 @@ fi
 "$vm" scp "$app" "${fixtures[@]}" /Applications/
 "$vm" scp "$probe" /Users/admin/probe
 
-# The image grants Accessibility to sshd, not to apps it launches. Ellipsis
+# The image grants Accessibility to sshd, not to apps it launches. BarNook
 # needs it for the divider (D1 to D5) and the measured clock zone. SIP is
 # off in the guest, so the row goes straight into the TCC database, as the
 # image's own rows did; tccd restarts to read it.
-"$vm" ssh 'sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
+"$vm" ssh 'sh -s' <<'GUEST'
+set -e
+result="$(sudo sqlite3 -bail "/Library/Application Support/com.apple.TCC/TCC.db" \
   "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, indirect_object_identifier, flags)
-   VALUES ("kTCCServiceAccessibility", "com.chlee1001.BarNookDev", 0, 2, 0, 1, "UNUSED", 0)" && sudo pkill tccd || true'
+   VALUES ('kTCCServiceAccessibility', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0);
+   SELECT COUNT(*) = 1 FROM access
+   WHERE service = 'kTCCServiceAccessibility' AND client = 'com.chlee1001.BarNookDev'
+     AND client_type = 0 AND auth_value = 2 AND auth_reason = 0 AND auth_version = 1
+     AND indirect_object_identifier = 'UNUSED' AND flags = 0;
+  ")"
+[ "$result" = 1 ]
+sudo pkill tccd
+GUEST
 
 status=0
 # One menu bar in the guest: suites must not run at the same time.
-swift test --package-path "$root" --no-parallel --filter EllipsisVMTests "$@" || status=$?
+swift test --package-path "$root" --no-parallel --filter "$filter" "$@" || status=$?
 
 mkdir -p "$root/build/vm-screenshots"
 "$vm" scp-from screenshots "$root/build/vm-screenshots/" 2>/dev/null || true
 
 if [[ -n "${ELLIPSIS_VM_KEEP:-}${ELLIPSIS_VM_REUSE:-}" ]]; then
   echo "$ELLIPSIS_VM is still running: scripts/vm.sh ssh, or scripts/vm.sh delete" >&2
-else
-  "$vm" delete
 fi
-exit "$status"
+cleanup_vm "$status"

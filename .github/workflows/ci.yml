@@ -16,7 +16,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
-      - run: shellcheck scripts/*.sh
+      - run: shellcheck scripts/*.sh Tests/ReleaseGateTests.sh
+      - run: bash Tests/ReleaseGateTests.sh
 
   swift:
     runs-on: xcode-27

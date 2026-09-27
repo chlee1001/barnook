@@ -49,9 +49,9 @@ mise run vm-test                                # clone, install, test, delete: 
 mise run vm-test -- --filter RehideTests        # one suite
 ```
 
-`scripts/vm-test.sh` clones the golden VM as `ELLIPSIS_VM` (default `ellipsis-test`), copies `BarNookDev.app`, the three fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter EllipsisVMTests`, copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `ELLIPSIS_VM_KEEP=1` leaves the VM running after the run. `ELLIPSIS_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `ELLIPSIS_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run ellipsis-test --vnc` after `scripts/vm.sh stop` shows its screen.
+`scripts/vm-test.sh` clones the golden VM as `ELLIPSIS_VM` (default `ellipsis-test`), copies `BarNookDev.app`, five fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter EllipsisVMTests` (or the requested VM suite), copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `ELLIPSIS_VM_KEEP=1` leaves the VM running after the run. `ELLIPSIS_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `ELLIPSIS_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run ellipsis-test --vnc` after `scripts/vm.sh stop` shows its screen.
 
-Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest has no notch.
+Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest grants Accessibility; the no-permission case F5 remains manual. The guest has no notch.
 
 ## Make a release
 
@@ -68,9 +68,11 @@ Without `ELLIPSIS_VM` the suites skip, so `mise run test` and CI stay unit tests
    NOTARY_PROFILE=barnook-chlee1001  # or an existing profile for the same team
    # BARNOOK_SPARKLE_ED_KEY_FILE=/absolute/path/to/eddsa-private.key  # optional
    ```
-5. Make sure `gh auth status` shows your account. Merge reviewed changes into `main`, then run `mise run archive X.Y.Z` to prepare and inspect the signed ZIP and appcast. Run `mise run publish X.Y.Z` to tag and upload, or `mise run release X.Y.Z` for both. Release preparation requires a clean, current `main`. No tag is pushed until signed artifacts pass verification.
+5. Run `bash Tests/ReleaseGateTests.sh`, `shellcheck scripts/*.sh Tests/ReleaseGateTests.sh`, `swift build --build-tests`, and `swift test`. Make sure `gh auth status` shows your account. Merge reviewed changes into `main`, then run `mise run archive X.Y.Z` to prepare and inspect the signed ZIP and appcast. Run `mise run publish X.Y.Z` to tag and upload, or `mise run release X.Y.Z` for both. Release preparation requires a clean, non-shallow, current `main`. No tag is pushed until signed artifacts pass verification.
 
 `scripts/release.sh X.Y.Z` does the build, sign, notarize, zip and appcast steps without the tag. `scripts/publish.sh X.Y.Z` (or `mise run publish X.Y.Z`) creates the GitHub release from the two files.
+
+GitHub authorization checks before tagging are best-effort; network or upload failures can still leave a tag without a release. If the tag points to the same commit and no release exists, repair the credentials/network and retry `mise run publish X.Y.Z` with the same inspected artifacts. If a partial release exists, inspect and repair it manually rather than overwriting assets. Do not rerun `archive` for a tagged version.
 
 `DEVELOPER_ID` and `NOTARY_PROFILE` are required for a release. The archive includes the original Apache 2.0 license and Sparkle's license. `build/BarNook-X.Y.Z.commit` binds the prepared artifacts to the reviewed commit; publication refuses a different head. The scripts are `bundle.sh`, `sign.sh`, `sign-sparkle.sh`, `notarize.sh`, `release.sh`, `publish.sh` and `make-icon.sh`.
 
