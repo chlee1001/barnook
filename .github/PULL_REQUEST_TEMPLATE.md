@@ -12,9 +12,9 @@
 
 - [ ] Low risk — isolated maintenance
 - [ ] Regression risk — behavior change requiring focused review
-- [ ] High risk — feature, signing, updater, release or public API change; independent review required
+- [ ] High risk — feature, signing, updater, release or public API change; maintainer self-review and focused verification recorded
 
-Reviewer and exact head tested:
+Maintainer review (exact head SHA, findings, unresolved risks, and checks actually run):
 
 ## Release impact
 
