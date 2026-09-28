@@ -10,7 +10,7 @@ What shipped:
 
 The D0, R0, S1 and S2 sections below are the historical spike record.
 
-- **Detector.** `901704f` replaced the window-list Notification Center detector with the Accessibility one described under "N3(c) follow-up". It removed `probe nc-windows` and made `probe nc-state` read Accessibility. Where this record mentions `nc-windows`, or `nc-state` reporting a banner as open, it describes the old detector. `f591637` also counts the widget editor button as the open panel, because a panel with every notification cleared has no list.
+- **Detector.** `901704f` replaced the window-list Notification Center detector with the Accessibility one described under "N3(c) follow-up". It removed `probe nc-windows` and made `probe nc-state` read Accessibility. Where this record mentions `nc-windows`, or `nc-state` reporting a banner as open, it describes the old detector. `f591637` also counts the widget editor button as the open panel, because a panel with every notification cleared has no list. The button was seen live only in a panel that listed notifications; the no-notification case passes a unit test on a constructed tree, and a live panel with zero notifications has not been observed.
 - **Not measured.** The revised latency gate (median ≤ 600 ms, p90 ≤ 1 s on the product path) and a recording at the display's refresh rate have not been run. Both remain Not-tested.
 
 ## Question
@@ -252,7 +252,7 @@ Recommended: (b), since it is the only new permission and turning it on is the u
     5. waits 150 ms and calls `applyCurrentState()`;
     6. waits for a layout with no hidden owner, capped at 3 s, then 150 ms;
     7. removes the cover.
-  - A click that lands while NC is already open is not intercepted. Escape and the dismissing click close NC with no lift. The AX detector reports NC's state: it looks for `AXNotificationListItems` or, since `f591637`, the widget editor button (`widget-editor-button`), so a panel with no notifications also reads open. It does not use the window list.
+  - A click that lands while NC is already open is not intercepted. Escape and the dismissing click close NC with no lift. The AX detector reports NC's state: it looks for `AXNotificationListItems` or, since `f591637`, the widget editor button (`widget-editor-button`). A panel with no notifications should then read open too. That case passes a unit test on a constructed tree, but has not been observed live. It does not use the window list.
   - Pure policy in `ClockCoverPolicy`: the timings, when to intercept, and debounce. The whole commit touches only `MenuBarManager`, a new `ClockCover` class and Settings.
 - **Commit 5** (rehide waits while the pointer is on the bar; `IconClickPolicy`). Unchanged.
 - **Commit 6** (reopen the bar at relaunch). Unchanged.
