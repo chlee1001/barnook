@@ -1,8 +1,8 @@
 # Test checklist
 
-Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks.
+Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Hidden and Settings › Always Hidden. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S9) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Hidden and Settings › Always Hidden. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S9, W1 to W5) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
@@ -41,11 +41,16 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | S2 | Check the same app under Always Hidden. | It leaves the Hidden list. Items stay hidden after a normal click. | Pass |
 | S3 | Check an app, quit that app. | It stays in the list, marked "Not running". Uncheck it. It leaves the list. | |
 | S4 | Launch another app while Settings is open. | It appears in both lists. | |
-| S5 | General: turn on "Launch at login". Open System Settings › Login Items. | BarNook is listed. Turn it off there. The switch in BarNook turns off when the window reopens. | |
+| S5 | General: turn on "Launch at login". Open System Settings › Login Items. | BarNook is listed. Turn it off there. The switch in BarNook turns off when the window comes back to the front. | |
 | S6 | General: "Quit BarNook". | Every item returns. | |
 | S7 | General: "Export…", save. Open the file. | A plist with the sets and the rehide options. No `isHiddenSetShown`. | |
 | S8 | Change a set. General: "Import…", pick the file from S7. | The set returns to the exported one at once. Items hide or show to match. | |
 | S9 | "Import…", pick a plist that is not from BarNook. | An alert: "The file has no BarNook settings." Settings unchanged. | |
+| W1 | Click the three panes, close, reopen. | The title follows the pane; minimize and zoom are dimmed; the height follows the pane; the window reopens on the last pane. | |
+| W2 | Dark mode: every pane and the onboarding. | Every control, badge and glyph is readable. | |
+| W3 | Keyboard only through every control; in each text field use Cmd-X/C/V/A. | Tab reaches every control; the four shortcuts work in every text field. | |
+| W4 | VoiceOver over every pane and the onboarding. | Pane buttons and every control are read by name. | |
+| W5 | Built-in 13-inch display at the default scale: open each pane. | The window stays on screen; a long pane scrolls inside. | |
 | D1 | Settings › Hidden: turn on "Hide apps left of the BarNook icon" (needs Accessibility). | Apps already left of the icon hide. The Hidden picker greys out. | vm |
 | D2 | While the set is hidden, Cmd-drag the icon to the right of an item. | That app hides. | vm |
 | D3 | Show the set. Cmd-drag the icon to the far left. | Every app leaves the hidden set and stays when the set hides again. | vm |

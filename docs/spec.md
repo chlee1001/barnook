@@ -1,6 +1,6 @@
 # BarNook — specification
 
-Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins and selectable menu bar icons.
+Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins, selectable menu bar icons and the toolbar settings panes.
 
 BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://github.com/ronny/ellipsis). It hides and shows menu bar items of other apps on macOS 27 (Golden Gate).
 
@@ -90,7 +90,7 @@ BarNook does not rehide while a menu from a shown item is open, or while the poi
 
 ### F4: Settings window
 
-A SwiftUI window with these controls:
+An AppKit window with toolbar panes that host SwiftUI views:
 
 - Launch at login (`SMAppService`).
 - Menu bar icon: separate pickers for the hidden and shown states; changes take effect immediately and are included in settings export/import.

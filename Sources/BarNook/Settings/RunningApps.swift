@@ -36,6 +36,7 @@ final class RunningApps {
                 self?.refresh()
             }
         }
+        observePermission()
     }
 
     /// Entries for a picker: the running apps plus the apps in `selected` that
@@ -87,6 +88,20 @@ final class RunningApps {
             }
             let result = found
             await MainActor.run { self?.withMenuBarItem = result }
+        }
+    }
+
+    /// The Accessibility permission decides which apps are listed, so a
+    /// change rescans whichever pane is showing.
+    private func observePermission() {
+        withObservationTracking {
+            _ = permission.isTrusted
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.refresh()
+                self.observePermission()
+            }
         }
     }
 

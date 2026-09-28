@@ -1,72 +1,43 @@
-// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers.
+// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window.
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct SettingsView: View {
+/// Every pane has one width, so switching panes changes only the height.
+let settingsPaneWidth: CGFloat = 500
+
+struct HiddenPane: View {
     @Environment(AppState.self) private var state
     @Environment(HiddenSets.self) private var sets
     @Environment(RunningApps.self) private var apps
     @Environment(Permissions.self) private var permission
 
     var body: some View {
-        TabView {
-            Tab("General", systemImage: "gearshape") {
-                GeneralSettings()
+        @Bindable var state = state
+        Form {
+            Section {
+                Toggle("Hide apps left of the BarNook icon", isOn: $state.hidesAppsLeftOfIcon)
+                    .disabled(!permission.isTrusted)
+            } footer: {
+                Text("Cmd-drag items across the icon. Apps left of it join the hidden set. Apps right of it leave it when the set is shown. The always-hidden set is not affected.")
             }
-            Tab("Hidden", systemImage: "eye.slash") {
-                @Bindable var state = state
-                Form {
-                    Section {
-                        Toggle("Hide apps left of the BarNook icon", isOn: $state.hidesAppsLeftOfIcon)
-                            .disabled(!permission.isTrusted)
-                    } footer: {
-                        Text("Cmd-drag items across the icon. Apps left of it join the hidden set. Apps right of it leave it when the set is shown. The always-hidden set is not affected.")
-                    }
-                    Section {
-                        AppPicker(
-                            apps: apps.entries(including: sets.hidden),
-                            selection: hiddenSelection,
-                            otherSet: sets.alwaysHidden,
-                            otherSetName: "Always hidden"
-                        )
-                    } header: {
-                        Text("Hidden apps")
-                    } footer: {
-                        Text(isDividerActive
-                            ? "The icon's position manages this list. Cmd-drag an item to change it."
-                            : "These apps hide until you click the BarNook icon.")
-                    }
-                    .disabled(isDividerActive)
-                }
-                .formStyle(.grouped)
+            Section {
+                AppPicker(
+                    apps: apps.entries(including: sets.hidden),
+                    selection: hiddenSelection,
+                    otherSet: sets.alwaysHidden,
+                    otherSetName: "Always hidden"
+                )
+            } header: {
+                Text("Hidden apps")
+            } footer: {
+                Text(isDividerActive
+                    ? "The icon's position manages this list. Cmd-drag an item to change it."
+                    : "These apps hide until you click the BarNook icon.")
             }
-            Tab("Always Hidden", systemImage: "eye.slash.fill") {
-                @Bindable var state = state
-                Form {
-                    Section {
-                        Toggle("Keep an always-hidden set", isOn: $state.isAlwaysHiddenEnabled)
-                    } footer: {
-                        Text("Option-click the BarNook icon to show these apps.")
-                    }
-                    Section("Always-hidden apps") {
-                        AppPicker(
-                            apps: apps.entries(including: sets.alwaysHidden),
-                            selection: alwaysHiddenSelection,
-                            otherSet: sets.hidden,
-                            otherSetName: "Hidden"
-                        )
-                    }
-                    .disabled(!state.isAlwaysHiddenEnabled)
-                }
-                .formStyle(.grouped)
-            }
+            .disabled(isDividerActive)
         }
-        .frame(width: 480, height: 460)
-        .onAppear {
-            permission.refresh()
-            apps.refresh()
-        }
-        .onChange(of: permission.isTrusted) { apps.refresh() }
+        .formStyle(.grouped)
+        .frame(width: settingsPaneWidth, height: 460)
     }
 
     private var isDividerActive: Bool { state.hidesAppsLeftOfIcon && permission.isTrusted }
@@ -81,6 +52,34 @@ struct SettingsView: View {
             }
         )
     }
+}
+
+struct AlwaysHiddenPane: View {
+    @Environment(AppState.self) private var state
+    @Environment(HiddenSets.self) private var sets
+    @Environment(RunningApps.self) private var apps
+
+    var body: some View {
+        @Bindable var state = state
+        Form {
+            Section {
+                Toggle("Keep an always-hidden set", isOn: $state.isAlwaysHiddenEnabled)
+            } footer: {
+                Text("Option-click the BarNook icon to show these apps.")
+            }
+            Section("Always-hidden apps") {
+                AppPicker(
+                    apps: apps.entries(including: sets.alwaysHidden),
+                    selection: alwaysHiddenSelection,
+                    otherSet: sets.hidden,
+                    otherSetName: "Hidden"
+                )
+            }
+            .disabled(!state.isAlwaysHiddenEnabled)
+        }
+        .formStyle(.grouped)
+        .frame(width: settingsPaneWidth, height: 460)
+    }
 
     private var alwaysHiddenSelection: Binding<Set<String>> {
         Binding(
@@ -93,7 +92,7 @@ struct SettingsView: View {
     }
 }
 
-private struct GeneralSettings: View {
+struct GeneralSettings: View {
     @Environment(AppState.self) private var state
     @Environment(LaunchAtLogin.self) private var loginItem
     @Environment(Permissions.self) private var permission
@@ -177,7 +176,7 @@ private struct GeneralSettings: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear(perform: loginItem.refresh)
+        .frame(width: settingsPaneWidth, height: 460)
     }
 
     private var iconOptions: some View {
@@ -201,7 +200,7 @@ private struct GeneralSettings: View {
 
 /// "Export…" writes the settings to a property list. "Import…" reads one
 /// back and the models reload from the store.
-private struct SettingsFileSection: View {
+struct SettingsFileSection: View {
     @Environment(AppState.self) private var state
     @Environment(HiddenSets.self) private var sets
 
@@ -253,7 +252,7 @@ private struct SettingsFileSection: View {
 /// hidden items show while the pointer is in it, so that a clock click opens
 /// Notification Center; in bar mode it only pre-filters clock clicks for the
 /// covered lift. Measured from the clock item, or from one click on the clock.
-private struct ClockZoneSection: View {
+struct ClockZoneSection: View {
     @Environment(AppState.self) private var state
     @Environment(ClockZone.self) private var clockZone
 
@@ -282,7 +281,6 @@ private struct ClockZoneSection: View {
                     ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
                     : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
         }
-        .onAppear(perform: clockZone.measureIfTrusted)
     }
 
     private var width: Int { Int(state.clockZoneWidth) }
