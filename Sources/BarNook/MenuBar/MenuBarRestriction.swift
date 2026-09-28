@@ -1,5 +1,8 @@
-// Modified by Chaehyeon Lee (2026): added allow-list reachability checks for pins.
+// Modified by Chaehyeon Lee (2026): added allow-list reachability checks for pins,
+// skipped assertions MenuBarAgent already holds, and kept the previous assertion
+// until a replacement takes effect.
 import AppKit
+import os
 
 enum MenuBarRestrictionError: LocalizedError {
     case frameworkNotLoaded(String)
@@ -15,12 +18,13 @@ enum MenuBarRestrictionError: LocalizedError {
     }
 }
 
-/// One assessment-mode assertion against `MenuBarAgent`, through the private
+/// Assessment-mode assertions against `MenuBarAgent`, through the private
 /// `MenuBarClientCore` framework. See `docs/spec.md`, "How it hides".
 @MainActor
 final class MenuBarRestriction {
     private static let frameworkPath =
         "/System/Library/PrivateFrameworks/MenuBarClientCore.framework/MenuBarClientCore"
+    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "restriction")
 
     /// MenuBarAgent takes system items as integer codes. 0–6 match the public
     /// `AEMenuBarItem` constants in order; 8 is Control Center. Codes past the
@@ -29,17 +33,23 @@ final class MenuBarRestriction {
 
     private let configurationClass: NSObject.Type
     private let assertionClass: NSObject.Type
-    private var assertion: NSObject?
+    /// Every assertion not yet invalidated, by identity, oldest first in `ledger`.
+    private var assertions: [ObjectIdentifier: NSObject] = [:]
+    private var ledger = AssertionLedger<ObjectIdentifier>()
+    /// What the bar shows, or is about to: the newest requested assertion.
+    private var applied: AssertionPolicy.Applied?
+    private var newest: ObjectIdentifier?
+    private var retry: Task<Void, Never>?
+    private var retryAttempt = 0
     /// Callers waiting for the newest assertion to report back.
     private var activationWaiters: [CheckedContinuation<Void, Never>] = []
-    private var isActivating = false
 
-    var isActive: Bool { assertion != nil }
+    var isActive: Bool { !ledger.isEmpty }
 
     /// Returns once the newest assertion has reported back, or at once if
     /// it already has. MenuBarAgent lays out only after that.
     func waitUntilActivated() async {
-        guard isActivating else { return }
+        guard newest != nil else { return }
         await withCheckedContinuation { activationWaiters.append($0) }
     }
 
@@ -79,41 +89,100 @@ final class MenuBarRestriction {
     }
 
     /// Hides the given apps and shows every other running app and every system
-    /// item. Replaces any assertion held before. The allow-list is a snapshot of
-    /// the running apps, so call this again when an app launches.
+    /// item. The allow-list is a snapshot of the running apps, so call this
+    /// again when an app launches. An allow-list MenuBarAgent already holds
+    /// is not asked for again.
     ///
     /// Activation is asynchronous. The newest assertion wins while several are
-    /// alive, so the old one stays until the new one reports back. Invalidating
-    /// it earlier drops every restriction for a moment and every item flashes.
+    /// alive, so older ones stay until a newer one reports success.
+    /// Invalidating them earlier drops every restriction for a moment and every
+    /// item flashes; a failed activation leaves the previous one live and is
+    /// retried.
     func apply(hiddenBundleIdentifiers hidden: Set<String>) {
+        retry?.cancel()
+        retry = nil
+        retryAttempt = 0
+        activate(hidden: hidden)
+    }
+
+    private func activate(hidden: Set<String>) {
         let running = NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)
-        let allowed = Set(running).subtracting(hidden).sorted()
+        let agentPID = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.MenuBarAgent")
+            .first?.processIdentifier
+        let wanted = AssertionPolicy.Applied(allowList: Set(running).subtracting(hidden).sorted(), agentPID: agentPID)
+        switch AssertionPolicy.decide(wanted, previous: applied) {
+        case .skip:
+            Self.log.debug("skip: unchanged")
+            return
+        case let .activate(reason, added, removed):
+            Self.log.info("activate reason=\(reason.rawValue, privacy: .public) added=\(added, privacy: .public) removed=\(removed, privacy: .public)")
+        }
+        applied = wanted
 
         let configuration = (configurationClass as AnyObject)
             .perform(NSSelectorFromString("alloc"))?.takeUnretainedValue()
             .perform(NSSelectorFromString("initWithAllowedSystemItems:allowedBundleIdentifiers:"),
-                     with: Self.allSystemItems as NSArray, with: allowed as NSArray)?
+                     with: Self.allSystemItems as NSArray, with: wanted.allowList as NSArray)?
             .takeUnretainedValue()
         let assertion = assertionClass.init()
-        nonisolated(unsafe) let previous = self.assertion
-        isActivating = true
+        let token = ObjectIdentifier(assertion)
+        assertions[token] = assertion
+        ledger.requested(token, key: wanted)
+        newest = token
         let completion: @convention(block) (Any?) -> Void = { [weak self] error in
-            if let error {
-                NSLog("BarNook: restriction failed: %@", String(describing: error))
-            }
-            _ = previous?.perform(NSSelectorFromString("invalidate"))
+            let failure = error.map { String(describing: $0) }
             Task { @MainActor in
-                self?.activated(assertion)
+                self?.reported(token, failure: failure, hidden: hidden)
             }
         }
         _ = assertion.perform(NSSelectorFromString("activateWithConfiguration:completionHandler:"),
                               with: configuration, with: completion)
-        self.assertion = assertion
     }
 
-    private func activated(_ assertion: NSObject) {
-        guard assertion === self.assertion else { return }  // an older one; the newest is still on its way
-        isActivating = false
+    private func reported(_ token: ObjectIdentifier, failure: String?, hidden: Set<String>) {
+        if let failure {
+            let outcome = ledger.failed(token)
+            invalidate([token])
+            guard outcome.wasNewest else {
+                Self.log.error("failed (superseded): \(failure, privacy: .public)")
+                return
+            }
+            applied = outcome.newestKey
+            retryAttempt += 1
+            guard let delay = AssertionPolicy.retryDelay(attempt: retryAttempt) else {
+                Self.log.error("failed; kept previous; giving up after \(self.retryAttempt - 1) retries: \(failure, privacy: .public)")
+                finishActivating(token)
+                return
+            }
+            Self.log.error("failed; kept previous; retry \(self.retryAttempt) in \(delay, privacy: .public): \(failure, privacy: .public)")
+            retry = Task { [weak self] in
+                try? await Task.sleep(for: delay)
+                guard !Task.isCancelled else { return }
+                self?.activate(hidden: hidden)
+            }
+            finishActivating(token)
+            return
+        }
+        // Unknown to the ledger: released while it was on its way. It must
+        // not outlive the release.
+        invalidate(ledger.succeeded(token) ?? [token])
+        finishActivating(token)
+    }
+
+    /// Resumes the waiters once the newest assertion has reported back.
+    private func finishActivating(_ token: ObjectIdentifier) {
+        guard token == newest else { return }  // an older one; the newest is still on its way
+        newest = nil
+        resumeWaiters()
+    }
+
+    private func invalidate(_ tokens: [ObjectIdentifier]) {
+        for token in tokens {
+            _ = assertions.removeValue(forKey: token)?.perform(NSSelectorFromString("invalidate"))
+        }
+    }
+
+    private func resumeWaiters() {
         let waiters = activationWaiters
         activationWaiters = []
         for waiter in waiters {
@@ -122,13 +191,12 @@ final class MenuBarRestriction {
     }
 
     func release() {
-        _ = assertion?.perform(NSSelectorFromString("invalidate"))
-        assertion = nil
-        isActivating = false
-        let waiters = activationWaiters
-        activationWaiters = []
-        for waiter in waiters {
-            waiter.resume()
-        }
+        retry?.cancel()
+        retry = nil
+        retryAttempt = 0
+        invalidate(ledger.releaseAll())
+        applied = nil
+        newest = nil
+        resumeWaiters()
     }
 }

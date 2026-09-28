@@ -12,6 +12,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 2 | Put an app in the hidden set. Click the icon. Click again. | Items hide, show (`‹`), hide (nook). | vm |
 | 2a | Settings › General › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each picker lists every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | Pass |
 | 3 | Show the set. Quit. Relaunch. | Set is still shown. Sets are unchanged. | vm |
+| 3b | Hide A. Quit A, relaunch A. | A stays hidden. The `restriction` log shows `skip: unchanged` and no new `reason=fresh`. | vm |
 | 4 | Put an app in the always-hidden set. Click. Option+click. | Normal click keeps it hidden. Option+click shows it. | vm |
 | 4a | Right-click, "Show always-hidden items". | Both sets show. Menu item gets a checkmark. | |
 | 4b | Settings: turn off "Keep an always-hidden set". | Always-hidden apps appear at once. | vm |

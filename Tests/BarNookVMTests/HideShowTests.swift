@@ -19,6 +19,25 @@ struct HideShowTests {
         #expect(try guest.appItems().isSuperset(of: [Fixture.b, Fixture.c]))
     }
 
+    /// Row 3b: the allow-list does not change when a hidden app quits and
+    /// comes back, so MenuBarAgent is not asked again.
+    @Test func quittingAHiddenAppKeepsTheAssertion() throws {
+        try guest.enableDebugLogs()
+        let m0 = try guest.logMarker()
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.probe("move 500 400")
+        try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
+        try guest.waitUntil("a fresh assertion") { try guest.restrictionLog(since: m0).contains { $0.contains("reason=fresh") } }
+
+        let m1 = try guest.logMarker()
+        try guest.quit(Fixture.name(Fixture.a))
+        try guest.launch(Fixture.name(Fixture.a))
+        try guest.expectStable("A stays hidden") { try !guest.appItems().contains(Fixture.a) }
+        let lines = try guest.restrictionLog(since: m1)
+        #expect(lines.contains { $0.contains("skip: unchanged") })
+        #expect(!lines.contains { $0.contains("reason=fresh") })
+    }
+
     @Test func clickTogglesTheHiddenSet() throws {
         try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a, Fixture.b])])
         try guest.waitUntil("A and B hide") { try guest.appItems().isDisjoint(with: [Fixture.a, Fixture.b]) }
