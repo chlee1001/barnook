@@ -282,3 +282,13 @@ This packet goes into a new ralplan run for consensus review. The current run ha
 - **The one open that failed.** A click came about 1.5 s after the previous lift and was ignored. The layout was probably still settling.
 - **The first fix.** The first product build skipped displays whose menu bar hides itself: `visibleFrame` reports no menu bar there. `40da177` takes the strips from the Accessibility layout instead.
 - **Not tested.** Real mouse clicks, fullscreen spaces, a banner during the cover, and a screen recording at display refresh rate.
+
+
+### The twitch and the slowness (2026-09-28, maintainer report)
+
+- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. Recordings at 120 frames per second traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. `56cb91e` makes the covers appear and go at once. 120 fps recordings on all three displays then showed no icon shift.
+- **Missed opens.** The same traces showed MenuBarAgent handling the replayed click up to 450 ms late. A reapply before then swallowed it, most often after an Escape close, where 1 of 9 opened. The reapply now waits for the panel, capped at 900 ms, and 8 of 8 opened.
+- **Slowness.** Click to panel took 577–620 ms, against about 170 ms natively. Most of it was MenuBarAgent laying out the lift before handling the replay.
+  - `d34e088` captures and reads in parallel, keeps the display list, and replays 10 ms after the lift. That brought click to panel to 409–500 ms.
+  - It also covers and lifts once the pointer has rested 60 ms on the clock. After a rest, click to panel measured 27–36 ms in the generation-3 QA, and the maintainer reported it smoother.
+- **Trade-off.** While the pointer rests on the clock, every menu bar left of the clock is a still picture.

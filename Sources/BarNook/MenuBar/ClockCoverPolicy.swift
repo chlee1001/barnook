@@ -12,7 +12,10 @@ enum ClockCoverPolicy {
 
     /// Wait after the covers are ordered front, for one composite before the lift.
     static let coverComposite: Duration = .milliseconds(30)
-    /// Lift to replayed click. 40 ms lost clicks in the Ice measurements; 80 ms did not.
+    /// Lift to replayed click. MenuBarAgent handles the replay late anyway
+    /// (it lays out the lift first), and the reapply waits for the panel
+    /// (`pressToReapplyCap`), so an early replay is not lost: 5/5 opened at
+    /// 10 ms on the host, 409-500 ms click to panel.
     static let liftToPress: Duration = .milliseconds(10)
     /// Replayed click to reapply, at least. Notification Center stays open after the reapply.
     static let pressToReapply: Duration = .milliseconds(150)
@@ -36,6 +39,49 @@ enum ClockCoverPolicy {
     /// Clicks closer together than this start one lift: a double click opens
     /// Notification Center once.
     static let debounce: Duration = .milliseconds(300)
+
+    /// The bar-mode clock lift, from the pointer's first rest on the clock
+    /// to the restriction's return.
+    enum Phase: Equatable {
+        /// Nothing lifted, nothing covered.
+        case idle
+        /// The pointer rests on the clock; the pre-lift has not covered yet.
+        case dwelling
+        /// The covers are up, the restriction is still active.
+        case covering
+        /// The covers are up and the restriction is lifted: clicks reach
+        /// MenuBarAgent as they are.
+        case lifted
+        /// The restriction is coming back and the covers come off once it has.
+        case restoring
+        /// A covered lift for one click that came with no rest.
+        case clickLift
+    }
+
+    enum ClickRoute: Equatable {
+        /// MenuBarAgent takes the click as it is, or it is not on the clock.
+        case native
+        /// The pre-lift replays it once lifted.
+        case queue
+        /// A covered lift replays it; after a restore, once the restore ends.
+        case coveredLift
+    }
+
+    /// Where a mouse-down goes, by phase. Only a click on the clock is
+    /// queued or replayed; any other click is the user's business.
+    static func route(phase: Phase, onClock: Bool, isReplay: Bool) -> ClickRoute {
+        guard !isReplay, onClock else { return .native }
+        switch phase {
+        case .lifted, .clickLift: return .native
+        case .dwelling, .covering: return .queue
+        case .idle, .restoring: return .coveredLift
+        }
+    }
+
+    /// Whether the pointer on the clock starts a pre-lift.
+    static func startsPrelift(phase: Phase, onClock: Bool, inBar: Bool, restrictionActive: Bool, permissionsGranted: Bool) -> Bool {
+        phase == .idle && onClock && inBar && restrictionActive && permissionsGranted
+    }
 
     struct Facts: Equatable {
         var inBar: Bool

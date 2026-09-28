@@ -17,9 +17,9 @@ final class ClockCover {
         /// The status-item strip in Cocoa screen coordinates.
         var frame: NSRect
         var displayID: CGDirectDisplayID
-        /// The same strip, local to the display, top-left origin, for ScreenCaptureKit.
+        /// The same strip, local to the display, top-left origin; the band
+        /// picture is cropped to it.
         var local: CGRect
-        var scale: CGFloat
     }
 
     private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "clockCover")
@@ -64,8 +64,7 @@ final class ClockCover {
             strips.append(Strip(
                 frame: frame,
                 displayID: screen.displayID,
-                local: CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height),
-                scale: screen.scale
+                local: CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
             ))
         }
         return strips.isEmpty ? nil : strips
@@ -111,6 +110,21 @@ final class ClockCover {
         return (false, readFailures)
     }
 
+    /// Puts the restriction back, bounded by `reapplyTimeout`, then removes
+    /// the covers once the layout has settled. Shared by the click path and
+    /// the hover pre-lift.
+    func restore(
+        reapply: @escaping @MainActor () async -> Void,
+        hiddenStillDrawn: @escaping @Sendable () async -> Bool?
+    ) async -> (reapplied: Bool, settled: Bool, readFailures: Int) {
+        let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
+        if !reapplied {
+            Self.log.error("reapply not confirmed within \(ClockCoverPolicy.reapplyTimeout, privacy: .public); uncovering on the layout check")
+        }
+        let (settled, readFailures) = await uncoverWhenSettled(hiddenStillDrawn)
+        return (reapplied, settled, readFailures)
+    }
+
     /// One covered lift for a click that MenuBarAgent ignored: cover, lift,
     /// replay the click, reapply once the panel opens (bounded), uncover.
     /// Returns false, having lifted nothing, when a strip has no picture.
@@ -132,9 +146,7 @@ final class ClockCover {
         try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
         await Self.replayClick(at: point)
         let opened = await Self.waitForPanel(panelOpen)
-        let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
-        if !reapplied { Self.log.error("reapply not confirmed within \(ClockCoverPolicy.reapplyTimeout, privacy: .public); uncovering on the layout check") }
-        let (settled, readFailures) = await uncoverWhenSettled(hiddenStillDrawn)
+        let (reapplied, settled, readFailures) = await restore(reapply: reapply, hiddenStillDrawn: hiddenStillDrawn)
         let elapsed = ContinuousClock.now - started
         Self.log.info("lift done opened=\(opened) reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
         return true
@@ -143,14 +155,30 @@ final class ClockCover {
     /// Waits for the panel after a replayed click: MenuBarAgent handles it up
     /// to about 450 ms late while it lays out the lift, and a reapply before
     /// then swallows it.
-    static func waitForPanel(_ panelOpen: @escaping @Sendable () async -> Bool) async -> Bool {
-        let pressed = ContinuousClock.now
-        try? await Task.sleep(for: ClockCoverPolicy.pressToReapply)
-        while ContinuousClock.now - pressed < ClockCoverPolicy.pressToReapplyCap {
-            if await panelOpen() { return true }
-            try? await Task.sleep(for: .milliseconds(25))
+    static func waitForPanel(
+        floor: Duration = ClockCoverPolicy.pressToReapply,
+        cap: Duration = ClockCoverPolicy.pressToReapplyCap,
+        poll: Duration = .milliseconds(25),
+        _ panelOpen: @escaping @Sendable () async -> Bool
+    ) async -> Bool {
+        try? await Task.sleep(for: floor)
+        // The cap bounds the whole wait, a slow Accessibility read included.
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                while !Task.isCancelled {
+                    if await panelOpen() { return true }
+                    try? await Task.sleep(for: poll)
+                }
+                return false
+            }
+            group.addTask {
+                try? await Task.sleep(for: cap - floor)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
         }
-        return false
     }
 
     /// The top of one display, captured before the layout is known, so the
@@ -174,7 +202,12 @@ final class ClockCover {
     /// The top `ClockCover.bandHeight` points of every screen.
     func captureBands(_ screens: [Screen]) async -> [Band]? {
         if content == nil || screens.contains(where: { screen in !(content?.displays.contains { $0.displayID == screen.displayID } ?? false) }) {
-            content = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            do {
+                content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            } catch {
+                Self.log.error("display list failed: \(error.localizedDescription, privacy: .public)")
+                return nil
+            }
         }
         guard let content else { return nil }
         var bands: [Band] = []
@@ -186,14 +219,22 @@ final class ClockCover {
             configuration.height = Int(Self.bandHeight * screen.scale)
             configuration.showsCursor = false
             let filter = SCContentFilter(display: display, excludingWindows: [])
-            guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-            else { return nil }
-            bands.append(Band(displayID: screen.displayID, image: image, scale: screen.scale))
+            do {
+                let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+                bands.append(Band(displayID: screen.displayID, image: image, scale: screen.scale))
+            } catch {
+                // A display that changed under the cached list fails here;
+                // the next capture fetches the list again.
+                self.content = nil
+                Self.log.error("capture failed: \(error.localizedDescription, privacy: .public)")
+                return nil
+            }
         }
         return bands
     }
 
     /// Tall enough for any menu bar; the strips crop it to the bar's height.
+    /// The clock pre-filter uses the same band.
     static let bandHeight: CGFloat = 40
 
     /// Each strip's picture, cut from its display's band; nil when a strip
@@ -206,7 +247,10 @@ final class ClockCover {
                 x: strip.local.minX * band.scale, y: strip.local.minY * band.scale,
                 width: strip.local.width * band.scale, height: strip.local.height * band.scale
             ).integral
-            guard let picture = band.image.cropping(to: rect) else { return nil }
+            // A strip outside the band would be cropped short and stretched.
+            guard CGRect(x: 0, y: 0, width: band.image.width, height: band.image.height).contains(rect),
+                  let picture = band.image.cropping(to: rect)
+            else { return nil }
             pictures.append(picture)
         }
         return pictures

@@ -41,7 +41,6 @@ import Testing
         #expect(strips[0].local == CGRect(x: 0, y: 0, width: 1335, height: 33))
         #expect(strips[1].local == CGRect(x: 0, y: 0, width: 1743, height: 30))
         #expect(strips[2].local == CGRect(x: 0, y: 0, width: 2383, height: 30))
-        #expect(strips.map(\.scale) == [2, 1, 1])
     }
 
     @Test func aBarReportedTwiceIsCoveredOnce() throws {
@@ -118,5 +117,70 @@ import Testing
         let reads = Reads([true, false])
         let result = await ClockCover.settle(cap: .seconds(1), poll: .milliseconds(1)) { reads.next() }
         #expect(result.settled)
+    }
+}
+
+@Suite struct ClockCoverPanelWaitTests {
+    @Test func aPanelThatOpensEndsTheWait() async {
+        let opened = await ClockCover.waitForPanel(floor: .milliseconds(1), cap: .seconds(1), poll: .milliseconds(1)) { true }
+        #expect(opened)
+    }
+
+    @Test func aPanelThatNeverOpensStopsAtTheCap() async {
+        let start = ContinuousClock.now
+        let opened = await ClockCover.waitForPanel(floor: .milliseconds(1), cap: .milliseconds(40), poll: .milliseconds(1)) { false }
+        #expect(!opened)
+        #expect(ContinuousClock.now - start < .milliseconds(500))
+    }
+
+    /// A read that hangs (an Accessibility timeout) still ends at the cap.
+    @Test func aHangingReadStopsAtTheCap() async {
+        let start = ContinuousClock.now
+        let opened = await ClockCover.waitForPanel(floor: .milliseconds(1), cap: .milliseconds(40), poll: .milliseconds(1)) {
+            try? await Task.sleep(for: .seconds(5))
+            return true
+        }
+        #expect(!opened)
+        #expect(ContinuousClock.now - start < .milliseconds(500))
+    }
+}
+
+@Suite struct ClockCoverCropTests {
+    /// A width x height image, every pixel opaque.
+    func image(width: Int, height: Int) -> CGImage {
+        let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.setFillColor(CGColor(red: 0.2, green: 0.3, blue: 0.5, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()!
+    }
+
+    func strip(_ local: CGRect, display: CGDirectDisplayID = 1) -> ClockCover.Strip {
+        ClockCover.Strip(frame: NSRect(origin: .zero, size: local.size), displayID: display, local: local)
+    }
+
+    @Test func aRetinaBandCropsInPixels() throws {
+        let band = ClockCover.Band(displayID: 1, image: image(width: 3024, height: 80), scale: 2)
+        let pictures = try #require(ClockCover.crop([band], to: [strip(CGRect(x: 0, y: 0, width: 1335, height: 33))]))
+        #expect(pictures[0].width == 2670)
+        #expect(pictures[0].height == 66)
+    }
+
+    @Test func anOffsetStripOnAPlainBandCropsInPoints() throws {
+        let band = ClockCover.Band(displayID: 2, image: image(width: 2560, height: 40), scale: 1)
+        let pictures = try #require(ClockCover.crop([band], to: [strip(CGRect(x: 100, y: 0, width: 2283, height: 30), display: 2)]))
+        #expect(pictures[0].width == 2283)
+        #expect(pictures[0].height == 30)
+    }
+
+    @Test func aStripWithoutABandHasNoPicture() {
+        let band = ClockCover.Band(displayID: 1, image: image(width: 3024, height: 80), scale: 2)
+        #expect(ClockCover.crop([band], to: [strip(CGRect(x: 0, y: 0, width: 100, height: 30), display: 9)]) == nil)
+    }
+
+    /// A bar taller than the band would be cropped short and stretched.
+    @Test func aStripTallerThanTheBandHasNoPicture() {
+        let band = ClockCover.Band(displayID: 1, image: image(width: 3024, height: 80), scale: 2)
+        #expect(ClockCover.crop([band], to: [strip(CGRect(x: 0, y: 0, width: 1335, height: 44))]) == nil)
     }
 }
