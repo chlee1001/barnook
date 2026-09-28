@@ -170,14 +170,22 @@ enum SettingsWindowFrame {
         visible.height - chrome
     }
 
-    /// The window frame for `content`: the height is capped at the screen, the
-    /// top edge stays where it is, and a window that would reach below the
-    /// visible area moves up instead. Nil before the pane has a size.
+    /// The window frame for `content`: the height is capped at the screen and
+    /// the top edge stays where it is, as long as the window stays inside the
+    /// visible area; otherwise it moves in from whichever edge it crossed
+    /// (after a move to a smaller screen, say). Nil before the pane has a size.
     static func fitted(current: NSRect, content: CGSize, chrome: CGFloat, visible: NSRect) -> NSRect? {
         guard content.width > 0, content.height > 0 else { return nil }
         let height = min(content.height, heightCap(visible: visible, chrome: chrome)) + chrome
-        let y = max(current.maxY - height, visible.minY)
-        return NSRect(x: current.minX, y: y, width: content.width, height: height)
+        let y = clamp(current.maxY - height, visible.minY, visible.maxY - height)
+        let x = clamp(current.minX, visible.minX, visible.maxX - content.width)
+        return NSRect(x: x, y: y, width: content.width, height: height)
+    }
+
+    /// `value` within `low...high`; `low` wins when the range is empty (a
+    /// window wider than the screen keeps its left edge on screen).
+    private static func clamp(_ value: CGFloat, _ low: CGFloat, _ high: CGFloat) -> CGFloat {
+        max(low, min(value, high))
     }
 }
 
