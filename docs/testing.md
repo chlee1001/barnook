@@ -2,7 +2,7 @@
 
 Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Hidden and Settings › Always Hidden. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
@@ -17,7 +17,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 3b | Hide A. Quit A, relaunch A. | A stays hidden. The `restriction` log shows `skip: unchanged` and no new `reason=fresh`. | vm |
 | 4 | Put an app in the always-hidden set. Click. Option+click. | Normal click keeps it hidden. Option+click shows it. | vm |
 | 4a | Right-click, "Show always-hidden items". | Both sets show. Menu item gets a checkmark. | |
-| 4b | Settings: turn off "Keep an always-hidden set". | Always-hidden apps appear at once. | vm |
+| 4b | Settings › Apps: turn off "Always-hidden apps". | Always-hidden apps appear at once. | vm |
 | 5 | Show the set. Wait for the timeout (default 15 s). | Set hides. | vm |
 | 5a | Settings › Menu Bar: set the timeout to 3 s while the set is shown. | Set hides 3 s later. | Pass |
 | 5b | Settings › Menu Bar: turn "After a timeout" off. Show the set. Wait. | Set stays. | vm |
@@ -37,10 +37,10 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 8b | With Accessibility: open Settings, then Menu Bar › Advanced. | "N points, measured". Hidden items show over the clock, not over Control Center. | vm |
 | 9 | Quit from the right-click menu. | Every item returns. | vm |
 | 9a | `kill -9` BarNook. | Every item returns. | vm |
-| S1 | Settings › Hidden: check an app. | Its items hide at once. | Pass |
-| S2 | Check the same app under Always Hidden. | It leaves the Hidden list. Items stay hidden after a normal click. | Pass |
-| S3 | Check an app, quit that app. | It stays in the list, marked "Not running". Uncheck it. It leaves the list. | |
-| S4 | Launch another app while Settings is open. | It appears in both lists. | |
+| S1 | Settings › Apps: set an app to Hidden. | Its items hide at once. | |
+| S2 | Set the same app to Always hidden. | It leaves the hidden set. Items stay hidden after a normal click. | |
+| S3 | Set an app to Hidden, quit that app. | It stays in the list, marked "Not running". Set it to Shown. It leaves the list. | |
+| S4 | Launch another app while Settings is open. | It appears in the Apps list. | |
 | S5 | General: turn on "Launch at login". Open System Settings › Login Items. | BarNook is listed. Turn it off there. The switch in BarNook turns off when the window comes back to the front. | |
 | S6 | General: "Quit BarNook". | Every item returns. | |
 | S7 | General: "Export…", save. Open the file. | A plist with the sets and the rehide options. No `isHiddenSetShown`. | |
@@ -58,11 +58,17 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | M4 | Expand and collapse Advanced. With Accessibility off, "Click the Clock…". | Collapsed by default; the clock zone texts and buttons as before; width = distance + 30; Reset returns 300. | |
 | M5 | Quit. `defaults write com.chlee1001.BarNookDev rehideTimeout -float 0`. Launch, show the set. | The field shows 1; the set hides after about 1 s, not at once. | |
 | M6 | Turn "On a click outside the menu bar" off, show the set, click the desktop. | The set stays until the timeout. | |
-| D1 | Settings › Hidden: turn on "Hide apps left of the BarNook icon" (needs Accessibility). | Apps already left of the icon hide. The Hidden picker greys out. | vm |
+| A1 | Set one app Shown, Hidden, Always hidden, then Shown. | After each step the app is in exactly one set or none; the counts follow. | |
+| A2 | Turn "Always-hidden apps" off, then on. | Off: the always-hidden apps show, rows read "Always hidden · paused", the third segment is disabled. On: they hide again and the list is kept. | |
+| A3 | Without Accessibility, open Apps. | "By position" cannot be chosen; the footer says position mode needs Accessibility. The rows stay editable. | |
+| A4 | "By position": turn Always hidden on for an app left of the icon, then off. | On: a purple Always hidden capsule. Off: Shown until the next show or Cmd-drag, then Hidden by position. The list is never greyed out. | |
+| A5 | Type part of an app name in the search field, then clear it. | Only matching apps show; the counts stay; no match shows "No apps with a menu bar item match." | |
+| A6 | Quit a listed app. | "Not running"; it leaves the list once set to Shown. | |
+| D1 | Settings › Apps: choose "By position" (needs Accessibility). | Apps already left of the icon hide. Rows show read-only Shown/Hidden capsules; the list stays readable. | vm |
 | D2 | While the set is hidden, Cmd-drag the icon to the right of an item. | That app hides. | vm |
 | D3 | Show the set. Cmd-drag the icon to the far left. | Every app leaves the hidden set and stays when the set hides again. | vm |
 | D4 | Cmd-drag an app's item from right of the icon to left of it. | It hides. | vm |
-| D5 | Settings › Hidden: turn the switch off. | The picker is editable. The set is unchanged. | vm |
+| D5 | Settings › Apps: choose "From this list". | The rows are editable. The set is unchanged. | vm |
 | F1 | A front app with a wide menu bar (or a notch). "In the menu bar" mode. Show the set. | macOS collapses what does not fit behind `«`. | vm |
 | F2 | Same, "In a bar below the menu bar" mode. Click the icon. | A bar under the icon lists the hidden apps. Nothing in the menu bar moves. Icon shows `‹`. | vm |
 | F3 | Option-click the icon in bar mode. | The bar adds the always-hidden apps. | vm |

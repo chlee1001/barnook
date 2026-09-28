@@ -16,7 +16,7 @@ BarNook hides selected menu bar items on macOS 27. Click its icon to show them. 
 1. Download `BarNook-X.Y.Z.zip` from [GitHub Releases](../../releases).
 2. Open the zip. Move `BarNook.app` to `/Applications`.
 3. Open BarNook. Its small nook icon appears in the menu bar. Settings › Menu Bar › "Menu bar icon" picks a different icon for the hidden and shown states.
-4. Right-click the icon. Select "Settings…". Put apps in the hidden set. Or, with the Accessibility permission, turn on "Hide apps left of the BarNook icon" and Cmd-drag items to the left of the icon.
+4. Right-click the icon. Select "Settings…". In Settings › Apps, set apps to Hidden. Or, with the Accessibility permission, choose "By position" and Cmd-drag items to the left of the icon.
 
 On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the BarNook icon first. So on a notch display, BarNook shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar pins its item for you to click in the menu bar. Settings › Menu Bar › "Show hidden items" switches between the bar and the menu bar on any display.
 
@@ -29,7 +29,7 @@ This fork checks its own GitHub Releases for updates with [Sparkle](https://spar
 - The hidden sets hold whole apps, not single items. An app with two menu bar items hides both.
 - The bar below the menu bar shows app icons, not the items. An item that changes (a timer, a meter) shows only its app icon there. A click on an app in the bar pins its item in the menu bar for you to click, up to three at once; without the Accessibility permission the other items give way while a pin is up.
 - An app that runs from outside `/Applications` cannot be pinned into view. `MenuBarAgent` matches its allow-list against `/Applications` only, so macOS hides that item whenever BarNook hides anything. The bar marks such an app. Synology Drive, which runs from `~/Library/Application Support`, is one. Keep it out of the hidden set, or switch "Show hidden items" to "In the menu bar", which lifts the restriction while the set is shown.
-- With the Accessibility permission, the app pickers in Settings list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. If the permission is revoked later, the pickers list every running app.
+- With the Accessibility permission, the Apps list in Settings shows only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. If the permission is revoked later, the list shows every running app.
 
 ## Alternatives
 

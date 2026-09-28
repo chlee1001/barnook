@@ -25,8 +25,7 @@ final class SettingsWindow {
         tabs.tabStyle = .toolbar
         tabs.addPane("General", symbol: "gearshape", GeneralSettings().modifier(environment))
         tabs.addPane("Menu Bar", symbol: "menubar.rectangle", MenuBarPane().modifier(environment))
-        tabs.addPane("Hidden", symbol: "eye.slash", HiddenPane().modifier(environment))
-        tabs.addPane("Always Hidden", symbol: "eye.slash.fill", AlwaysHiddenPane().modifier(environment))
+        tabs.addPane("Apps", symbol: "square.grid.2x2", AppsPane().modifier(environment))
         window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.toolbarStyle = .preference
         window.contentViewController = tabs

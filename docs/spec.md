@@ -94,9 +94,9 @@ An AppKit window with toolbar panes that host SwiftUI views:
 
 - Launch at login (`SMAppService`).
 - Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
-- Hidden set: a list of running apps with a checkbox per app. BarNook lists apps with a `.regular` or `.accessory` activation policy.
-- Always-hidden set: the same list, and a switch to enable the set.
-- "Hide apps left of the BarNook icon": a switch (F7). Off without the Accessibility permission.
+- Apps (Settings › Apps): one list of running apps with Shown, Hidden or Always hidden per app, a search field and the count of each set. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running.
+- Choose hidden apps: "From this list" or "By position" (F7). "By position" needs the Accessibility permission.
+- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused.
 - Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
 - Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
 - Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
@@ -115,7 +115,7 @@ Open the window from a right-click menu on the BarNook icon. The same menu has "
 
 BarNook requires two permissions:
 
-- Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the pickers (F4) list only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
+- Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the Apps list (F4) shows only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
 - Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory.
 
 Hiding and showing work without either permission.
@@ -128,13 +128,13 @@ Hiding and showing work without either permission.
 
 ### F7: The icon as divider
 
-Off by default. When on, the BarNook icon divides the menu bar like the Bartender and Ice icons do: Cmd-drag items across it. Needs the Accessibility permission: with it, the windows of `MenuBarAgent` expose every visible item with its frame and owner, and the icon's own window frame gives the split point.
+Off by default ("From this list" in Settings › Apps). With "By position", the BarNook icon divides the menu bar like the Bartender and Ice icons do: Cmd-drag items across it. Needs the Accessibility permission: with it, the windows of `MenuBarAgent` expose every visible item with its frame and owner, and the icon's own window frame gives the split point.
 
 - A visible app left of the icon joins the hidden set. A visible app right of it leaves the set, but only while the set is shown: while it is hidden, a hidden app can still be on its way out.
 - An app with an item on each side hides. Hiding is per app.
 - Apps that are not visible keep their membership. The always-hidden set is never touched.
-- BarNook reads the menu bar when the switch turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning the switch on hides whatever already sits left of the icon.
-- While the switch is on, the Hidden picker in Settings is read-only.
+- BarNook reads the menu bar when position mode turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning position mode on hides whatever already sits left of the icon.
+- While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again.
 
 ### F8: The floating bar
 

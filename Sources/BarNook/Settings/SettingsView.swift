@@ -1,96 +1,9 @@
-// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window; menu bar options moved to their own pane.
+// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window; menu bar options and app lists moved to their own panes.
 import SwiftUI
 import UniformTypeIdentifiers
 
 /// Every pane has one width, so switching panes changes only the height.
 let settingsPaneWidth: CGFloat = 500
-
-struct HiddenPane: View {
-    @Environment(AppState.self) private var state
-    @Environment(HiddenSets.self) private var sets
-    @Environment(RunningApps.self) private var apps
-    @Environment(Permissions.self) private var permission
-
-    var body: some View {
-        @Bindable var state = state
-        Form {
-            Section {
-                Toggle("Hide apps left of the BarNook icon", isOn: $state.hidesAppsLeftOfIcon)
-                    .disabled(!permission.isTrusted)
-            } footer: {
-                Text("Cmd-drag items across the icon. Apps left of it join the hidden set. Apps right of it leave it when the set is shown. The always-hidden set is not affected.")
-            }
-            Section {
-                AppPicker(
-                    apps: apps.entries(including: sets.hidden),
-                    selection: hiddenSelection,
-                    otherSet: sets.alwaysHidden,
-                    otherSetName: "Always hidden"
-                )
-            } header: {
-                Text("Hidden apps")
-            } footer: {
-                Text(isDividerActive
-                    ? "The icon's position manages this list. Cmd-drag an item to change it."
-                    : "These apps hide until you click the BarNook icon.")
-            }
-            .disabled(isDividerActive)
-        }
-        .formStyle(.grouped)
-        .frame(width: settingsPaneWidth, height: 460)
-    }
-
-    private var isDividerActive: Bool { state.hidesAppsLeftOfIcon && permission.isTrusted }
-
-    /// An app can be in one set only, so a check here removes it from the other set.
-    private var hiddenSelection: Binding<Set<String>> {
-        Binding(
-            get: { sets.hidden },
-            set: { new in
-                sets.alwaysHidden.subtract(new)
-                sets.hidden = new
-            }
-        )
-    }
-}
-
-struct AlwaysHiddenPane: View {
-    @Environment(AppState.self) private var state
-    @Environment(HiddenSets.self) private var sets
-    @Environment(RunningApps.self) private var apps
-
-    var body: some View {
-        @Bindable var state = state
-        Form {
-            Section {
-                Toggle("Keep an always-hidden set", isOn: $state.isAlwaysHiddenEnabled)
-            } footer: {
-                Text("Option-click the BarNook icon to show these apps.")
-            }
-            Section("Always-hidden apps") {
-                AppPicker(
-                    apps: apps.entries(including: sets.alwaysHidden),
-                    selection: alwaysHiddenSelection,
-                    otherSet: sets.hidden,
-                    otherSetName: "Hidden"
-                )
-            }
-            .disabled(!state.isAlwaysHiddenEnabled)
-        }
-        .formStyle(.grouped)
-        .frame(width: settingsPaneWidth, height: 460)
-    }
-
-    private var alwaysHiddenSelection: Binding<Set<String>> {
-        Binding(
-            get: { sets.alwaysHidden },
-            set: { new in
-                sets.hidden.subtract(new)
-                sets.alwaysHidden = new
-            }
-        )
-    }
-}
 
 struct GeneralSettings: View {
     @Environment(LaunchAtLogin.self) private var loginItem
