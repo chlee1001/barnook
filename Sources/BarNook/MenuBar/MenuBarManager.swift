@@ -35,8 +35,16 @@ final class MenuBarManager {
     private let icon = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var launchObserver: Task<Void, Never>?
     private var pointerMonitor: Any?
-    private var clockHoverRestore: Task<Void, Never>?
+    private var clockHover: Task<Void, Never>?
     private var isPointerInClockZone = false
+    /// Menu-bar mode: the pointer is over the clock and the restriction is
+    /// lifted. A set change, a launch or a rehide waits until it leaves,
+    /// or its reapply would land under the pointer and the click would go
+    /// nowhere (`applyCurrentState`).
+    private var isHoverReleased = false
+    /// A global monitor is blind while the pointer is over BarNook's own
+    /// windows, so the lift also checks the pointer on this interval.
+    private static let hoverWatchInterval: Duration = .milliseconds(200)
     /// The apps the restriction hides now, for the cover's settle check.
     private var hiddenNow: Set<String> = []
     private let clockCover = ClockCover()
@@ -145,8 +153,14 @@ final class MenuBarManager {
             }
         }
         hiddenNow = hidden
-        if isCoverLifting {
-            // The covered lift reapplies when it is done.
+        if inBar, isHoverReleased {
+            // A switch to bar mode ends a menu-bar hover lift.
+            isHoverReleased = false
+            isPointerInClockZone = false
+            clockHover?.cancel()
+        }
+        if isCoverLifting || isHoverReleased {
+            // The lift in progress reapplies when it ends.
         } else if hidden.isEmpty {
             restriction.release()
         } else {
@@ -172,7 +186,7 @@ final class MenuBarManager {
         barPlacement?.cancel()
         floatingBar?.hide()
         launchObserver?.cancel()
-        clockHoverRestore?.cancel()
+        clockHover?.cancel()
         clockLift?.cancel()
         if let pointerMonitor {
             NSEvent.removeMonitor(pointerMonitor)
@@ -358,14 +372,31 @@ final class MenuBarManager {
             && MenuBarGeometry.current.clockZoneContains(point, width: state.clockZoneWidth)
         guard inZone != isPointerInClockZone else { return }
         isPointerInClockZone = inZone
-        clockHoverRestore?.cancel()
+        clockHover?.cancel()
         if inZone {
-            restriction.release()
-        } else {
-            clockHoverRestore = Task { [weak self] in
+            liftForClock()
+        } else if isHoverReleased {
+            clockHover = Task { [weak self] in
                 try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled else { return }
-                self?.applyCurrentState()
+                guard let self, !Task.isCancelled else { return }
+                self.isHoverReleased = false
+                self.applyCurrentState()
+            }
+        }
+    }
+
+    private func liftForClock() {
+        isHoverReleased = true
+        restriction.release()
+        clockHover = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.hoverWatchInterval)
+                guard let self, !Task.isCancelled else { return }
+                let point = NSEvent.mouseLocation
+                if !MenuBarGeometry.current.clockZoneContains(point, width: self.state.clockZoneWidth) {
+                    self.pointerMoved(to: point)
+                    return
+                }
             }
         }
     }

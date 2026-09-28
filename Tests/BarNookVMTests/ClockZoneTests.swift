@@ -22,6 +22,24 @@ struct ClockZoneTests {
         try guest.waitUntil("A hides again") { try !guest.appItems().contains(Fixture.a) }
     }
 
+    /// Row 8c: a rehide while the pointer rests on the clock waits until it
+    /// leaves, so the hidden items stay under the pointer.
+    @Test func aRehideWaitsWhileThePointerIsOnTheClock() throws {
+        let clock = try guest.clockFrame()
+        try guest.launchBarNook([
+            "hiddenBundleIdentifiers": .strings([Fixture.a]),
+            "rehideOnTimeout": .bool(true),
+            "rehideTimeout": .double(4),
+        ])
+        try guest.clickIcon()
+        try guest.waitUntil("A shows") { try guest.appItems().contains(Fixture.a) }
+        try guest.probe("move \(Int(clock.midX)) \(Int(clock.midY))")
+        try guest.waitUntil("the set hides after the timeout") { try guest.setting("isHiddenSetShown") == "0" }
+        try guest.expectStable("A stays under the pointer", for: 3) { try guest.appItems().contains(Fixture.a) }
+        try guest.probe("move 500 400")
+        try guest.waitUntil("A hides once the pointer leaves") { try !guest.appItems().contains(Fixture.a) }
+    }
+
     @Test func measuredZoneStopsBeforeControlCenter() throws {
         try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
