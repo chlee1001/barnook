@@ -40,6 +40,28 @@ struct RehidePolicyTests {
         #expect(RehidePolicy.shouldHide(afterClickAt: NSPoint(x: 350, y: 350), menuBar: menuBar, menus: [popUp]))
     }
 
+    // The floating bar under the menu bar.
+    private let panel = NSRect(x: 600, y: 700, width: 200, height: 40)
+
+    @Test func anOpenMenuWaits() {
+        #expect(RehidePolicy.shouldWait(menus: [statusMenu], menuBar: menuBar, panel: nil, pointer: NSPoint(x: 10, y: 10)))
+    }
+
+    @Test func thePointerOnTheBarWaits() {
+        #expect(RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 650, y: 720)))
+        #expect(RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 600, y: 700)))
+    }
+
+    @Test func thePointerOffTheBarDoesNotWait() {
+        #expect(!RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 800, y: 720)))
+        #expect(!RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: nil, pointer: NSPoint(x: 650, y: 720)))
+    }
+
+    @Test func aPopUpElsewhereDoesNotWait() {
+        let popUp = NSRect(x: 300, y: 300, width: 150, height: 100)
+        #expect(!RehidePolicy.shouldWait(menus: [popUp], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 350, y: 350)))
+    }
+
     @Test func menuOnAnotherScreenDoesNotCount() {
         let menu = NSRect(x: 1200, y: 576, width: 200, height: 200)
         #expect(!RehidePolicy.isMenuOpen([menu], menuBar: menuBar))

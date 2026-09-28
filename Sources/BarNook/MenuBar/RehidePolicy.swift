@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): the rehide waits while the pointer rests on the floating bar.
 import BarNookCore
 import Foundation
 
@@ -20,6 +21,12 @@ enum RehidePolicy {
 
     static func isMenuOpen(_ menus: [NSRect], menuBar: MenuBarGeometry) -> Bool {
         !menuBarMenus(menus, menuBar: menuBar).isEmpty
+    }
+
+    /// A hide waits while a menu from a shown item is open, and while the
+    /// pointer rests on the floating bar: the user is about to click an app.
+    static func shouldWait(menus: [NSRect], menuBar: MenuBarGeometry, panel: NSRect?, pointer: NSPoint) -> Bool {
+        isMenuOpen(menus, menuBar: menuBar) || panel?.contains(pointer) == true
     }
 
     /// A click in the menu bar, inside an open menu, or inside the floating

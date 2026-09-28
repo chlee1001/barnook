@@ -72,6 +72,9 @@ final class MenuBarManager {
         rehide.panelFrame = { [weak self] in self?.floatingBar?.frame }
         rehide.hasPins = { [weak self] in self?.pins.isEmpty == false }
 
+        // A relaunch with the set shown in bar mode opens the bar again.
+        isBarOpen = sets.isHiddenSetShown && state.hiddenItemsPlacement == .floatingBar
+
         icon.autosaveName = "barnook.icon"
         if let button = icon.button {
             button.target = self
@@ -105,15 +108,14 @@ final class MenuBarManager {
     /// everything only once the bar is open again.
     func toggle(includingAlwaysHidden: Bool) {
         let isShown = includingAlwaysHidden ? sets.isAlwaysHiddenSetShown : sets.isHiddenSetShown
-        if isShown {
-            if !pins.isEmpty, !isBarOpen, state.hiddenItemsPlacement == .floatingBar {
-                isBarOpen = true
-                applyCurrentState()
-            } else {
-                hide()
-            }
-        } else {
+        switch IconClickPolicy.action(isShown: isShown, inBar: state.hiddenItemsPlacement == .floatingBar, isBarOpen: isBarOpen) {
+        case .show:
             show(includingAlwaysHidden: includingAlwaysHidden)
+        case .reopenBar:
+            isBarOpen = true
+            applyCurrentState()
+        case .hide:
+            hide()
         }
     }
 
