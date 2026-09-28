@@ -286,10 +286,16 @@ This packet goes into a new ralplan run for consensus review. The current run ha
 
 ### The twitch and the slowness (2026-09-28, maintainer report)
 
-- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. Recordings at 120 frames per second traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. `56cb91e` makes the covers appear and go at once. 120 fps recordings on all three displays then showed no icon shift.
+- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. `screencapture -v` recordings traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. The recordings are variable-frame-rate. They were requested at 120 fps, but reached an average of about 28–43 fps. A 10 ms window-list watcher confirmed the cover frames scaling. `56cb91e` makes the covers appear and go at once. Recordings on all three displays then showed no icon shift. The `56cb91e` commit message calls these "120 Hz recordings"; that overstates the achieved rate. A refresh-rate recording has not been run.
 - **Missed opens.** The same traces showed MenuBarAgent handling the replayed click up to 450 ms late. A reapply before then swallowed it, most often after an Escape close, where 1 of 9 opened. The reapply now waits for the panel, capped at 900 ms, and 8 of 8 opened.
 - **Slowness.** Click to panel took 577–620 ms, against about 170 ms natively. Most of it was MenuBarAgent laying out the lift before handling the replay.
   - `d34e088` captures and reads in parallel, keeps the display list, and replays 10 ms after the lift. That brought click to panel to 409–500 ms.
   - It also covers and lifts once the pointer has rested 60 ms on the clock, and the maintainer reported it smoother. The gain depends on how busy MenuBarAgent still is with the lift, and the host measurements vary. After a rest of about 1 s, mouse-down to panel ranged from 22 to about 400 ms. After a 300 ms rest or none, it was about 330–500 ms. MenuBarAgent's own click log leaves out its input queue, so figures measured from it (27–36 ms at 95b2433) are lower. The cause of the spread is not established.
 - **Closing.** A clock click that closes the panel closes it natively. Replaying that click, or reading the panel after it, reopened the panel, so BarNook now remembers that a lift opened it and never lifts for, or replays, a click while the panel is believed open.
 - **Trade-off.** While the pointer rests on the clock, every menu bar left of the clock is a still picture.
+- **Not tested.**
+  - A Notification Center panel opened outside BarNook (Fn+N, the trackpad edge swipe). BarNook's belief that the panel is open covers only panels a lift opened, and the Accessibility read is best effort for the rest.
+  - Real mouse clicks.
+  - Fullscreen spaces.
+  - A banner during the cover.
+  - VM runs: Tart is not installed.
