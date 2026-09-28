@@ -12,6 +12,7 @@ final class SettingsWindow {
     private let permission: Permissions
     private let clockZone: ClockZone
     private var keyObserver: NSObjectProtocol?
+    private var screenObserver: NSObjectProtocol?
 
     init(state: AppState, sets: HiddenSets, permission: Permissions, clockZone: ClockZone, updater: Updater) {
         self.permission = permission
@@ -23,6 +24,7 @@ final class SettingsWindow {
         )
         let tabs = SettingsTabViewController()
         tabs.tabStyle = .toolbar
+        self.tabs = tabs
         tabs.addPane("General", symbol: "gearshape", GeneralPane().modifier(environment))
         tabs.addPane("Menu Bar", symbol: "menubar.rectangle", MenuBarPane().modifier(environment))
         tabs.addPane("Apps", symbol: "square.grid.2x2", AppsPane().modifier(environment))
@@ -37,10 +39,19 @@ final class SettingsWindow {
         ) { [weak self] _ in
             Task { @MainActor in self?.refreshModels() }
         }
+        // Another screen, or a new resolution, has another height cap.
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeScreenNotification, object: window, queue: .main
+        ) { [weak tabs] _ in
+            Task { @MainActor in tabs?.refit() }
+        }
     }
+
+    private let tabs: SettingsTabViewController
 
     isolated deinit {
         if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
     }
 
     func show() {
@@ -130,27 +141,43 @@ private final class SettingsTabViewController: NSTabViewController {
         view.window?.title = selected.title ?? ""
     }
 
+    func refit() { fit(animate: false) }
+
     private func fit(animate: Bool) {
         guard let window = view.window, let pane = selected else { return }
         let visible = (window.screen ?? NSScreen.main)?.visibleFrame ?? .infinite
         let chrome = window.frame.height - window.contentLayoutRect.height
-        let cap = visible.height - chrome
         for case let other as PaneController in tabViewItems.map(\.viewController) {
-            other.heightCap = cap
+            other.heightCap = SettingsWindowFrame.heightCap(visible: visible, chrome: chrome)
         }
-        var size = pane.contentSize
-        guard size.width > 0, size.height > 0 else { return }
-        size.height = min(size.height, cap)
-        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: size))
-        frame.origin = NSPoint(x: window.frame.minX, y: window.frame.maxY - frame.height)
-        // A taller pane grows downward; past the bottom of the screen it
-        // moves up instead.
-        frame.origin.y = max(frame.origin.y, visible.minY)
+        guard let frame = SettingsWindowFrame.fitted(
+            current: window.frame, content: pane.contentSize, chrome: chrome, visible: visible
+        ) else { return }
         window.setFrame(frame, display: true, animate: animate && window.isVisible && hasCentered)
         if !hasCentered {
             window.center()
             hasCentered = true
         }
+    }
+}
+
+/// Where the Settings window goes for a pane of a given size. Pure, so the
+/// screen cap and the edge rules can be tested without a window.
+enum SettingsWindowFrame {
+    /// The tallest a pane may be: the visible screen less the title bar and
+    /// toolbar.
+    static func heightCap(visible: NSRect, chrome: CGFloat) -> CGFloat {
+        visible.height - chrome
+    }
+
+    /// The window frame for `content`: the height is capped at the screen, the
+    /// top edge stays where it is, and a window that would reach below the
+    /// visible area moves up instead. Nil before the pane has a size.
+    static func fitted(current: NSRect, content: CGSize, chrome: CGFloat, visible: NSRect) -> NSRect? {
+        guard content.width > 0, content.height > 0 else { return nil }
+        let height = min(content.height, heightCap(visible: visible, chrome: chrome)) + chrome
+        let y = max(current.maxY - height, visible.minY)
+        return NSRect(x: current.minX, y: y, width: content.width, height: height)
     }
 }
 

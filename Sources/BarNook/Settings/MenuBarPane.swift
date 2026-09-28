@@ -77,7 +77,7 @@ private struct PlacementCards: View {
                         .font(.callout.weight(.medium))
                         .lineLimit(2)
                 }
-                if placement == .floatingBar, NSScreen.anyHasNotch {
+                if NSScreen.anyHasNotch, placement == AppState.recommendedPlacement(hasNotch: true) {
                     Text("Recommended")
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 6)

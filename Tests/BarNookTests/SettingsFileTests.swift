@@ -190,12 +190,11 @@ struct SettingsFileTests {
         #expect(AppState.registeredDefaults(hasNotch: true).count == AppState.defaults.count)
     }
 
-    /// A value the user picked lives in the app's domain, above the
-    /// registration domain, so the notch default never replaces it.
-    @Test @MainActor func aChosenPlacementBeatsTheRegisteredDefault() {
+    /// A stored placement is read as is, not replaced by the fallback.
+    @Test @MainActor func aStoredPlacementIsRead() {
         let store = makeStore()
-        store.set("menuBar", forKey: AppState.Key.hiddenItemsPlacement)
-        #expect(AppState(store: store).hiddenItemsPlacement == .menuBar)
+        store.set("floatingBar", forKey: AppState.Key.hiddenItemsPlacement)
+        #expect(AppState(store: store).hiddenItemsPlacement == .floatingBar)
     }
 
     @Test func outOfRangeErrorNamesTheRange() {
