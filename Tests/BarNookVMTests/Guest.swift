@@ -246,7 +246,6 @@ struct Guest: Sendable {
         return clock.frame
     }
 
-
     /// Whether the app's item is on screen: in the layout and not collapsed.
     func isDrawn(_ bundleIdentifier: String) throws -> Bool {
         try layout().drawnItem(of: bundleIdentifier) != nil

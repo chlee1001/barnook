@@ -24,24 +24,17 @@ final class ClockCover {
 
     private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "clockCover")
 
-    /// Resumes one continuation once, with the first answer.
-    @MainActor private final class BoundedRace {
-        var continuation: CheckedContinuation<Bool, Never>?
-        func finish(_ value: Bool) {
-            continuation?.resume(returning: value)
-            continuation = nil
-        }
-    }
     private var windows: [NSWindow] = []
 
-    /// A screen as the strip math needs it: its Cocoa frame and display.
+    /// A screen as the strip math needs it: its Cocoa frame, display and
+    /// backing scale.
     struct Screen: Equatable {
         var frame: NSRect
         var displayID: CGDirectDisplayID
         var scale: CGFloat
     }
 
-    @MainActor static var currentScreens: [Screen] {
+    static var currentScreens: [Screen] {
         NSScreen.screens.compactMap { screen in
             guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
             else { return nil }
@@ -90,29 +83,39 @@ final class ClockCover {
     }
 
     /// Removes the covers once the layout no longer has a hidden app, plus
-    /// the crossfade, by `settleCap` at the latest. `hiddenStillDrawn` returns
-    /// nil when the layout cannot be read, which counts as not settled.
+    /// the crossfade: at most `settleCap` after the call, plus the last read
+    /// and `settledToUncover`.
     func uncoverWhenSettled(_ hiddenStillDrawn: @escaping @Sendable () async -> Bool?) async -> (settled: Bool, readFailures: Int) {
-        let settleStart = ContinuousClock.now
-        var settled = false
+        let result = await Self.settle(cap: ClockCoverPolicy.settleCap, poll: .milliseconds(20), hiddenStillDrawn)
+        try? await Task.sleep(for: ClockCoverPolicy.settledToUncover)
+        hide()
+        return result
+    }
+
+    /// Polls `hiddenStillDrawn` until it reports false or `cap` passes. A nil
+    /// read (the layout could not be read) is not a settled layout: it is
+    /// counted and the wait goes on.
+    static func settle(
+        cap: Duration, poll: Duration, _ hiddenStillDrawn: @escaping @Sendable () async -> Bool?
+    ) async -> (settled: Bool, readFailures: Int) {
+        let start = ContinuousClock.now
         var readFailures = 0
-        while ContinuousClock.now - settleStart < ClockCoverPolicy.settleCap {
+        while ContinuousClock.now - start < cap {
             switch await hiddenStillDrawn() {
-            case false?: settled = true
+            case false?: return (true, readFailures)
             case true?: break
             case nil: readFailures += 1
             }
-            if settled { break }
-            try? await Task.sleep(for: .milliseconds(20))
+            try? await Task.sleep(for: poll)
         }
-        try? await Task.sleep(for: ClockCoverPolicy.settledToUncover)
-        hide()
-        return (settled, readFailures)
+        return (false, readFailures)
     }
 
     /// One covered lift for a click that MenuBarAgent ignored: cover, lift,
     /// replay the click, reapply once the panel opens (bounded), uncover.
     /// Returns false, having lifted nothing, when a strip has no picture.
+    /// The covers come off at most `pressToReapplyCap` + `reapplyTimeout` +
+    /// `settleCap` after the replay, plus the last read and `settledToUncover`.
     func run(
         clickAt point: CGPoint,
         strips: [Strip],
@@ -130,6 +133,7 @@ final class ClockCover {
         await Self.replayClick(at: point)
         let opened = await Self.waitForPanel(panelOpen)
         let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
+        if !reapplied { Self.log.error("reapply not confirmed within \(ClockCoverPolicy.reapplyTimeout, privacy: .public); uncovering on the layout check") }
         let (settled, readFailures) = await uncoverWhenSettled(hiddenStillDrawn)
         let elapsed = ContinuousClock.now - started
         Self.log.info("lift done opened=\(opened) reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
@@ -236,6 +240,15 @@ final class ClockCover {
     private func hide() {
         windows.forEach { $0.orderOut(nil) }
         windows.removeAll()
+    }
+
+    /// Resumes one continuation once, with the first answer.
+    @MainActor private final class BoundedRace {
+        var continuation: CheckedContinuation<Bool, Never>?
+        func finish(_ value: Bool) {
+            continuation?.resume(returning: value)
+            continuation = nil
+        }
     }
 
     /// Runs `work`, giving up after `limit`. MenuBarAgent's reply to an

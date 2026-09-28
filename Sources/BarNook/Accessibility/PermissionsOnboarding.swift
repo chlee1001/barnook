@@ -43,6 +43,10 @@ final class PermissionsOnboarding {
         }
     }
 
+    isolated deinit {
+        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
+    }
+
     func show() {
         permissions.refresh()
         permissions.startPolling()

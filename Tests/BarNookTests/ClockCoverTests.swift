@@ -71,7 +71,7 @@ import Testing
     /// A reply from MenuBarAgent that never comes must not hold the cover.
     @Test func aStuckWaitIsCutOff() async {
         let finished = await ClockCover.bounded(.milliseconds(50)) {
-            await withCheckedContinuation { (_: CheckedContinuation<Void, Never>) in }
+            try? await Task.sleep(for: .seconds(5))
         }
         #expect(!finished)
     }
@@ -79,5 +79,44 @@ import Testing
     @Test func aPromptWaitFinishes() async {
         let finished = await ClockCover.bounded(.seconds(2)) {}
         #expect(finished)
+    }
+}
+
+/// The uncover wait: an unreadable layout is not a settled one.
+@Suite struct ClockCoverSettleTests {
+    /// Answers the reads in order, then repeats the last.
+    final class Reads: @unchecked Sendable {
+        private var answers: [Bool?]
+        private let lock = NSLock()
+        init(_ answers: [Bool?]) { self.answers = answers }
+        func next() -> Bool? {
+            lock.lock(); defer { lock.unlock() }
+            return answers.count > 1 ? answers.removeFirst() : answers.first ?? nil
+        }
+    }
+
+    @Test func aFailedReadIsNotSettled() async {
+        let reads = Reads([nil, nil, false])
+        let result = await ClockCover.settle(cap: .seconds(1), poll: .milliseconds(1)) { reads.next() }
+        #expect(result.settled)
+        #expect(result.readFailures == 2)
+    }
+
+    @Test func onlyFailedReadsNeverSettle() async {
+        let result = await ClockCover.settle(cap: .milliseconds(30), poll: .milliseconds(1)) { nil }
+        #expect(!result.settled)
+        #expect(result.readFailures > 0)
+    }
+
+    @Test func hiddenItemsStillDrawnWaitForTheCap() async {
+        let result = await ClockCover.settle(cap: .milliseconds(30), poll: .milliseconds(1)) { true }
+        #expect(!result.settled)
+        #expect(result.readFailures == 0)
+    }
+
+    @Test func aSettledLayoutEndsAtOnce() async {
+        let reads = Reads([true, false])
+        let result = await ClockCover.settle(cap: .seconds(1), poll: .milliseconds(1)) { reads.next() }
+        #expect(result.settled)
     }
 }

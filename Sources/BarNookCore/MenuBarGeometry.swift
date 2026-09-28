@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): top-band geometry for the bar-mode clock pre-filter.
 import AppKit
 
 /// The menu bar rectangle of every screen, in Cocoa screen coordinates.
@@ -19,6 +20,13 @@ public struct MenuBarGeometry: Sendable {
 
     @MainActor
     public static var current: MenuBarGeometry { MenuBarGeometry(screens: NSScreen.screens) }
+
+    /// The top `height` points of every screen frame. A menu bar that hides
+    /// itself reports none in `visibleFrame`, and the one under the pointer
+    /// is revealed, so the clock pre-filter uses the screen's top band.
+    public init(topBandsOf screenFrames: [NSRect], height: CGFloat) {
+        frames = screenFrames.map { NSRect(x: $0.minX, y: $0.maxY - height, width: $0.width, height: height) }
+    }
 
     public func contains(_ point: NSPoint) -> Bool {
         frames.contains { $0.contains(point) }

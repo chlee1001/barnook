@@ -541,9 +541,7 @@ final class MenuBarManager {
         )
         // The top band of each screen, not `visibleFrame`: a menu bar that
         // hides itself reports none there, and the clicked one is revealed.
-        let bands = MenuBarGeometry(frames: NSScreen.screens.map {
-            NSRect(x: $0.frame.minX, y: $0.frame.maxY - Self.menuBarBand, width: $0.frame.width, height: Self.menuBarBand)
-        })
+        let bands = MenuBarGeometry(topBandsOf: NSScreen.screens.map(\.frame), height: Self.menuBarBand)
         let inZone = bands.clockZoneContains(point, width: state.clockZoneWidth)
         guard ClockCoverPolicy.mayIntercept(facts), inZone else {
             if inZone {

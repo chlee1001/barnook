@@ -76,6 +76,19 @@ struct MenuBarGeometryTests {
         #expect(!menuBar.contains(NSPoint(x: 10, y: 770)))
     }
 
+    /// An auto-hidden menu bar reports none in visibleFrame; the top band of
+    /// the screen still finds the clock zone.
+    @Test func topBandsFindTheClockZoneOfAnAutoHiddenBar() {
+        let bands = MenuBarGeometry(topBandsOf: [
+            NSRect(x: 0, y: 0, width: 1512, height: 982),
+            NSRect(x: 1512, y: -1200, width: 1920, height: 1200),
+        ], height: 40)
+        #expect(bands.clockZoneContains(NSPoint(x: 3335, y: -15), width: 203))
+        #expect(bands.clockZoneContains(NSPoint(x: 1415, y: 966), width: 203))
+        #expect(!bands.clockZoneContains(NSPoint(x: 3335, y: -60), width: 203))
+        #expect(!bands.clockZoneContains(NSPoint(x: 3000, y: -15), width: 203))
+    }
+
     @Test func clockZoneIsTrailingStrip() {
         #expect(menuBar.clockZoneContains(NSPoint(x: 900, y: 780), width: 300))
         #expect(!menuBar.clockZoneContains(NSPoint(x: 600, y: 780), width: 300))
