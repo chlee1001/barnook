@@ -30,7 +30,10 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 8c | Menu-bar mode, 4 s timeout. Show the set, rest the pointer on the clock. | The set hides after 4 s but the items stay while the pointer is there; they hide once it leaves. | vm |
 | 8g | Menu-bar mode. Rest on the clock, then move straight onto the Settings window. | The items hide within about 0.7 s. | |
 | B8 | Bar mode, both permissions. Click the clock 10 times on each display (open, close). | Notification Center opens and closes each time. No hidden item appears in any menu bar, on any display. | Synthetic clicks: externals 0 hidden frames, NC 13/14 (docs/phase9.md); real clicks pending |
-| B8h | Bar mode. Move the pointer across and onto the clock. | Nothing lifts: no hidden item appears. | |
+| B8h | Bar mode. Move the pointer across and onto the clock. | Nothing lifts: no hidden item appears. | Host: 552 reads, 0 hidden |
+| F2a | Bar mode. Show the set. Quit. Relaunch. Click the icon. | The bar opens at launch; the click hides the set. | Host pass |
+| F2b | Bar mode. Pin an app, then unpin it from the reopened bar. | The icon reopens the bar and the set stays shown. | |
+| F4a | Bar mode, 3 s timeout, focus rehide off. Show the set, rest the pointer on the bar for 5 s, then leave. | The set stays while the pointer is on the bar and hides once it leaves. | Host: stays 5 s; leave timing not checked |
 | 8a | Without Accessibility: General, "Click the Clock…", click the left edge of the clock. | The width becomes the distance to the right edge plus 30. "Reset" returns 300. | Pass |
 | 8b | With Accessibility: open General. | "N points, measured". Hidden items show over the clock, not over Control Center. | vm |
 | 9 | Quit from the right-click menu. | Every item returns. | vm |

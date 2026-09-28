@@ -86,7 +86,7 @@ BarNook rehides the hidden set when one of these conditions is true and the rela
 
 Each condition has its own switch in Settings. Defaults: timeout on, click outside on, focus change off.
 
-BarNook does not rehide while a menu from a shown item is open.
+BarNook does not rehide while a menu from a shown item is open, or while the pointer rests on the floating bar (F8).
 
 ### F4: Settings window
 
@@ -148,7 +148,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 - Each icon has a tooltip with the app name. A hover highlights it.
 - The rehide conditions of F3 close the panel: timeout, a click outside the panel and the menu bar, and a focus change.
 - A click on an icon pins that app. The restriction lets its item through, the panel closes, and the user clicks the item itself in the menu bar, as they would any other item. Nothing is pressed on the user's behalf: the press raced the layout and lost the item its menu. Up to three apps are pinned at once (`PinPolicy`); a click past the limit drops the oldest pin, and a click on a pinned app unpins it. With the Accessibility permission the pins are checked against the layout once it settles: a pin that does not fit (macOS put it behind `«`) hides every other app, so every pin is drawn whenever the region holds the icon and the pins. Without the permission nothing can be read, so every other app hides at once, the one arrangement that always leaves the pin on screen.
-- While a pin is up, the icon brings the bar back on the first click and hides the set, the pins and the bar on the second. No rehide condition takes a pin away: a pin is an item the user put in the menu bar to click, and a timeout or a focus change that pulled it back would be the click-through race again, one step removed. The conditions resume once the last pin is gone.
+- Whenever the set is shown in bar mode and the bar is closed — a pin closed it, the last pin went, or BarNook relaunched — the icon brings the bar back on the first click and hides the set, the pins and the bar on the second. A relaunch with the set shown opens the bar. No rehide condition takes a pin away: a pin is an item the user put in the menu bar to click, and a timeout or a focus change that pulled it back would be the click-through race again, one step removed. The conditions resume once the last pin is gone.
 - An app that runs from outside `/Applications` is marked in the bar and cannot be pinned into view: `MenuBarAgent` matches the allow-list against `/Applications` only, so the item stays hidden whatever the allow-list says (see "How it hides"). Such an app is left out of the fit check too — hiding every other app would empty the menu bar and still not draw it.
 - An app with an item that changes (a timer, a meter) shows only its app icon in the bar. The README lists this limit.
 
