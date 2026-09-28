@@ -13,7 +13,7 @@ enum ClockCoverPolicy {
     /// Wait after the covers are ordered front, for one composite before the lift.
     static let coverComposite: Duration = .milliseconds(30)
     /// Lift to replayed click. 40 ms lost clicks in the Ice measurements; 80 ms did not.
-    static let liftToPress: Duration = .milliseconds(80)
+    static let liftToPress: Duration = .milliseconds(10)
     /// Replayed click to reapply, at least. Notification Center stays open after the reapply.
     static let pressToReapply: Duration = .milliseconds(150)
     /// Replayed click to reapply, at most. MenuBarAgent handles the replayed
@@ -29,6 +29,10 @@ enum ClockCoverPolicy {
     static let reapplyTimeout: Duration = .seconds(1)
     /// Mouse-down to mouse-up of the replayed click.
     static let replayClickHold: Duration = .milliseconds(60)
+    /// The pointer rests this long on the clock before the menu bars are
+    /// covered and the restriction lifts ahead of a click; a pass across the
+    /// clock does nothing.
+    static let hoverDwell: Duration = .milliseconds(60)
     /// Clicks closer together than this start one lift: a double click opens
     /// Notification Center once.
     static let debounce: Duration = .milliseconds(300)

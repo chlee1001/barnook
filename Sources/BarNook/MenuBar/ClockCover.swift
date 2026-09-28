@@ -78,38 +78,21 @@ final class ClockCover {
         return strips.isEmpty ? nil : strips
     }
 
-    /// Runs one covered lift. `lift` drops the restriction; `reapply` puts it
-    /// back and waits for MenuBarAgent, bounded by `reapplyTimeout`, once
-    /// `panelOpen` reports the panel or `pressToReapplyCap` passes;
-    /// `hiddenStillDrawn` reads the layout and returns nil when the read
-    /// fails. Returns false, having lifted nothing, when a strip cannot be
-    /// captured. The covers always come off, by `settleCap` at the latest.
-    func run(
-        clickAt point: CGPoint,
-        strips: [Strip],
-        lift: () -> Void,
-        reapply: @escaping @MainActor () async -> Void,
-        panelOpen: @escaping @Sendable () async -> Bool,
-        hiddenStillDrawn: @escaping @Sendable () async -> Bool?
-    ) async -> Bool {
-        let started = ContinuousClock.now
-        guard let pictures = await capture(strips) else {
-            Self.log.error("capture failed; clock click not replayed")
+    /// Covers every strip with its picture. False, covering nothing, when a
+    /// strip has no picture.
+    func cover(_ strips: [Strip], bands: [Band]) -> Bool {
+        guard let pictures = Self.crop(bands, to: strips) else {
+            Self.log.error("capture missing for a menu bar; not covering")
             return false
         }
         show(pictures, strips: strips)
-        try? await Task.sleep(for: ClockCoverPolicy.coverComposite)
-        lift()
-        try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
-        await Self.replayClick(at: point)
-        let pressed = ContinuousClock.now
-        try? await Task.sleep(for: ClockCoverPolicy.pressToReapply)
-        var opened = false
-        while ContinuousClock.now - pressed < ClockCoverPolicy.pressToReapplyCap {
-            if await panelOpen() { opened = true; break }
-            try? await Task.sleep(for: .milliseconds(25))
-        }
-        let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
+        return true
+    }
+
+    /// Removes the covers once the layout no longer has a hidden app, plus
+    /// the crossfade, by `settleCap` at the latest. `hiddenStillDrawn` returns
+    /// nil when the layout cannot be read, which counts as not settled.
+    func uncoverWhenSettled(_ hiddenStillDrawn: @escaping @Sendable () async -> Bool?) async -> (settled: Bool, readFailures: Int) {
         let settleStart = ContinuousClock.now
         var settled = false
         var readFailures = 0
@@ -117,34 +100,112 @@ final class ClockCover {
             switch await hiddenStillDrawn() {
             case false?: settled = true
             case true?: break
-            case nil: readFailures += 1  // an unreadable layout is not a settled one
+            case nil: readFailures += 1
             }
             if settled { break }
             try? await Task.sleep(for: .milliseconds(20))
         }
         try? await Task.sleep(for: ClockCoverPolicy.settledToUncover)
         hide()
+        return (settled, readFailures)
+    }
+
+    /// One covered lift for a click that MenuBarAgent ignored: cover, lift,
+    /// replay the click, reapply once the panel opens (bounded), uncover.
+    /// Returns false, having lifted nothing, when a strip has no picture.
+    func run(
+        clickAt point: CGPoint,
+        strips: [Strip],
+        bands: [Band],
+        lift: () -> Void,
+        reapply: @escaping @MainActor () async -> Void,
+        panelOpen: @escaping @Sendable () async -> Bool,
+        hiddenStillDrawn: @escaping @Sendable () async -> Bool?
+    ) async -> Bool {
+        let started = ContinuousClock.now
+        guard cover(strips, bands: bands) else { return false }
+        try? await Task.sleep(for: ClockCoverPolicy.coverComposite)
+        lift()
+        try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
+        await Self.replayClick(at: point)
+        let opened = await Self.waitForPanel(panelOpen)
+        let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
+        let (settled, readFailures) = await uncoverWhenSettled(hiddenStillDrawn)
         let elapsed = ContinuousClock.now - started
         Self.log.info("lift done opened=\(opened) reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
         return true
     }
 
-    private func capture(_ strips: [Strip]) async -> [CGImage]? {
-        guard let content = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true) else { return nil }
-        var images: [CGImage] = []
-        for strip in strips {
-            guard let display = content.displays.first(where: { $0.displayID == strip.displayID }) else { return nil }
+    /// Waits for the panel after a replayed click: MenuBarAgent handles it up
+    /// to about 450 ms late while it lays out the lift, and a reapply before
+    /// then swallows it.
+    static func waitForPanel(_ panelOpen: @escaping @Sendable () async -> Bool) async -> Bool {
+        let pressed = ContinuousClock.now
+        try? await Task.sleep(for: ClockCoverPolicy.pressToReapply)
+        while ContinuousClock.now - pressed < ClockCoverPolicy.pressToReapplyCap {
+            if await panelOpen() { return true }
+            try? await Task.sleep(for: .milliseconds(25))
+        }
+        return false
+    }
+
+    /// The top of one display, captured before the layout is known, so the
+    /// capture runs alongside the layout read.
+    struct Band {
+        var displayID: CGDirectDisplayID
+        var image: CGImage
+        /// Points to pixels.
+        var scale: CGFloat
+    }
+
+    /// The display list ScreenCaptureKit needs, kept between clicks: asking
+    /// for it costs about 100 ms. Refreshed when the screens change or a
+    /// display is missing.
+    private var content: SCShareableContent?
+
+    func screensChanged() {
+        content = nil
+    }
+
+    /// The top `ClockCover.bandHeight` points of every screen.
+    func captureBands(_ screens: [Screen]) async -> [Band]? {
+        if content == nil || screens.contains(where: { screen in !(content?.displays.contains { $0.displayID == screen.displayID } ?? false) }) {
+            content = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        }
+        guard let content else { return nil }
+        var bands: [Band] = []
+        for screen in screens {
+            guard let display = content.displays.first(where: { $0.displayID == screen.displayID }) else { return nil }
             let configuration = SCStreamConfiguration()
-            configuration.sourceRect = strip.local
-            configuration.width = Int(strip.local.width * strip.scale)
-            configuration.height = Int(strip.local.height * strip.scale)
+            configuration.sourceRect = CGRect(x: 0, y: 0, width: screen.frame.width, height: Self.bandHeight)
+            configuration.width = Int(screen.frame.width * screen.scale)
+            configuration.height = Int(Self.bandHeight * screen.scale)
             configuration.showsCursor = false
             let filter = SCContentFilter(display: display, excludingWindows: [])
             guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
             else { return nil }
-            images.append(image)
+            bands.append(Band(displayID: screen.displayID, image: image, scale: screen.scale))
         }
-        return images
+        return bands
+    }
+
+    /// Tall enough for any menu bar; the strips crop it to the bar's height.
+    static let bandHeight: CGFloat = 40
+
+    /// Each strip's picture, cut from its display's band; nil when a strip
+    /// has no band.
+    nonisolated static func crop(_ bands: [Band], to strips: [Strip]) -> [CGImage]? {
+        var pictures: [CGImage] = []
+        for strip in strips {
+            guard let band = bands.first(where: { $0.displayID == strip.displayID }) else { return nil }
+            let rect = CGRect(
+                x: strip.local.minX * band.scale, y: strip.local.minY * band.scale,
+                width: strip.local.width * band.scale, height: strip.local.height * band.scale
+            ).integral
+            guard let picture = band.image.cropping(to: rect) else { return nil }
+            pictures.append(picture)
+        }
+        return pictures
     }
 
     private func show(_ pictures: [CGImage], strips: [Strip]) {
@@ -199,7 +260,7 @@ final class ClockCover {
 
     /// Posts a click at `point`, tagged so BarNook's own monitor skips it.
     /// Cocoa coordinates in, CG (top-left) out.
-    private static func replayClick(at point: CGPoint) async {
+    static func replayClick(at point: CGPoint) async {
         let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
         let location = CGPoint(x: point.x, y: primaryHeight - point.y)
         for type in [CGEventType.leftMouseDown, .leftMouseUp] {
