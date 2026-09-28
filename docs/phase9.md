@@ -299,3 +299,13 @@ This packet goes into a new ralplan run for consensus review. The current run ha
   - Fullscreen spaces.
   - A banner during the cover.
   - VM runs: Tart is not installed.
+
+
+### Commit-message corrections (2026-09-28)
+
+Two commit messages on `fix/menu-bar-stability` are left as they are and corrected here. The branch history is not rewritten: the review snapshots are pinned to these commits.
+
+- **`56cb91e`.** The message says "120 Hz recordings". The recordings were `screencapture -v` captures, variable-frame-rate with an average of about 28–43 fps. They were not refresh-rate recordings. See "The twitch and the slowness" above.
+- **`e4b4172`.** The message has no `Not-tested:` line. It documents `23c83f0`, whose message lists what was not tested: the hide timing after the pointer leaves, and VM rows F2a, F2b and F4a.
+
+Before a pull request, these two messages can be amended instead, if the maintainer asks.
