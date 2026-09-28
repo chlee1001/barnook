@@ -1,65 +1,41 @@
-import AppKit
 import BarNookCore
 import Testing
 
-/// Main and stacked-display geometry from the reported setup; the host
-/// spike presently sees only one 1512-point display.
+/// Trees shaped like the ones read on the host (docs/phase9.md).
 @Suite struct NotificationCenterPanelTests {
-    let main = NotificationCenterPanel.Display(
-        frame: NSRect(x: 0, y: 0, width: 2048, height: 1280),
-        visibleFrame: NSRect(x: 0, y: 0, width: 2048, height: 1249)
-    )
-    let wide = NotificationCenterPanel.Display(
-        frame: NSRect(x: -479, y: 1280, width: 3440, height: 1440),
-        visibleFrame: NSRect(x: -479, y: 1280, width: 3440, height: 1409)
-    )
-    var displays: [NotificationCenterPanel.Display] { [main, wide] }
-    let owner = "com.apple.notificationcenterui"
-    let layer = NotificationCenterPanel.panelLayer
+    typealias Node = NotificationCenterPanel.Node
 
-    func window(_ frame: NSRect, owner: String? = nil, layer: Int? = nil) -> NotificationCenterPanel.Window {
-        NotificationCenterPanel.Window(owner: owner ?? self.owner, layer: layer ?? self.layer, frame: frame)
+    func window(_ content: [Node]) -> (title: String?, root: Node) {
+        ("Notification Center", Node(children: [Node(children: [Node(children: [Node(children: content)])])]))
     }
 
-    @Test func thePanelOnTheMainDisplayIsOpen() {
-        let panel = window(main.frame)
-        #expect(NotificationCenterPanel.isOpen([panel], displays: displays))
+    let banner = Node(identifier: "F1E82E30-DD6F-48F1-AF93-AA7A24CFF663", children: [Node(identifier: "title"), Node(identifier: "body")])
+    let list = Node(identifier: "AXNotificationListItems")
+    let widget: (title: String?, root: Node) = ("Calendar", Node(children: [Node(identifier: "widget-local:com.apple.iCal")]))
+
+    @Test func noWindowIsClosed() {
+        #expect(!NotificationCenterPanel.isOpen(windows: []))
     }
 
-    @Test func thePanelOnTheDisplayAboveIsOpen() {
-        let panel = window(wide.frame)
-        #expect(NotificationCenterPanel.isOpen([panel], displays: displays))
+    @Test func desktopWidgetsAreClosed() {
+        #expect(!NotificationCenterPanel.isOpen(windows: [widget]))
     }
 
-    // A small synthetic banner frame is excluded. The observed banner also
-    // creates a full-display backing window and *does* fool this predicate.
-    @Test func aSmallBannerWindowIsNotThePanel() {
-        let banner = window(NSRect(x: 1680, y: 1161, width: 360, height: 80))
-        #expect(!NotificationCenterPanel.isOpen([banner], displays: displays))
+    /// D0: the banner's window has the panel's owner, layer and frame.
+    @Test func aBannerAloneIsClosed() {
+        #expect(!NotificationCenterPanel.isOpen(windows: [window([banner]), widget]))
     }
 
-    @Test func aWidgetOnAnotherLayerIsNotThePanel() {
-        let widget = window(main.frame, layer: Int(CGWindowLevelForKey(.desktopWindow)))
-        #expect(!NotificationCenterPanel.isOpen([widget], displays: displays))
+    @Test func theListIsOpen() {
+        #expect(NotificationCenterPanel.isOpen(windows: [window([list]), widget]))
     }
 
-    @Test func anotherOwnerIsNotThePanel() {
-        let other = window(main.frame, owner: "com.apple.controlcenter")
-        #expect(!NotificationCenterPanel.isOpen([other], displays: displays))
+    @Test func theListUnderABannerIsOpen() {
+        #expect(NotificationCenterPanel.isOpen(windows: [window([list, banner])]))
     }
 
-    @Test func aWindowAtTheLeftEdgeIsNotThePanel() {
-        let left = window(NSRect(x: 0, y: 0, width: 400, height: 1280))
-        #expect(!NotificationCenterPanel.isOpen([left], displays: displays))
-    }
-
-    @Test func noWindowsMeansClosed() {
-        #expect(!NotificationCenterPanel.isOpen([], displays: displays))
-    }
-
-    @Test func aBannerBesideThePanelStillReadsOpen() {
-        let banner = window(NSRect(x: 1680, y: 1161, width: 360, height: 80))
-        let panel = window(main.frame)
-        #expect(NotificationCenterPanel.isOpen([banner, panel], displays: displays))
+    @Test func theListInAnotherWindowIsClosed() {
+        let other: (title: String?, root: Node) = ("Other", Node(children: [list]))
+        #expect(!NotificationCenterPanel.isOpen(windows: [other]))
     }
 }

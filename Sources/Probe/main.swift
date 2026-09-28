@@ -14,8 +14,7 @@ import Foundation
 //   probe move X Y
 //   probe click X Y [--option] [--command] [--right]
 //   probe drag X1 Y1 X2 Y2 [--command]
-//   probe nc-windows                   raw owner, layer and frame of Notification Center's windows (Cocoa)
-//   probe nc-state                     whether the Notification Center panel is open
+//   probe nc-state                     whether the Notification Center panel is open (Accessibility)
 //   probe press-system ID [--display N]  AX-press a system item, com.apple.menuextra.clock and the like
 //   probe key CODE [--fn] [--command] [--option] [--control]
 //   probe click-press X Y --trigger none|press|key:CODE[+fn]|script --at down|up --delay MS
@@ -211,7 +210,7 @@ func postNow(_ type: CGEventType, at point: CGPoint) throws {
 
 @MainActor
 func clickPress(at p: CGPoint, trigger: String, atDown: Bool, delay: Double) throws -> ClickPress {
-    let openAtStart = NotificationCenterPanel.isOpenNow
+    let openAtStart = NotificationCenterPanel.isOpenNow()
     try post(.mouseMoved, at: p)
     let start = milliseconds()
     try postNow(.leftMouseDown, at: p)
@@ -235,7 +234,7 @@ func clickPress(at p: CGPoint, trigger: String, atDown: Bool, delay: Double) thr
     var transitions: [Double] = []
     var opened: Double?
     while milliseconds() - start < 1500 {
-        let now = NotificationCenterPanel.isOpenNow
+        let now = NotificationCenterPanel.isOpenNow()
         if now != state {
             let t = milliseconds() - start
             transitions.append(t)
@@ -302,11 +301,8 @@ do {
             try post(.leftMouseDragged, at: p, flags: flags(options))
         }
         try post(.leftMouseUp, at: to, flags: flags(options))
-    case "nc-windows":
-        struct Raw: Codable { var owner: String; var layer: Int; var frame: CGRect }
-        try emit(NotificationCenterPanel.currentWindows().map { Raw(owner: $0.owner, layer: $0.layer, frame: $0.frame) })
     case "nc-state":
-        try emit(["open": NotificationCenterPanel.isOpenNow])
+        try emit(["open": NotificationCenterPanel.isOpenNow()])
     case "press-system":
         guard let id = positional.dropFirst().first else { throw ProbeError(description: "expected ID") }
         let item = try systemItem(id, display: value(of: "--display", in: arguments).flatMap { Int($0) })
@@ -349,7 +345,7 @@ do {
         }
         try emit(Watched(reads: reads, drawn: drawn.sorted()))
     default:
-        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]|nc-windows|nc-state|press-system ID [--display N]|key CODE [--fn]|click-press X Y --trigger T --at down|up --delay MS|double-click X Y --gap MS|watch-hidden IDS --for MS")
+        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]|nc-state|press-system ID [--display N]|key CODE [--fn]|click-press X Y --trigger T --at down|up --delay MS|double-click X Y --gap MS|watch-hidden IDS --for MS")
     }
 } catch {
     fail("\(error)")

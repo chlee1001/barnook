@@ -249,9 +249,10 @@ private struct SettingsFileSection: View {
     }
 }
 
-/// The trailing zone of the menu bar where hidden items show, so that a
-/// clock click opens Notification Center. Measured from the clock item with
-/// the Accessibility permission, or from one click on the clock without it.
+/// The trailing zone of the menu bar around the clock. In menu-bar mode
+/// hidden items show while the pointer is in it, so that a clock click opens
+/// Notification Center; in bar mode it only pre-filters clock clicks for the
+/// covered lift. Measured from the clock item, or from one click on the clock.
 private struct ClockZoneSection: View {
     @Environment(AppState.self) private var state
     @Environment(ClockZone.self) private var clockZone
@@ -275,9 +276,11 @@ private struct ClockZoneSection: View {
                 }
             }
         } footer: {
-            Text(clockZone.isMeasured
-                ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
-                : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
+            Text(state.hiddenItemsPlacement == .floatingBar
+                ? "In bar mode a click on the clock opens Notification Center while the menu bar is covered, so hidden items never show."
+                : clockZone.isMeasured
+                    ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
+                    : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
         }
         .onAppear(perform: clockZone.measureIfTrusted)
     }
