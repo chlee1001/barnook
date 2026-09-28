@@ -483,6 +483,9 @@ final class MenuBarManager {
                     self.applyCurrentState()
                     await self.restriction.waitUntilActivated()
                 },
+                panelOpen: {
+                    await Task.detached { NotificationCenterPanel.isOpenNow() }.value
+                },
                 hiddenStillDrawn: {
                     await Task.detached { MenuBarLayout.read()?.containsItem(ofAny: hidden) }.value
                 }

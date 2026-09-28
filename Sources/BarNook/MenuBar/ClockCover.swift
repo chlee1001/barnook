@@ -79,7 +79,8 @@ final class ClockCover {
     }
 
     /// Runs one covered lift. `lift` drops the restriction; `reapply` puts it
-    /// back and waits for MenuBarAgent, bounded by `reapplyTimeout`;
+    /// back and waits for MenuBarAgent, bounded by `reapplyTimeout`, once
+    /// `panelOpen` reports the panel or `pressToReapplyCap` passes;
     /// `hiddenStillDrawn` reads the layout and returns nil when the read
     /// fails. Returns false, having lifted nothing, when a strip cannot be
     /// captured. The covers always come off, by `settleCap` at the latest.
@@ -88,6 +89,7 @@ final class ClockCover {
         strips: [Strip],
         lift: () -> Void,
         reapply: @escaping @MainActor () async -> Void,
+        panelOpen: @escaping @Sendable () async -> Bool,
         hiddenStillDrawn: @escaping @Sendable () async -> Bool?
     ) async -> Bool {
         let started = ContinuousClock.now
@@ -100,7 +102,13 @@ final class ClockCover {
         lift()
         try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
         await Self.replayClick(at: point)
+        let pressed = ContinuousClock.now
         try? await Task.sleep(for: ClockCoverPolicy.pressToReapply)
+        var opened = false
+        while ContinuousClock.now - pressed < ClockCoverPolicy.pressToReapplyCap {
+            if await panelOpen() { opened = true; break }
+            try? await Task.sleep(for: .milliseconds(25))
+        }
         let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
         let settleStart = ContinuousClock.now
         var settled = false
@@ -117,7 +125,7 @@ final class ClockCover {
         try? await Task.sleep(for: ClockCoverPolicy.settledToUncover)
         hide()
         let elapsed = ContinuousClock.now - started
-        Self.log.info("lift done reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
+        Self.log.info("lift done opened=\(opened) reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
         return true
     }
 
@@ -148,6 +156,10 @@ final class ClockCover {
             window.hasShadow = false
             window.ignoresMouseEvents = true
             window.isReleasedWhenClosed = false
+            // The default window animation zooms the cover in from a smaller
+            // frame and fades it out: its picture scales, so the status icons
+            // appear to jump and slide back. The cover must appear and go at once.
+            window.animationBehavior = .none
             window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
             let view = NSImageView(frame: NSRect(origin: .zero, size: strip.frame.size))
             view.imageScaling = .scaleAxesIndependently

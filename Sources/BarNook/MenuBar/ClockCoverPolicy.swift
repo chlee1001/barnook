@@ -14,8 +14,12 @@ enum ClockCoverPolicy {
     static let coverComposite: Duration = .milliseconds(30)
     /// Lift to replayed click. 40 ms lost clicks in the Ice measurements; 80 ms did not.
     static let liftToPress: Duration = .milliseconds(80)
-    /// Replayed click to reapply. Notification Center stays open after the reapply.
+    /// Replayed click to reapply, at least. Notification Center stays open after the reapply.
     static let pressToReapply: Duration = .milliseconds(150)
+    /// Replayed click to reapply, at most. MenuBarAgent handles the replayed
+    /// click up to about 450 ms late while it lays out the lift; a reapply
+    /// before that swallows it, so the reapply waits until the panel opens.
+    static let pressToReapplyCap: Duration = .milliseconds(900)
     /// After the layout no longer has a hidden app, the crossfade still runs.
     static let settledToUncover: Duration = .milliseconds(150)
     /// The longest wait for the layout; the cover comes off after it either way.
