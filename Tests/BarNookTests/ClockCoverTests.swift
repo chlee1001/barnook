@@ -3,10 +3,17 @@ import BarNookCore
 import Testing
 @testable import BarNook
 
-/// A synchronous call that blocks for a second and ignores cancellation,
-/// as a hung Accessibility read does.
-nonisolated func blockingRead() {
-    usleep(1_000_000)
+/// Waits on a call that blocks for a second and ignores cancellation, as a
+/// hung Accessibility read does. The call runs on its own thread: blocking
+/// a thread of Swift's cooperative pool would stall every other test on a
+/// machine with few cores.
+func blockingRead() async {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        Thread.detachNewThread {
+            usleep(1_000_000)
+            continuation.resume()
+        }
+    }
 }
 
 /// The strips over the host's three displays: a 1512x982 primary, a
@@ -78,7 +85,7 @@ nonisolated func blockingRead() {
     @Test func aStuckWaitIsCutOff() async {
         let start = ContinuousClock.now
         let finished = await ClockCover.bounded(.milliseconds(50)) {
-            await Task.detached { blockingRead() }.value
+            await blockingRead()
         }
         #expect(!finished)
         #expect(ContinuousClock.now - start < .milliseconds(500))
@@ -147,7 +154,8 @@ nonisolated func blockingRead() {
     @Test func aHangingReadStopsAtTheCap() async {
         let start = ContinuousClock.now
         let opened = await ClockCover.waitForPanel(floor: .milliseconds(1), cap: .milliseconds(40), poll: .milliseconds(1)) {
-            await Task.detached { blockingRead(); return true }.value
+            await blockingRead()
+            return true
         }
         #expect(!opened)
         #expect(ContinuousClock.now - start < .milliseconds(500))

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 struct ReleaseAppcastTests {
-    @Test func validatesThePublishedArchive() throws {
+    @Test func validatesThePublishedArchive() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -36,7 +36,10 @@ struct ReleaseAppcastTests {
             """
         }
 
-        func accepts(_ xml: String) throws -> Bool {
+        // Waits for the validator without blocking a thread of Swift's
+        // cooperative pool, which would stall the timing tests running
+        // alongside on a machine with few cores.
+        func accepts(_ xml: String) async throws -> Bool {
             try Data(xml.utf8).write(to: appcast)
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
@@ -44,22 +47,23 @@ struct ReleaseAppcastTests {
             process.arguments = ["swift", root.appendingPathComponent("scripts/verify-appcast.swift").path,
                                  appcast.path, zip.path, plist.path, version]
             process.standardError = Pipe()
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
+            return try await withCheckedThrowingContinuation { continuation in
+                process.terminationHandler = { continuation.resume(returning: $0.terminationStatus == 0) }
+                do { try process.run() } catch { continuation.resume(throwing: error) }
+            }
         }
 
-        #expect(try accepts(feed()))
-        #expect(try !accepts(feed(build: "122")))
-        #expect(try !accepts(feed(length: archive.count + 1)))
-        #expect(try !accepts(feed(url: "https://example.com/BarNook-0.1.0.zip")))
-        #expect(try !accepts(feed(enclosureVersion: "sparkle:version=\"999\"")))
+        #expect(try await accepts(feed()))
+        #expect(try await !accepts(feed(build: "122")))
+        #expect(try await !accepts(feed(length: archive.count + 1)))
+        #expect(try await !accepts(feed(url: "https://example.com/BarNook-0.1.0.zip")))
+        #expect(try await !accepts(feed(enclosureVersion: "sparkle:version=\"999\"")))
         let alias = "xmlns:alt=\"http://www.andymatuschak.org/xml-namespaces/sparkle\""
-        #expect(try !accepts(feed(namespace: alias, enclosureVersion: "alt:version=\"0\"")))
-        #expect(try !accepts(feed(namespace: alias, extraVersion: "<alt:version>0</alt:version>")))
-        #expect(try !accepts(feed(extraItem: "<item/>")))
+        #expect(try await !accepts(feed(namespace: alias, enclosureVersion: "alt:version=\"0\"")))
+        #expect(try await !accepts(feed(namespace: alias, extraVersion: "<alt:version>0</alt:version>")))
+        #expect(try await !accepts(feed(extraItem: "<item/>")))
 
         try Data("signed archivE".utf8).write(to: zip)
-        #expect(try !accepts(feed()))
+        #expect(try await !accepts(feed()))
     }
 }
