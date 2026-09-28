@@ -44,6 +44,30 @@ import Testing
             == .activate(reason: .agentRestarted, added: ["c"], removed: ["a"]))
     }
 
+    @Test func noPreviousListIsTheRunningAppsMinusHidden() {
+        #expect(AssertionPolicy.allowList(running: ["a", "b", "h"], hidden: ["h"], previous: nil) == ["a", "b"])
+    }
+
+    @Test func aQuitAppStaysOnTheList() {
+        #expect(AssertionPolicy.allowList(running: ["b"], hidden: [], previous: ["a", "b"]) == ["a", "b"])
+    }
+
+    @Test func aNewlyHiddenAppLeavesTheList() {
+        #expect(AssertionPolicy.allowList(running: ["a", "b"], hidden: ["a"], previous: ["a", "b"]) == ["b"])
+    }
+
+    @Test func aNewLaunchJoins() {
+        #expect(AssertionPolicy.allowList(running: ["a", "c"], hidden: [], previous: ["a"]) == ["a", "c"])
+    }
+
+    @Test func nothingRunningIsEmpty() {
+        #expect(AssertionPolicy.allowList(running: [], hidden: [], previous: nil) == [])
+    }
+
+    @Test func theListIsSortedAndUnique() {
+        #expect(AssertionPolicy.allowList(running: ["c", "a", "c"], hidden: [], previous: ["b", "a"]) == ["a", "b", "c"])
+    }
+
     @Test func retriesBackOffThenStop() {
         #expect(AssertionPolicy.retryDelay(attempt: 1) == .milliseconds(250))
         #expect(AssertionPolicy.retryDelay(attempt: 2) == .seconds(1))

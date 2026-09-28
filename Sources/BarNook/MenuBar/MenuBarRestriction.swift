@@ -1,6 +1,6 @@
 // Modified by Chaehyeon Lee (2026): added allow-list reachability checks for pins,
-// skipped assertions MenuBarAgent already holds, and kept the previous assertion
-// until a replacement takes effect.
+// skipped assertions MenuBarAgent already holds, kept the previous assertion
+// until a replacement takes effect, and kept quit apps on the allow-list.
 import AppKit
 import os
 
@@ -109,7 +109,10 @@ final class MenuBarRestriction {
         let running = NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)
         let agentPID = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.MenuBarAgent")
             .first?.processIdentifier
-        let wanted = AssertionPolicy.Applied(allowList: Set(running).subtracting(hidden).sorted(), agentPID: agentPID)
+        let wanted = AssertionPolicy.Applied(
+            allowList: AssertionPolicy.allowList(running: running, hidden: hidden, previous: applied?.allowList),
+            agentPID: agentPID
+        )
         switch AssertionPolicy.decide(wanted, previous: applied) {
         case .skip:
             Self.log.debug("skip: unchanged")

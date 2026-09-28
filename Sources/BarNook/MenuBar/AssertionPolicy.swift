@@ -33,6 +33,15 @@ enum AssertionPolicy {
         return .activate(reason: reason, added: added, removed: removed)
     }
 
+    /// The allow-list for `running` apps minus `hidden`, keeping the apps the
+    /// previous list allowed. A background agent that quits and comes back
+    /// then changes nothing, where a strict snapshot asked MenuBarAgent for a
+    /// new assertion, and a new layout, twice. Allowing an app that is not
+    /// running draws nothing. `release` forgets the list.
+    static func allowList(running: some Sequence<String>, hidden: Set<String>, previous: [String]?) -> [String] {
+        Set(running).union(previous ?? []).subtracting(hidden).sorted()
+    }
+
     /// The wait before the given retry of a failed activation; nil once
     /// three retries have failed.
     static func retryDelay(attempt: Int) -> Duration? {
