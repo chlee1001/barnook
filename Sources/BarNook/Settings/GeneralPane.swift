@@ -2,9 +2,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Every pane has one width, so switching panes changes only the height.
-let settingsPaneWidth: CGFloat = 500
-
 /// The app itself: who it is, whether it can work, how it starts and
 /// updates, and its settings file.
 struct GeneralPane: View {
@@ -58,7 +55,6 @@ struct GeneralPane: View {
                 SettingsFileSection()
             }
             .formStyle(.grouped)
-            .scrollDisabled(true)
             HStack {
                 Spacer()
                 Button("Quit BarNook") { NSApp.terminate(nil) }
@@ -68,7 +64,16 @@ struct GeneralPane: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 14)
         }
-        .frame(width: settingsPaneWidth, height: 600 + CGFloat(status.missing.count) * 90)
+        .paneHeight(idealHeight(missing: status.missing.count))
+    }
+
+    /// Tall enough for every row without scrolling; above the screen's cap
+    /// the form scrolls.
+    private func idealHeight(missing: Int) -> CGFloat {
+        var height: CGFloat = 600 + CGFloat(missing) * 120
+        if loginItem.needsApproval { height += 40 }
+        if loginItem.error != nil { height += 30 }
+        return height
     }
 }
 
@@ -244,44 +249,4 @@ struct SettingsFileSection: View {
         alert.informativeText = error.localizedDescription
         alert.runModal()
     }
-}
-
-/// The trailing zone of the menu bar around the clock. In menu-bar mode
-/// hidden items show while the pointer is in it, so that a clock click opens
-/// Notification Center; in bar mode it only pre-filters clock clicks for the
-/// covered lift. Measured from the clock item, or from one click on the clock.
-struct ClockZoneRow: View {
-    @Environment(AppState.self) private var state
-    @Environment(ClockZone.self) private var clockZone
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            LabeledContent("Clock zone") {
-                if clockZone.isWaitingForClick {
-                    Text("Click the left edge of the clock")
-                        .foregroundStyle(.secondary)
-                    Button("Cancel", action: clockZone.cancelClick)
-                } else {
-                    Text(clockZone.isMeasured ? "\(width) points, measured" : "\(width) points")
-                        .foregroundStyle(.secondary)
-                    if !clockZone.isMeasured {
-                        Button("Click the Clock…", action: clockZone.waitForClick)
-                    }
-                    if !clockZone.isMeasured, state.clockZoneWidth != ClockZone.defaultWidth {
-                        Button("Reset", action: clockZone.reset)
-                    }
-                }
-            }
-            Text(state.hiddenItemsPlacement == .floatingBar
-                ? "In bar mode a click on the clock opens Notification Center under a picture of the menu bar, so hidden items stay covered."
-                : clockZone.isMeasured
-                    ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
-                    : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var width: Int { Int(state.clockZoneWidth) }
 }

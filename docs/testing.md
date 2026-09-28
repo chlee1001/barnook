@@ -13,7 +13,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | O1 | `tccutil reset` both permissions. Launch; allow Accessibility; request Screen Recording; "Relaunch BarNook". | 0 then 1 of 2; step 1 green; step 2 orange with "Relaunch BarNook" inside it; the line beside Continue changes each step. No onboarding after the relaunch. | |
 | O2 | Expand "What does BarNook capture?"; Tab to Continue. | The text says the picture stays in memory and is discarded when the cover comes off; Continue stays disabled with the reason until both are allowed. | |
 | 2 | Put an app in the hidden set. Click the icon. Click again. | Items hide, show (`‹`), hide (nook). | vm |
-| 2a | Settings › Menu Bar › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each palette shows every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | Pass |
+| 2a | Settings › Menu Bar › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each palette shows every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | |
 | 3 | Show the set. Quit. Relaunch. | Set is still shown. Sets are unchanged. | vm |
 | 3a | Hide A. Quit the visible app B, relaunch B. | B reappears and stays. The `restriction` log shows `skip: unchanged` and no `activate` naming B. | vm; host pass with Clipy (4101e9a) |
 | 3b | Hide A. Quit A, relaunch A. | A stays hidden. The `restriction` log shows `skip: unchanged` and no new `reason=fresh`. | vm |
@@ -21,7 +21,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 4a | Right-click, "Show always-hidden items". | Both sets show. Menu item gets a checkmark. | |
 | 4b | Settings › Apps: turn off "Always-hidden apps". | Always-hidden apps appear at once. | vm |
 | 5 | Show the set. Wait for the timeout (default 15 s). | Set hides. | vm |
-| 5a | Settings › Menu Bar: set the timeout to 3 s while the set is shown. | Set hides 3 s later. | Pass |
+| 5a | Settings › Menu Bar: set the timeout to 3 s while the set is shown. | Set hides 3 s later. | |
 | 5b | Settings › Menu Bar: turn "After a timeout" off. Show the set. Wait. | Set stays. | vm |
 | 6 | Show the set. Click the desktop. | Set hides. | vm |
 | 6a | Show the set. Click another item in the menu bar. | Set stays. | vm |
@@ -53,7 +53,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | W2 | Dark mode: every pane and the onboarding. | Every control, badge and glyph is readable. | |
 | W3 | Keyboard only through every control; in each text field use Cmd-X/C/V/A. | Tab reaches every control; the four shortcuts work in every text field. | |
 | W4 | VoiceOver over every pane and the onboarding. | Pane buttons and every control are read by name. | |
-| W5 | Built-in 13-inch display at the default scale: open each pane. | The window stays on screen; a long pane scrolls inside. | |
+| W5 | Built-in 13-inch display at the default scale: open each pane, expand Menu Bar › Advanced, turn a permission off to show the General banner; drag the window to the bottom of the screen and switch to a taller pane. | The window stays inside the visible screen; a pane taller than the screen scrolls inside and every row can be reached. | |
 | G1 | Open General. Turn "Check for updates automatically" on, quit, relaunch; click "Check Now…". | Header with the icon, the version from Info.plist and "Permissions OK"; Launch at login; both permissions "Allowed"; Updates; Settings file; Quit at the bottom right; no scrolling. The switch stays on (`SUEnableAutomaticChecks` 1). Sparkle's check window opens; the button is disabled meanwhile. | |
 | G2 | Window open: turn Screen Recording off in System Settings, come back; turn Accessibility off; turn both on (Screen Recording: relaunch). | Accessibility: a banner and "missing" in the header within about 1 s; its button opens the list. Screen Recording: either (a) the banner on return or (b) nothing until a relaunch, then the onboarding; record which. On again: the banners go. | |
 | G3 | Quit. `defaults delete com.chlee1001.BarNookDev <key>` for the 12 settings keys. Launch the new build. Import a file exported by an earlier build. Before reopening Settings, `defaults read` the 12 keys. | All 12 equal the file; each shows in its new place; no alert. `clockZoneWidth` may be measured again when Settings opens with Accessibility. | |
@@ -66,7 +66,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | M6 | Turn "On a click outside the menu bar" off, show the set, click the desktop. | The set stays until the timeout. | |
 | A1 | Set one app Shown, Hidden, Always hidden, then Shown. | After each step the app is in exactly one set or none; the counts follow. | |
 | A2 | Turn "Always-hidden apps" off, then on. | Off: the always-hidden apps show, rows read "Always hidden · paused", the third segment is disabled. On: they hide again and the list is kept. | |
-| A3 | Without Accessibility, open Apps. | "By position" cannot be chosen; the footer says position mode needs Accessibility. The rows stay editable. | |
+| A3 | Without Accessibility, open Apps (once with "By position" chosen before, once without). | "By position" cannot be chosen; the footer says position mode needs Accessibility, and that it resumes once allowed when it was chosen. The rows stay editable. | |
 | A4 | "By position": turn Always hidden on for an app left of the icon, then off. | On: a purple Always hidden capsule. Off: Shown until the next show or Cmd-drag, then Hidden by position. The list is never greyed out. | |
 | A5 | Type part of an app name in the search field, then clear it. | Only matching apps show; the counts stay; no match shows "No apps with a menu bar item match." | |
 | A6 | Quit a listed app. | "Not running"; it leaves the list once set to Shown. | |
@@ -87,6 +87,6 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | F6a | Same, with a front app whose menus leave room for one item only. | A second pin that does not fit hides every other app; both pins are drawn. After the set hides, the front app's item returns. | vm |
 | F6b | Three pins, with a menu bar item that animates (a timer, a meter). Leave the pointer alone. | The pins stay. No rehide condition and no fit-check escalation takes them away. | Pass |
 | F6c | Pin an app that runs from outside `/Applications` (Synology Drive). | The bar marks it and says why. The other items stay: no escalation for an item macOS will not draw. | Pass |
-| F7 | On the notch MacBook, first launch. | "Show hidden items" defaults to the bar. Settings › Menu Bar switches it. | Pass |
+| F7 | On the notch MacBook, first launch. | "Show hidden items" defaults to the bar. Settings › Menu Bar switches it. | |
 | 10 | Release build: `spctl --assess`, `stapler validate`. | Both pass. | Phase 5 |
 | 11 | Clean checkout: `swift build`, every script. | No Xcode project needed. | Phase 5 |

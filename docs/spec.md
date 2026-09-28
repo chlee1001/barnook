@@ -99,7 +99,7 @@ An AppKit window with toolbar panes that host SwiftUI views:
 - Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused.
 - Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
 - Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
-- Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
+- Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing. A switch must be a property-list Boolean (`<true/>`/`<false/>`) and a number must not be one; export writes them that way.
 
 Open the window from a right-click menu on the BarNook icon. The same menu has "Show always-hidden items", "Settings…", and "Quit".
 

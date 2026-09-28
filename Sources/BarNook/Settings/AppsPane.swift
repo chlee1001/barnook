@@ -66,14 +66,16 @@ struct AppsPane: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: settingsPaneWidth, height: 620)
+        .paneHeight(620)
     }
 
     private var isDividerActive: Bool { state.hidesAppsLeftOfIcon && permission.isTrusted }
 
     private var modeFooter: String {
         if !permission.isTrusted {
-            return "Position mode needs \(Permissions.Kind.accessibility.title). It resumes once it is allowed."
+            return state.hidesAppsLeftOfIcon
+                ? "Position mode needs \(Permissions.Kind.accessibility.title). It resumes once it is allowed."
+                : "Position mode needs \(Permissions.Kind.accessibility.title)."
         }
         return isDividerActive
             ? "Apps left of the BarNook icon are hidden. Cmd-drag an item across the icon to change it. Always hidden is set here."

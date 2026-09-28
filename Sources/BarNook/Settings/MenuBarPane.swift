@@ -47,15 +47,13 @@ struct MenuBarPane: View {
             }
         }
         .formStyle(.grouped)
-        .scrollDisabled(true)
-        .frame(width: settingsPaneWidth, height: showsAdvanced ? 830 : 720)
+        .paneHeight(showsAdvanced ? 780 : 720)
     }
 }
 
 /// Two cards that show what each placement does, selected like radio buttons.
 private struct PlacementCards: View {
     @Binding var selection: AppState.HiddenItemsPlacement
-    private let recommended = AppState.recommendedPlacement(hasNotch: NSScreen.anyHasNotch)
 
     var body: some View {
         HStack(spacing: 12) {
@@ -79,7 +77,7 @@ private struct PlacementCards: View {
                         .font(.callout.weight(.medium))
                         .lineLimit(2)
                 }
-                if placement == recommended, NSScreen.anyHasNotch {
+                if placement == .floatingBar, NSScreen.anyHasNotch {
                     Text("Recommended")
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 6)
@@ -240,4 +238,44 @@ private struct TimeoutRow: View {
             set: { seconds = RehidePolicy.clampedTimeout($0) }
         )
     }
+}
+
+/// The trailing zone of the menu bar around the clock. In menu-bar mode
+/// hidden items show while the pointer is in it, so that a clock click opens
+/// Notification Center; in bar mode it only pre-filters clock clicks for the
+/// covered lift. Measured from the clock item, or from one click on the clock.
+struct ClockZoneRow: View {
+    @Environment(AppState.self) private var state
+    @Environment(ClockZone.self) private var clockZone
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            LabeledContent("Clock zone") {
+                if clockZone.isWaitingForClick {
+                    Text("Click the left edge of the clock")
+                        .foregroundStyle(.secondary)
+                    Button("Cancel", action: clockZone.cancelClick)
+                } else {
+                    Text(clockZone.isMeasured ? "\(width) points, measured" : "\(width) points")
+                        .foregroundStyle(.secondary)
+                    if !clockZone.isMeasured {
+                        Button("Click the Clock…", action: clockZone.waitForClick)
+                    }
+                    if !clockZone.isMeasured, state.clockZoneWidth != ClockZone.defaultWidth {
+                        Button("Reset", action: clockZone.reset)
+                    }
+                }
+            }
+            Text(state.hiddenItemsPlacement == .floatingBar
+                ? "In bar mode a click on the clock opens Notification Center under a picture of the menu bar, so hidden items stay covered."
+                : clockZone.isMeasured
+                    ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
+                    : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var width: Int { Int(state.clockZoneWidth) }
 }

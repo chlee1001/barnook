@@ -1,7 +1,7 @@
 import AppKit
 import Observation
 
-/// The apps a picker can list: every running app with a regular or accessory
+/// The apps the Apps list can show: every running app with a regular or accessory
 /// activation policy. With the Accessibility permission, only the apps that
 /// have a menu bar item. An app in a set stays listed after it quits, so the
 /// user can still uncheck it.
@@ -39,7 +39,7 @@ final class RunningApps {
         observePermission()
     }
 
-    /// Entries for a picker: the running apps plus the apps in `selected` that
+    /// Entries for the Apps list: the running apps plus the apps in `selected` that
     /// are not running, sorted by name.
     func entries(including selected: Set<String>) -> [Entry] {
         let runningIDs = Set(running.map(\.id))

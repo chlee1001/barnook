@@ -180,10 +180,22 @@ struct SettingsFileTests {
     }
 
     /// `registerDefaults` writes the process-wide registration domain, which
-    /// every suite store reads, so it is not called here.
+    /// every suite store reads, so the test checks the values it registers.
     @Test @MainActor func placementDefaultFollowsTheNotch() {
         #expect(AppState.recommendedPlacement(hasNotch: true) == .floatingBar)
         #expect(AppState.recommendedPlacement(hasNotch: false) == .menuBar)
+        let key = AppState.Key.hiddenItemsPlacement
+        #expect(AppState.registeredDefaults(hasNotch: true)[key] as? String == "floatingBar")
+        #expect(AppState.registeredDefaults(hasNotch: false)[key] as? String == "menuBar")
+        #expect(AppState.registeredDefaults(hasNotch: true).count == AppState.defaults.count)
+    }
+
+    /// A value the user picked lives in the app's domain, above the
+    /// registration domain, so the notch default never replaces it.
+    @Test @MainActor func aChosenPlacementBeatsTheRegisteredDefault() {
+        let store = makeStore()
+        store.set("menuBar", forKey: AppState.Key.hiddenItemsPlacement)
+        #expect(AppState(store: store).hiddenItemsPlacement == .menuBar)
     }
 
     @Test func outOfRangeErrorNamesTheRange() {
