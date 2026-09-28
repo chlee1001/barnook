@@ -286,7 +286,7 @@ This packet goes into a new ralplan run for consensus review. The current run ha
 
 ### The twitch and the slowness (2026-09-28, maintainer report)
 
-- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. `screencapture -v` recordings traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. The recordings are variable-frame-rate. They were requested at 120 fps, but reached an average of about 28–43 fps. A 10 ms window-list watcher confirmed the cover frames scaling. `56cb91e` makes the covers appear and go at once. Recordings on all three displays then showed no icon shift. The `56cb91e` commit message calls these "120 Hz recordings"; that overstates the achieved rate. A refresh-rate recording has not been run.
+- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. `screencapture -v` recordings traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. `screencapture -v` has no frame-rate setting and records a variable frame rate. The 60/120/240 in ffprobe's `r_frame_rate` is only the stream's timebase. The twitch and post-fix recordings averaged about 19–30 fps, and QA recordings on this host ranged from about 17 to 43 fps. A 10 ms window-list watcher confirmed the cover frames scaling. `56cb91e` makes the covers appear and go at once. Recordings on all three displays then showed no icon shift. The `56cb91e` commit message calls these "120 Hz recordings", which overstates the achieved rate. A refresh-rate recording has not been run.
 - **Missed opens.** The same traces showed MenuBarAgent handling the replayed click up to 450 ms late. A reapply before then swallowed it, most often after an Escape close, where 1 of 9 opened. The reapply now waits for the panel, capped at 900 ms, and 8 of 8 opened.
 - **Slowness.** Click to panel took 577–620 ms, against about 170 ms natively. Most of it was MenuBarAgent laying out the lift before handling the replay.
   - `d34e088` captures and reads in parallel, keeps the display list, and replays 10 ms after the lift. That brought click to panel to 409–500 ms.
@@ -305,7 +305,7 @@ This packet goes into a new ralplan run for consensus review. The current run ha
 
 Two commit messages on `fix/menu-bar-stability` are left as they are and corrected here. The branch history is not rewritten: the review snapshots are pinned to these commits.
 
-- **`56cb91e`.** The message says "120 Hz recordings". The recordings were `screencapture -v` captures, variable-frame-rate with an average of about 28–43 fps. They were not refresh-rate recordings. See "The twitch and the slowness" above.
+- **`56cb91e`.** The message says "120 Hz recordings". The recordings were `screencapture -v` captures: variable frame rate, averaging about 19–30 fps. 120 was only the stream timebase. They were not refresh-rate recordings. See "The twitch and the slowness" above.
 - **`e4b4172`.** The message has no `Not-tested:` line. It documents `23c83f0`, whose message lists what was not tested: the hide timing after the pointer leaves, and VM rows F2a, F2b and F4a.
 
 Before a pull request, these two messages can be amended instead, if the maintainer asks.
