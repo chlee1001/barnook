@@ -30,6 +30,14 @@ struct MenuBarLayoutTests {
         ])
     }
 
+    /// `v` collapsed behind the `«` button.
+    private var collapsedV: [MenuBarLayout.Item] {
+        [
+            MenuBarLayout.Item(bundleIdentifier: "v", frame: CGRect(x: 626.5, y: 0, width: 70, height: 30)),
+            MenuBarLayout.Item(systemIdentifier: MenuBarLayout.overflowIdentifier, frame: CGRect(x: 679.5, y: 1, width: 17.5, height: 27)),
+        ]
+    }
+
     @Test func aPointOnTheClockHitsIt() {
         #expect(twoBars.clock(at: CGPoint(x: 1400, y: 16)) != nil)
     }
@@ -61,10 +69,7 @@ struct MenuBarLayoutTests {
     /// A collapsed item is still in the layout: the restriction has not landed.
     @Test func containsItemCountsACollapsedItem() {
         let collapsed = MenuBarLayout(displays: [
-            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 1024, height: 30), items: [
-                MenuBarLayout.Item(bundleIdentifier: "v", frame: CGRect(x: 626.5, y: 0, width: 70, height: 30)),
-                MenuBarLayout.Item(systemIdentifier: MenuBarLayout.overflowIdentifier, frame: CGRect(x: 679.5, y: 1, width: 17.5, height: 27)),
-            ]),
+            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 1024, height: 30), items: collapsedV),
         ])
         #expect(collapsed.drawnItem(of: "v") == nil)
         #expect(collapsed.containsItem(ofAny: ["v"]))
@@ -83,9 +88,7 @@ struct MenuBarLayoutTests {
     /// `«` button, drawn to its right, tells.
     @Test func anItemLeftOfTheOverflowButtonIsNotDrawn() {
         let layout = MenuBarLayout(displays: [
-            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 1024, height: 30), items: [
-                MenuBarLayout.Item(bundleIdentifier: "v", frame: CGRect(x: 626.5, y: 0, width: 70, height: 30)),
-                MenuBarLayout.Item(systemIdentifier: MenuBarLayout.overflowIdentifier, frame: CGRect(x: 679.5, y: 1, width: 17.5, height: 27)),
+            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 1024, height: 30), items: collapsedV + [
                 MenuBarLayout.Item(bundleIdentifier: "icon", frame: CGRect(x: 704.5, y: 0, width: 28, height: 30)),
                 MenuBarLayout.Item(bundleIdentifier: "a", frame: CGRect(x: 732.5, y: 0, width: 70, height: 30)),
             ]),

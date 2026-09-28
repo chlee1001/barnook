@@ -149,8 +149,8 @@ private struct GeneralSettings: View {
                 Toggle("When the front app or Space changes", isOn: $state.rehideOnFocusChange)
             }
             Section {
-                ForEach([Permissions.Kind.accessibility, .screenRecording], id: \.self) { kind in
-                    LabeledContent(kind == .accessibility ? "Accessibility" : "Screen Recording") {
+                ForEach(Permissions.Kind.allCases, id: \.self) { kind in
+                    LabeledContent(kind.title) {
                         if permission.isGranted(kind) {
                             Text("Granted")
                                 .foregroundStyle(.secondary)
@@ -162,7 +162,7 @@ private struct GeneralSettings: View {
             } header: {
                 Text("Permissions")
             } footer: {
-                Text("Both are required. Accessibility reads the menu bar and clicks the clock in bar mode; Screen Recording covers the menu bar while the clock opens Notification Center.")
+                Text("Both are required. Accessibility reads the menu bar and clicks the clock in bar mode; Screen Recording takes the picture that covers the menu bar while the clock opens Notification Center.")
             }
             ClockZoneSection()
             SettingsFileSection()
@@ -277,7 +277,7 @@ private struct ClockZoneSection: View {
             }
         } footer: {
             Text(state.hiddenItemsPlacement == .floatingBar
-                ? "In bar mode a click on the clock opens Notification Center while the menu bar is covered, so hidden items never show."
+                ? "In bar mode a click on the clock opens Notification Center under a picture of the menu bar, so hidden items stay covered."
                 : clockZone.isMeasured
                     ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
                     : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")

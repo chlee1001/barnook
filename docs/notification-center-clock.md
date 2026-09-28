@@ -1,17 +1,17 @@
-# Phase 9 record: the clock in bar mode
+# The clock in bar mode: opening Notification Center without showing hidden items
 
-Status: **decided and shipped (2026-09-28).** The maintainer chose A1: in bar mode, a clock click always uses the cover-lift. Accessibility and Screen Recording are required, and a first-launch onboarding window keeps Settings closed until both are granted.
+Status: **decided and implemented on `fix/menu-bar-stability` (2026-09-28).** The maintainer chose the cover-lift: in bar mode, a clock click always uses the cover-lift. Accessibility and Screen Recording are required, and a first-launch onboarding window keeps Settings closed until both are granted.
 
-What shipped:
+What landed:
 
 - `901704f` the covered lift;
 - `40da177` covering every menu bar;
 - `5f42bef` the onboarding.
 
-The D0, R0, S1 and S2 sections below are the historical spike record.
+The sections from "Question" through "Proposed revision after the spike" are the historical record; `docs/spec.md` describes the current behavior.
 
-- **Detector.** `901704f` replaced the window-list Notification Center detector with the Accessibility one described under "N3(c) follow-up". It removed `probe nc-windows` and made `probe nc-state` read Accessibility. Where this record mentions `nc-windows`, or `nc-state` reporting a banner as open, it describes the old detector. `f591637` also counts the widget editor button as the open panel, because a panel with every notification cleared has no list. The button was seen live only in a panel that listed notifications; the no-notification case passes a unit test on a constructed tree, and a live panel with zero notifications has not been observed.
-- **Not measured.** The revised latency gate (median ≤ 600 ms, p90 ≤ 1 s on the product path) and a recording at the display's refresh rate have not been run. Both remain Not-tested.
+- **Detector.** `901704f` replaced the window-list Notification Center detector with the Accessibility one described under "Follow-up: other triggers and the cover-lift". It removed `probe nc-windows` and made `probe nc-state` read Accessibility. Where this record mentions `nc-windows`, or `nc-state` reporting a banner as open, it describes the old detector. `f591637` also counts the widget editor button as the open panel, because a panel with every notification cleared has no list. The button was seen live only in a panel that listed notifications; the no-notification case passes a unit test on a constructed tree, and a live panel with zero notifications has not been observed.
+- **Not measured.** The revised latency gate (median ≤ 600 ms, p90 ≤ 1 s on the product path) and a recording at the display's refresh rate have not been run.
 
 ## Question
 
@@ -28,16 +28,16 @@ So NC has to open through something that works while the restriction stays activ
 
 - **Host:**
   - The planned main-plus-LG stacked arrangement was not available for this run: `probe screens` reported one 1512×982 display. The running app was `/Applications/BarNook.app`, not a freshly installed `BarNookDev.app`; `hiddenItemsPlacement` was `floatingBar`.
-  - The restarted Chostty had Accessibility (`AXIsProcessTrusted=true`, the clock's `AXPress` action was visible) and Screen Recording (`CGPreflightScreenCaptureAccess=true`).
+  - The restarted Ghostty had Accessibility (`AXIsProcessTrusted=true`, the clock's `AXPress` action was visible) and Screen Recording (`CGPreflightScreenCaptureAccess=true`).
   - For the MenuBarAgent log: `sudo log config --subsystem com.apple.menubar --mode persist:debug` before the run, and `--reset` after it.
-- **Guest:** the Tart VM from Phase 7, with the fixtures hidden. `sshd` already holds Accessibility.
+- **Guest:** the Tart VM set up for the VM tests (`docs/phase7.md`), with the fixtures hidden. `sshd` already holds Accessibility.
 - **Probe:** `.build/debug/Probe`, or `probe` in the guest.
   - Points are Accessibility coordinates.
   - Take the clock's point from `probe layout` (the `com.apple.menuextra.clock` item's frame).
 
 ## Steps
 
-### D0: the detector
+### Detector check
 
 1. Run `probe nc-windows` in each of four states:
    - NC closed.
@@ -50,7 +50,7 @@ So NC has to open through something that works while the restriction stays activ
 
 If the panel cannot be told apart from those confounders, stop.
 
-### R0: the baseline
+### Baseline: a clock click while restricted
 
 With the restriction active, and at every grid point below:
 
@@ -73,18 +73,18 @@ Also record whether a native clock click closes an NC that is already open. That
 
 Run 10 tries per point, starting once from NC closed and once from NC open.
 
-The grid measures only how `MenuBarAgent` and NC answer at controlled timings. It does not validate the app's own path (global monitor, main-actor hop, AX read, press). VM rows B8/B8x/B8t and host row B8p cover that path.
+The grid measures only how `MenuBarAgent` and NC answer at controlled timings. It does not validate the app's own path (global monitor, main-actor hop, AX read, press). Host rows B8, B8h and B8p in `docs/testing.md` cover that path.
 
-### S1: AX press on the clock
+### Trigger: an Accessibility press on the clock
 
 - Run `probe press-system com.apple.menuextra.clock` ×10 with no click. Record `pressed`.
 - Run the grid with `--trigger press`.
 
-### S2: a trigger outside the menu bar
+### Trigger: a key or script outside the menu bar
 
-- **S2.1:** `--trigger key:45+fn` (globe+N).
-- **S2.3:** `--trigger script`. System Events sends the same key; note any Automation prompt.
-- **S2.4:** a documented URL, if one exists.
+- **Globe+N:** `--trigger key:45+fn` (globe+N).
+- **System Events script:** `--trigger script`. System Events sends the same key; note any Automation prompt.
+- **Documented URL:** a documented URL, if one exists.
 
 For each candidate, record the permission it needs: none, Accessibility, or Automation.
 
@@ -98,51 +98,51 @@ All five must hold at one grid point:
 4. The median `ncOpenedAtMs` is at most 400.
 5. On the host, both clocks pass.
 
-S3 (release, press, reapply) is never a winner. Sampling cannot prove that the hidden items were never drawn. It may run once as a local diagnostic, never committed, to measure the flash window for the packet below.
+Releasing the restriction, pressing and reapplying is never a winner. Sampling cannot prove that the hidden items were never drawn. It may run once as a local diagnostic, never committed, to measure the flash window.
 
 ## Result
 
-Host D0 run on 2026-09-28, one 1512×982 display. A clock click with no banner toggled the window predicate 10/10 times (closed → open → closed, repeated). The open state exposed a `com.apple.notificationcenterui` window at layer 21 with full-display frame (0,0,1512,982). Desktop widgets from the same process were layer −2147483601 and 180×180. `NotificationCenterPanel` now matches the process bundle ID, layer 21 and a full-display frame instead of the original guessed English owner, popup-menu layer and side-panel frame.
+Host detector check on 2026-09-28, one 1512×982 display. A clock click with no banner toggled the window predicate 10/10 times (closed → open → closed, repeated). The open state exposed a `com.apple.notificationcenterui` window at layer 21 with full-display frame (0,0,1512,982). Desktop widgets from the same process were layer −2147483601 and 180×180. `NotificationCenterPanel` now matches the process bundle ID, layer 21 and a full-display frame instead of the original guessed English owner, popup-menu layer and side-panel frame.
 
-**D0 fails the banner confounder.** With `nc-state` first reporting closed, `osascript -e 'display notification "Detector check" with title "BarNook"'` produced the *same* layer-21 full-display backing window and `nc-state` immediately reported open. The window subsequently disappeared without a clock click. This false positive was reproduced. The current window-list fields (process owner, layer and frame) cannot distinguish that banner state from the panel; the detector is unsafe for a click policy. The eight pure geometry cases pass but do not cover this observed ambiguity. No unobserved distinction is assumed.
+**The detector check fails on a banner.** With `nc-state` first reporting closed, `osascript -e 'display notification "Detector check" with title "BarNook"'` produced the *same* layer-21 full-display backing window and `nc-state` immediately reported open. The window subsequently disappeared without a clock click. This false positive was reproduced. The current window-list fields (process owner, layer and frame) cannot distinguish that banner state from the panel; the detector is unsafe for a click policy. The eight pure geometry cases pass but do not cover this observed ambiguity. No unobserved distinction is assumed.
 
 Raw `probe nc-windows` JSON from the host (Cocoa coordinates; the probe reports the bundle ID as `owner`, not the localized process name):
 
 | State | `nc-state` | `nc-windows` |
 |---|---|---|
 | Closed, desktop widgets visible | `{"open":false}` | `[{"frame":[[188,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"},{"frame":[[8,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"}]` |
-| Clock-open (recorded during initial D0 toggles) | `{"open":true}` | `[{"frame":[[0,0],[1512,982]],"layer":21,"owner":"com.apple.notificationcenterui"},{"frame":[[188,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"},{"frame":[[8,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"}]` |
+| Clock-open (recorded during the first detector toggles) | `{"open":true}` | `[{"frame":[[0,0],[1512,982]],"layer":21,"owner":"com.apple.notificationcenterui"},{"frame":[[188,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"},{"frame":[[8,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"}]` |
 | Banner, after `nc-state` was false | `{"open":true}` (**false positive**) | `[{"frame":[[0,0],[1512,982]],"layer":21,"owner":"com.apple.notificationcenterui"},{"frame":[[188,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"},{"frame":[[8,761],[180,180]],"layer":-2147483601,"owner":"com.apple.notificationcenterui"}]` |
 
-After the banner cleared, `nc-state` and `nc-windows` again reported the closed row. Subsequent synthetic clock clicks sometimes failed to reopen NC; the successful 10/10 D0 toggle sequence was earlier, before this banner run. This does not change the reproduced false positive. These three fields establish only an indistinguishable **signature**, not that the two states contain the identical window object.
+After the banner cleared, `nc-state` and `nc-windows` again reported the closed row. Subsequent synthetic clock clicks sometimes failed to reopen NC; the successful 10/10 detector toggle sequence was earlier, before this banner run. This does not change the reproduced false positive. These three fields establish only an indistinguishable **signature**, not that the two states contain the identical window object.
 
-An exploratory AX press away from the clock returned `pressed:false`; ten exploratory Fn+N key events while the pointer was away from the clock left `nc-state` false. These are **not** S1/S2 grid results, and they cannot establish a winner or a comprehensive negative verdict. No MenuBarAgent assertion log, hidden-item watch, two-display run, VM run, or timed grid was performed. The running app's existing clock hover lift also makes a plain native clock click unsuitable as R0 evidence.
+An exploratory AX press away from the clock returned `pressed:false`; ten exploratory Fn+N key events while the pointer was away from the clock left `nc-state` false. These are **not** results of the trigger grid, and they cannot establish a winner or a comprehensive negative verdict. No MenuBarAgent assertion log, hidden-item watch, two-display run, VM run, or timed grid was performed. The running app's existing clock hover lift also makes a plain native clock click unsuitable as R0 evidence.
 
 | Step | Outcome |
 |---|---|
-| D0 | **Failed:** banner produces false positive with the same observed window signature. |
-| R0 | Not run: D0 gate failed. |
-| S1 | Not run: one exploratory AX press returned false. |
-| S2.1 | Not run: ten exploratory Fn+N events away from clock did not change `nc-state`. |
-| S2.3 | Not run. |
-| S2.4 | Not run; no documented trigger established. |
+| Detector check | **Failed:** banner produces false positive with the same observed window signature. |
+| Baseline | Not run: the detector check failed. |
+| Accessibility press on the clock | Not run: one exploratory AX press returned false. |
+| Globe+N | Not run: ten exploratory Fn+N events away from clock did not change `nc-state`. |
+| System Events script | Not run. |
+| Documented URL | Not run; no documented trigger established. |
 
-**Winner:** none established; D0 gate failed.  
-**Grid point:** none measured.  
-**Without Accessibility:** not measured.
+- **Winner:** none established; the detector check failed.
+- **Grid point:** none measured.
+- **Without Accessibility:** not measured.
 
 ## If nothing wins
 
 The work stops after this record. Nothing else lands and no pull request opens. These are the choices for the user:
 
-- **N1:** keep bar mode strict: hidden items never appear, but the clock does not open NC. A BarNook right-click item or shortcut could open NC only if an independently verified trigger works while restricted. No such route has been established; the exploratory synthetic Fn+N negative had no unrestricted control, so it is not a trigger verdict. Otherwise that menu action would have to lift the restriction while NC is open, showing hidden items as a **user-approved exception** to the strict rule. This exception would also need a reliable NC-close signal: today's detector mistakes banners for an open panel and could leave the restriction lifted while a banner is visible.
-- **N2:** allow the clock-zone lift in bar mode as before. Hidden items become visible; the user previously rejected this.
-- **N3:** use menu-bar placement when the clock must open NC; approve S3 only after reviewing a display-refresh-rate recording and the MenuBarAgent log; or propose a different design, such as investigating richer window fields and testing Fn+N against an unrestricted control. Any NC-state-gated reapplication inherits the banner false positive until the detector is redesigned. N2 and menu-bar placement do not rely on this detector.
+- **Keep bar mode strict:** hidden items never appear, but the clock does not open NC. A BarNook right-click item or shortcut could open NC only if an independently verified trigger works while restricted. No such route has been established; the exploratory synthetic Fn+N negative had no unrestricted control, so it is not a trigger verdict. Otherwise that menu action would have to lift the restriction while NC is open, showing hidden items as a **user-approved exception** to the strict rule. This exception would also need a reliable NC-close signal: today's detector mistakes banners for an open panel and could leave the restriction lifted while a banner is visible.
+- **Lift in the clock zone as before:** Hidden items become visible; the user previously rejected this.
+- **Investigate further:** use menu-bar placement when the clock must open NC; approve a release-press-reapply trigger only after reviewing a display-refresh-rate recording and the MenuBarAgent log; or propose a different design, such as investigating richer window fields and testing Fn+N against an unrestricted control. Any NC-state-gated reapplication inherits the banner false positive until the detector is redesigned. N2 and menu-bar placement do not rely on this detector.
 
-There is no verified basis yet to recommend N1's menu item as a strict no-flash route. The user's choice requires a ralplan revision before more implementation.
+There is no verified basis yet to recommend the strict option's menu item as a strict no-flash route.
 
 
-## N3(c) follow-up (2026-09-28)
+## Follow-up: other triggers and the cover-lift (2026-09-28)
 
 ### No trigger works under an assertion
 
@@ -172,7 +172,7 @@ This needs Accessibility.
 
 ### A stale assertion
 
-At 11:09:38, two overlapping activations left one assertion behind. From then on, hover lifts showed nothing and the clock stayed inert until BarNook relaunched. The MenuBarAgent activate/invalidate balance shows it. Commit `616addb` fixes this (the plan's commits 1 and 1b).
+At 11:09:38, two overlapping activations left one assertion behind. From then on, hover lifts showed nothing and the clock stayed inert until BarNook relaunched. The MenuBarAgent activate/invalidate balance shows it. Commit `616addb` fixes this.
 
 ### Cover-lift spike
 
@@ -215,16 +215,16 @@ The displays were the built-in 1512×982 and two externals, 1920×1200 and 2560�
 - **Not measured.** A real mouse click, a banner arriving during the cover, and fullscreen spaces.
 
 
-## Proposed revision after the spike (approved as A1 with required permissions; B(a)/(b) replaced by the onboarding)
+## Proposed revision after the spike (approved: the cover-lift with both permissions required and a first-launch onboarding)
 
-The approved plan has two rules for bar mode: the restriction is never lifted on a hover or click, and the hidden items are never drawn. The cover-lift breaks both on purpose. The restriction is lifted for about 0.4–0.9 s, and MenuBarAgent draws the hidden items under the cover. The spike shows only that no hidden item appeared in the frames it sampled, about 20 per second. The user asked for items to be "never shown, even briefly". The cover meets that only on screen, as far as sampling can tell, and only when BarNook has Screen Recording.
+Bar mode had two rules before this revision: the restriction is never lifted on a hover or click, and the hidden items are never drawn. The cover-lift breaks both on purpose. The restriction is lifted for about 0.4–0.9 s, and MenuBarAgent draws the hidden items under the cover. The spike shows only that no hidden item appeared in the frames it sampled, about 20 per second. The user asked for items to be "never shown, even briefly". The cover meets that only on screen, as far as sampling can tell, and only when BarNook has Screen Recording.
 
 ### What to approve
 
 **A. The contract for bar mode.**
 
 1. **Cover-lift (recommended).** A click on the clock opens NC. No hidden item is visible on screen, within the sampling limit above. What is gained and what it costs:
-   - NC appears about 0.46 s after the click, median; the native click takes about 0.18 s. This is above the plan's 400 ms gate, so the gate becomes "median ≤ 600 ms and p90 ≤ 1 s, measured on the product path."
+   - NC appears about 0.46 s after the click, median; the native click takes about 0.18 s. This is above the 400 ms of winner criterion 4, so the gate becomes "median ≤ 600 ms and p90 ≤ 1 s, measured on the product path."
    - The status strip is frozen for about 1.3 s after the click.
    - Two permissions are needed: Screen Recording (new) and Accessibility.
 2. **Strict.** In bar mode the clock does nothing. The Settings footer points to the trackpad edge swipe and to menu-bar placement.
@@ -240,9 +240,9 @@ Recommended: (b), since it is the only new permission and turning it on is the u
 ### Revised commits
 
 - **Commits 1 and 1b.** Landed as `616addb`.
-- **Commit 2** (monotonic allow-list). Unchanged and still gated by its four conditions. On this host the running-app churn comes from background agents, such as `AXVisualSupportAgent` flapping. So commit 2 is the likely fix for the repeated reassertions, if the gate holds.
-- **Commit 3** (menu-bar-mode hover hold and watch). Unchanged. It does not depend on the cover.
-- **Commit 4, rewritten** as `fix(floating-bar): open Notification Center from the clock behind a cover`:
+- **Allow-list that only grows.** Landed as `4101e9a`: an app that quits stays on the allow-list, so a background agent that restarts (`AXVisualSupportAgent`, `screencaptureui`) no longer asks MenuBarAgent for a new assertion.
+- **Hover hold in menu-bar mode.** Landed as `c3064d0`. It does not depend on the cover.
+- **Clock click in bar mode, rewritten** as `fix(floating-bar): open Notification Center from the clock behind a cover`. Landed as `901704f`:
   - Remove the bar-mode hover lift, as before.
   - A global `leftMouseDown` monitor, filtered to the clock (`clockZone` plus the AX clock frame), starts one `ClockCover` action at a time, with a 300 ms debounce. The action:
     1. captures the status strip with ScreenCaptureKit;
@@ -252,12 +252,11 @@ Recommended: (b), since it is the only new permission and turning it on is the u
     5. waits 150 ms and calls `applyCurrentState()`;
     6. waits for a layout with no hidden owner, capped at 3 s, then 150 ms;
     7. removes the cover.
-  - A click that lands while NC is already open is not intercepted. Escape and the dismissing click close NC with no lift. The AX detector reports NC's state: it looks for `AXNotificationListItems` or, since `f591637`, the widget editor button (`widget-editor-button`). A panel with no notifications should then read open too. That case passes a unit test on a constructed tree, but has not been observed live. It does not use the window list.
-  - Pure policy in `ClockCoverPolicy`: the timings, when to intercept, and debounce. The whole commit touches only `MenuBarManager`, a new `ClockCover` class and Settings.
-- **Commit 5** (rehide waits while the pointer is on the bar; `IconClickPolicy`). Unchanged.
-- **Commit 6** (reopen the bar at relaunch). Unchanged.
+  - A click that lands while NC is already open is not intercepted. Escape and the dismissing click close NC with no lift. The AX detector reads NC's state from the accessibility tree, not the window list: it looks for `AXNotificationListItems` or, since `f591637`, the widget editor button (`widget-editor-button`). A panel with no notifications should then read open too; that case passes a unit test on a constructed tree but has not been observed live.
+  - Pure policy in `ClockCoverPolicy`: the timings, when to intercept, and debounce.
+- **Commits 5 and 6** (rehide waits while the pointer is on the bar; `IconClickPolicy`; reopen the bar at relaunch). Landed together as `23c83f0`.
 
-### Verification of the revised commit 4
+### Verification of the covered clock click
 
 - Unit tests for `ClockCoverPolicy`.
 - Host rows. Run each on the 1512, 1920 and 2560 displays, 10 times each, with the product installed:
@@ -267,30 +266,27 @@ Recommended: (b), since it is the only new permission and turning it on is the u
   - a fullscreen space;
   - NC's latency against the new gate.
 - A 120 Hz screen recording of at least 3 clicks, reviewed frame by frame.
-- VM rows B8 and B8c, adapted, if Tart is available.
+- Row B8 in the VM, adapted, if Tart is available.
 - In the VM, Screen Recording has to be granted to BarNookDev.
-
-This packet goes into a new ralplan run for consensus review. The current run has used all 5 of its iterations.
-
 
 ### Product path on the host (BarNookDev, commits `901704f` and `40da177`)
 
-- **Setup.** Both permissions were granted and bar mode was on, with the user's 14 hidden apps. A separate process sampled the status strip of every menu bar, about 13 frames per second per display. It counted icon edges that were not there at rest, within 700 points left of the resting items.
+- **Setup.** Both permissions were granted and bar mode was on, with 14 hidden apps. A separate process sampled the status strip of every menu bar, about 13 frames per second per display. It counted icon edges that were not there at rest, within 700 points left of the resting items.
 - **Control.** In menu-bar mode, a hover lift over the clock drew hidden items in 13–15 of 33 frames on each display.
 - **Covered lift, 9 clicks spread over the 1512, 1920 and 2560 displays.** On the two externals, no frame out of 533 showed a new icon. On the built-in display the metric counted the front app's menus and RunCat's running animation. The frames were stacked and checked by eye: the status strip stays at its resting items (a second run of 5 clicks with Finder in front showed the same).
 - **Notification Center.** It opened 8/9 in the three-display run and 5/5 in the Finder run. It closed every time.
-- **The one open that failed.** A click came about 1.5 s after the previous lift and was ignored. The layout was probably still settling.
+- **The one open that failed.** A click came about 1.5 s after the previous lift and was ignored. The cause was not established.
 - **The first fix.** The first product build skipped displays whose menu bar hides itself: `visibleFrame` reports no menu bar there. `40da177` takes the strips from the Accessibility layout instead.
 - **Not tested.** Real mouse clicks, fullscreen spaces, a banner during the cover, and a screen recording at display refresh rate.
 
 
 ### The twitch and the slowness (2026-09-28, maintainer report)
 
-- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. `screencapture -v` recordings traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. `screencapture -v` has no frame-rate setting and records a variable frame rate. The 60/120/240 in ffprobe's `r_frame_rate` is only the stream's timebase. The twitch and post-fix recordings averaged about 19–30 fps, and QA recordings on this host ranged from about 17 to 43 fps. A 10 ms window-list watcher confirmed the cover frames scaling. `56cb91e` makes the covers appear and go at once. Recordings on all three displays then showed no icon shift. The `56cb91e` commit message calls these "120 Hz recordings", which overstates the achieved rate. A refresh-rate recording has not been run.
+- **Twitch.** The maintainer's screen recording showed the status icons jumping about 15 points left and sliding back. `screencapture -v` recordings traced it to the cover windows' default window animation: the windows zoomed in from a smaller frame and faded out while shrinking, so the picture itself scaled. `screencapture -v` has no frame-rate setting and records a variable frame rate. The 60/120/240 in ffprobe's `r_frame_rate` is only the stream's timebase. The twitch and post-fix recordings averaged about 19–30 fps, and QA recordings on this host ranged from about 17 to 43 fps. A 10 ms window-list watcher confirmed the cover frames scaling. `56cb91e` makes the covers appear and go at once. Recordings on all three displays then showed no icon shift. A refresh-rate recording has not been run.
 - **Missed opens.** The same traces showed MenuBarAgent handling the replayed click up to 450 ms late. A reapply before then swallowed it, most often after an Escape close, where 1 of 9 opened. The reapply now waits for the panel, capped at 900 ms, and 8 of 8 opened.
 - **Slowness.** Click to panel took 577–620 ms, against about 170 ms natively. Most of it was MenuBarAgent laying out the lift before handling the replay.
   - `d34e088` captures and reads in parallel, keeps the display list, and replays 10 ms after the lift. That brought click to panel to 409–500 ms.
-  - It also covers and lifts once the pointer has rested 60 ms on the clock, and the maintainer reported it smoother. The gain depends on how busy MenuBarAgent still is with the lift, and the host measurements vary. After a rest of about 1 s, mouse-down to panel ranged from 22 to about 400 ms. After a 300 ms rest or none, it was about 330–500 ms. MenuBarAgent's own click log leaves out its input queue, so figures measured from it (27–36 ms at 95b2433) are lower. The cause of the spread is not established.
+  - It also covers and lifts once the pointer has rested 60 ms on the clock, and the maintainer reported it smoother. The gain depends on how busy MenuBarAgent still is with the lift, and the host measurements vary. `docs/testing.md` row B8p records mouse-down to panel for each rest length. MenuBarAgent's own click log leaves out its input queue, so figures measured from it (27–36 ms at 95b2433) are lower. The cause of the spread is not established.
 - **Closing.** A clock click that closes the panel closes it natively. Replaying that click, or reading the panel after it, reopened the panel, so BarNook now remembers that a lift opened it and never lifts for, or replays, a click while the panel is believed open.
 - **Trade-off.** While the pointer rests on the clock, every menu bar left of the clock is a still picture.
 - **Not tested.**
@@ -303,9 +299,7 @@ This packet goes into a new ralplan run for consensus review. The current run ha
 
 ### Commit-message corrections (2026-09-28)
 
-Two commit messages on `fix/menu-bar-stability` are left as they are and corrected here. The branch history is not rewritten: the review snapshots are pinned to these commits.
+Two commit messages on `fix/menu-bar-stability` are corrected here.
 
 - **`56cb91e`.** The message says "120 Hz recordings". The recordings were `screencapture -v` captures: variable frame rate, averaging about 19–30 fps. 120 was only the stream timebase. They were not refresh-rate recordings. See "The twitch and the slowness" above.
 - **`e4b4172`.** The message has no `Not-tested:` line. It documents `23c83f0`, whose message lists what was not tested: the hide timing after the pointer leaves, and VM rows F2a, F2b and F4a.
-
-Before a pull request, these two messages can be amended instead, if the maintainer asks.

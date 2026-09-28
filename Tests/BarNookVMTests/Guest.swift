@@ -193,12 +193,12 @@ struct Guest: Sendable {
         try run("sudo log config --subsystem com.chlee1001.BarNook --mode 'level:debug,persist:debug'")
     }
 
-    /// The guest's clock, for `restrictionLog(since:)`. The next second
-    /// starts before it returns, so no earlier line reads as later.
+    /// The guest's clock, for `restrictionLog(since:)`, read a second after
+    /// the call: `log show --start` includes the whole marker second, so
+    /// every line logged before the call is earlier than the marker.
     func logMarker() throws -> String {
-        let marker = try run("date '+%Y-%m-%d %H:%M:%S'")
         Thread.sleep(forTimeInterval: 1)
-        return marker
+        return try run("date '+%Y-%m-%d %H:%M:%S'")
     }
 
     /// BarNook's restriction log lines since `marker`.

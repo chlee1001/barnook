@@ -20,7 +20,6 @@ import Foundation
 //   probe click-press X Y --trigger none|press|key:CODE[+fn]|script --at down|up --delay MS
 //                                      one click with a trigger at mouse-down or mouse-up, then
 //                                      Notification Center polled every 20 ms for 1500 ms
-//   probe double-click X Y --gap MS
 //   probe watch-hidden ID,ID,... --for MS   layout reads until MS elapse; which IDs were ever drawn
 
 struct ProbeError: Error, CustomStringConvertible {
@@ -190,7 +189,6 @@ func fire(_ trigger: String) throws {
 }
 
 struct ClickPress: Codable {
-    var tDown: Double
     var tTrigger: Double?
     var tUp: Double
     var ncOpenedAtMs: Double?
@@ -244,7 +242,7 @@ func clickPress(at p: CGPoint, trigger: String, atDown: Bool, delay: Double) thr
         usleep(20_000)
     }
     return ClickPress(
-        tDown: 0, tTrigger: trigger == "none" ? nil : tTrigger, tUp: tUp,
+        tTrigger: trigger == "none" ? nil : tTrigger, tUp: tUp,
         ncOpenedAtMs: opened, openAtStart: openAtStart, openAtEnd: state, transitions: transitions
     )
 }
@@ -259,8 +257,8 @@ let arguments = CommandLine.arguments.dropFirst()
 let options = Set(arguments.filter { $0.hasPrefix("--") })
 /// Values that follow an option, as in `--delay 20`, are not positional.
 let optionValues: Set<Int> = Set(arguments.indices.filter { index in
-    index > arguments.startIndex && arguments[index - 1].hasPrefix("--")
-        && ["--display", "--trigger", "--at", "--delay", "--gap", "--for"].contains(arguments[index - 1])
+    index > arguments.startIndex
+        && ["--display", "--trigger", "--at", "--delay", "--for"].contains(arguments[index - 1])
 })
 let positional = arguments.indices.filter { !arguments[$0].hasPrefix("--") && !optionValues.contains($0) }.map { arguments[$0] }
 let button: CGMouseButton = options.contains("--right") ? .right : .left
@@ -320,16 +318,6 @@ do {
             atDown: at == "down",
             delay: value(of: "--delay", in: arguments).flatMap { Double($0) } ?? 0
         ))
-    case "double-click":
-        let p = try point(positional.dropFirst())
-        let gap = value(of: "--gap", in: arguments).flatMap { Double($0) } ?? 100
-        try post(.mouseMoved, at: p)
-        for index in 0..<2 {
-            try postNow(.leftMouseDown, at: p)
-            usleep(60_000)
-            try postNow(.leftMouseUp, at: p)
-            if index == 0 { usleep(useconds_t(max(0, gap - 60) * 1000)) }
-        }
     case "watch-hidden":
         guard let list = positional.dropFirst().first else { throw ProbeError(description: "expected ID,ID,...") }
         let ids = Set(list.split(separator: ",").map(String.init))
@@ -345,7 +333,7 @@ do {
         }
         try emit(Watched(reads: reads, drawn: drawn.sorted()))
     default:
-        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]|nc-state|press-system ID [--display N]|key CODE [--fn]|click-press X Y --trigger T --at down|up --delay MS|double-click X Y --gap MS|watch-hidden IDS --for MS")
+        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]|nc-state|press-system ID [--display N]|key CODE [--fn] [--command] [--option] [--control]|click-press X Y --trigger T --at down|up --delay MS|watch-hidden IDS --for MS")
     }
 } catch {
     fail("\(error)")

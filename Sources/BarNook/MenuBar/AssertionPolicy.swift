@@ -19,9 +19,9 @@ enum AssertionPolicy {
         }
     }
 
-    /// Skips an assertion MenuBarAgent already holds. A new one for the
-    /// same allow-list changes nothing on the bar and makes MenuBarAgent lay
-    /// out again, which it does on every running-apps change.
+    /// Skips an assertion MenuBarAgent already holds. A new one for the same
+    /// allow-list changes nothing on the bar but makes MenuBarAgent lay out
+    /// again, and BarNook re-applies on every running-apps change.
     static func decide(_ wanted: Applied, previous: Applied?) -> Decision {
         guard let previous else {
             return .activate(reason: .fresh, added: wanted.allowList, removed: [])
@@ -34,10 +34,9 @@ enum AssertionPolicy {
     }
 
     /// The allow-list for `running` apps minus `hidden`, keeping the apps the
-    /// previous list allowed. A background agent that quits and comes back
-    /// then changes nothing, where a strict snapshot asked MenuBarAgent for a
-    /// new assertion, and a new layout, twice. Allowing an app that is not
-    /// running draws nothing. `release` forgets the list.
+    /// previous list allowed, so a background agent that quits and comes back
+    /// needs no new assertion and no new layout. Allowing an app that is not
+    /// running draws nothing. `MenuBarRestriction.release()` clears the list.
     static func allowList(running: some Sequence<String>, hidden: Set<String>, previous: [String]?) -> [String] {
         Set(running).union(previous ?? []).subtracting(hidden).sorted()
     }
@@ -57,9 +56,9 @@ enum AssertionPolicy {
 /// The assertions `MenuBarRestriction` holds, oldest first. An assertion is
 /// dropped only once a newer one has taken effect, so the bar is never left
 /// without one mid-replacement; a failed activation leaves the previous
-/// assertion live. `release` empties the ledger, and any activation still in
-/// flight then reports for a token the ledger no longer knows: the caller
-/// invalidates that one too, or it would outlive the release.
+/// assertion live. `releaseAll()` empties the ledger, and any activation
+/// still in flight then reports for a token the ledger no longer knows: the
+/// caller invalidates that one too, or it would outlive the release.
 struct AssertionLedger<Token: Hashable> {
     private struct Entry {
         var token: Token

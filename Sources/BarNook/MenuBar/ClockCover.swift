@@ -10,7 +10,7 @@ import ScreenCaptureKit
 /// covered with a picture of itself, the restriction lifts, the click is
 /// replayed, the restriction returns, and the covers come off once the
 /// layout no longer has a hidden app. Needs Screen Recording for the
-/// pictures and Accessibility for the layout. See `docs/phase9.md`.
+/// pictures and Accessibility for the layout. See `docs/notification-center-clock.md`.
 @MainActor
 final class ClockCover {
     struct Strip {
@@ -153,9 +153,8 @@ final class ClockCover {
         return opened
     }
 
-    /// Waits for the panel after a replayed click: MenuBarAgent handles it up
-    /// to about 450 ms late while it lays out the lift, and a reapply before
-    /// then swallows it.
+    /// Waits for the panel after a replayed click, between `floor` and `cap`
+    /// (`ClockCoverPolicy.pressToReapplyCap` says why).
     static func waitForPanel(
         floor: Duration = ClockCoverPolicy.pressToReapply,
         cap: Duration = ClockCoverPolicy.pressToReapplyCap,
@@ -275,12 +274,8 @@ final class ClockCover {
         }
     }
 
-    /// Takes the covers down at once, when a lift does not happen.
-    func hideNow() {
-        hide()
-    }
-
-    private func hide() {
+    /// Takes the covers down at once.
+    func hide() {
         windows.forEach { $0.orderOut(nil) }
         windows.removeAll()
     }
@@ -323,14 +318,21 @@ final class ClockCover {
         }
     }
 
+    /// Converts a Cocoa point to the Accessibility and Quartz event coordinate space.
+    static func topLeft(_ point: CGPoint) -> CGPoint {
+        CGPoint(x: point.x, y: (NSScreen.screens.first?.frame.maxY ?? 0) - point.y)
+    }
+
     /// Posts a click at `point`, tagged so BarNook's own monitor skips it.
-    /// Cocoa coordinates in, CG (top-left) out.
     static func replayClick(at point: CGPoint) async {
-        let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
-        let location = CGPoint(x: point.x, y: primaryHeight - point.y)
+        let location = topLeft(point)
         for type in [CGEventType.leftMouseDown, .leftMouseUp] {
+            // Each event is created when it is posted, so the mouse-up carries its own timestamp.
             guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: location, mouseButton: .left)
-            else { continue }
+            else {
+                Self.log.error("replay: no \(type == .leftMouseDown ? "mouse-down" : "mouse-up", privacy: .public) event")
+                return
+            }
             event.setIntegerValueField(.eventSourceUserData, value: ClockCoverPolicy.replayTag)
             event.post(tap: .cghidEventTap)
             if type == .leftMouseDown { try? await Task.sleep(for: ClockCoverPolicy.replayClickHold) }

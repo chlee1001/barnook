@@ -16,8 +16,9 @@ enum PermissionGate {
     static let skipAtLaunchKey = "skipsPermissionOnboarding"
 }
 
-/// The first window BarNook shows: both required permissions, their state,
-/// and a way to grant each. Continue opens Settings once both are granted.
+/// The window shown while a required permission is missing: both
+/// permissions, their state, and a way to grant each. Continue opens
+/// Settings once both are granted.
 @MainActor
 final class PermissionsOnboarding {
     private let window: NSWindow
@@ -72,13 +73,11 @@ private struct PermissionsOnboardingView: View {
                 .foregroundStyle(.secondary)
             row(
                 .accessibility,
-                title: "Accessibility",
                 detail: "Reads where the clock and the menu bar items are, and clicks the clock for you in bar mode."
             )
             row(
                 .screenRecording,
-                title: "Screen Recording",
-                detail: "Takes a picture of the menu bar that covers it while the clock opens Notification Center, so hidden items never show. The picture stays in memory and is thrown away at once."
+                detail: "Takes a picture of the menu bar and shows it over the bar while the clock opens Notification Center, so hidden items stay covered. The picture stays in memory and is discarded when the cover comes off."
             )
             if permissions.hasRequestedScreenRecording, !permissions.isScreenRecordingGranted {
                 HStack {
@@ -100,13 +99,13 @@ private struct PermissionsOnboardingView: View {
         .frame(width: 480)
     }
 
-    private func row(_ kind: Permissions.Kind, title: String, detail: String) -> some View {
+    private func row(_ kind: Permissions.Kind, detail: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: permissions.isGranted(kind) ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(permissions.isGranted(kind) ? .green : .secondary)
                 .font(.title3)
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
+                Text(kind.title).font(.headline)
                 Text(detail).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

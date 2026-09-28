@@ -9,13 +9,19 @@ import os
 /// The two permissions BarNook requires. Accessibility reads the menu bar
 /// layout and clicks the clock for the user in bar mode; Screen Recording
 /// captures the status-item strip that covers the menu bar while the clock
-/// opens Notification Center (see `docs/phase9.md`). Settings opens only once
-/// both are granted; until then `PermissionsOnboarding` shows instead.
+/// opens Notification Center (see `docs/notification-center-clock.md`).
 @MainActor
 @Observable
 final class Permissions {
     enum Kind: CaseIterable, Sendable {
         case accessibility, screenRecording
+
+        var title: String {
+            switch self {
+            case .accessibility: "Accessibility"
+            case .screenRecording: "Screen Recording"
+            }
+        }
 
         var settingsURL: URL {
             switch self {
@@ -67,7 +73,7 @@ final class Permissions {
     }
 
     /// Adds BarNook to the permission's list in System Settings with the
-    /// system prompt, then opens that list.
+    /// system prompt, then opens that list unless the permission is granted.
     func request(_ kind: Kind) {
         switch kind {
         case .accessibility:

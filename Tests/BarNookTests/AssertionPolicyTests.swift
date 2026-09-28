@@ -117,7 +117,7 @@ import Testing
         #expect(ledger.succeeded("C") == ["A"])
     }
 
-    /// The 11:09 orphan: two activations overlap and report out of order.
+    /// Two activations overlap and report out of order.
     @Test func aLateSuccessOfAnOlderRequestDropsNothingTwice() {
         var ledger = AssertionLedger<String>()
         ledger.requested("A", key: keyA)
@@ -136,6 +136,15 @@ import Testing
         #expect(outcome.wasNewest)
         #expect(outcome.newestKey == nil)
         #expect(ledger.isEmpty)
+    }
+
+    @Test func aFailureAfterReleaseIsNotRetried() {
+        var ledger = AssertionLedger<String>()
+        ledger.requested("A", key: keyA)
+        _ = ledger.releaseAll()
+        let outcome = ledger.failed("A")
+        #expect(!outcome.wasNewest)
+        #expect(outcome.newestKey == nil)
     }
 
     @Test func releaseReturnsEveryTokenIncludingThoseInFlight() {

@@ -2,8 +2,8 @@ import BarNookCore
 import Foundation
 import Testing
 
-/// Row 8: the pointer over the clock lifts the restriction, so a click on
-/// the clock opens Notification Center; the pointer leaving hides again.
+/// Rows 8, 8b and 8c: the pointer over the clock lifts the restriction, so a
+/// click on the clock opens Notification Center; the pointer leaving hides again.
 @Suite(.serialized, .enabled(if: Guest.isConfigured))
 struct ClockZoneTests {
     let guest = Guest()
@@ -22,9 +22,10 @@ struct ClockZoneTests {
         try guest.waitUntil("A hides again") { try !guest.appItems().contains(Fixture.a) }
     }
 
-    /// Row 8c: a rehide while the pointer rests on the clock waits until it
-    /// leaves, so the hidden items stay under the pointer.
-    @Test func aRehideWaitsWhileThePointerIsOnTheClock() throws {
+    /// Row 8c: a rehide while the pointer rests on the clock hides the set on
+    /// time, but the restriction waits until the pointer leaves, so the
+    /// hidden items stay under the pointer.
+    @Test func theClockHoverHoldsThroughARehide() throws {
         let clock = try guest.clockFrame()
         try guest.launchBarNook([
             "hiddenBundleIdentifiers": .strings([Fixture.a]),

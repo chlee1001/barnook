@@ -151,7 +151,7 @@ final class MenuBarRestriction {
             let outcome = ledger.failed(token)
             invalidate([token])
             guard outcome.wasNewest else {
-                Self.log.error("failed (superseded): \(failure, privacy: .public)")
+                Self.log.error("failed (superseded or released): \(failure, privacy: .public)")
                 return
             }
             applied = outcome.newestKey

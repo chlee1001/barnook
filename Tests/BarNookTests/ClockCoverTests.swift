@@ -9,7 +9,7 @@ nonisolated func blockingRead() {
     usleep(1_000_000)
 }
 
-/// The strips over the user's three displays: a 1512x982 primary, a
+/// The strips over the host's three displays: a 1512x982 primary, a
 /// 1920x1200 display right of and below it, and a 2560x1440 display right
 /// of and above it (Cocoa coordinates, as NSScreen reports them).
 @MainActor
@@ -103,7 +103,7 @@ nonisolated func blockingRead() {
         }
     }
 
-    @Test func aFailedReadIsNotSettled() async {
+    @Test func aFailedReadDoesNotEndTheWait() async {
         let reads = Reads([nil, nil, false])
         let result = await ClockCover.settle(cap: .seconds(1), poll: .milliseconds(1)) { reads.next() }
         #expect(result.settled)

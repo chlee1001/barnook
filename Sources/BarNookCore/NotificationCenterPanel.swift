@@ -3,11 +3,13 @@ import ApplicationServices
 
 /// Whether Notification Center's panel is open, read from its Accessibility
 /// tree. A banner and the panel share one full-display window at layer 21,
-/// so the window list cannot tell them apart (`docs/phase9.md`, D0). In the
-/// tree, a banner-only window holds `AXNotificationCenterBanner` groups. The
-/// open panel holds the `AXNotificationListItems` group when it lists
-/// notifications, and the widget editor button (`widget-editor-button`)
-/// either way, so a panel with no notifications still reads open. Needs the
+/// so the window list cannot tell them apart (`docs/notification-center-clock.md`,
+/// "The detector"). In the tree, a banner-only window holds
+/// `AXNotificationCenterBanner` groups. The open panel holds the
+/// `AXNotificationListItems` group when it lists notifications, and it also
+/// held the widget editor button (`widget-editor-button`) when observed live.
+/// A panel with every notification cleared is assumed to keep that button,
+/// so it reads open; that case has not been observed live. Needs the
 /// Accessibility permission.
 public enum NotificationCenterPanel {
     public static let bundleIdentifier = "com.apple.notificationcenterui"
@@ -38,8 +40,10 @@ public enum NotificationCenterPanel {
         return node.children.contains { contains(identifiers, in: $0, depth: depth + 1) }
     }
 
-    /// Reads Notification Center's windows over Accessibility, with a
-    /// one-second timeout. Off the main thread: every read is an IPC.
+    /// Reads Notification Center's windows over Accessibility. The one-second
+    /// timeout covers only the window-list read on the app element; the
+    /// window and child reads use the global Accessibility timeout. Off the
+    /// main thread: every read is an IPC.
     public nonisolated static func isOpenNow() -> Bool {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first
         else { return false }

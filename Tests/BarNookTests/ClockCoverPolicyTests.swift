@@ -40,7 +40,7 @@ import Testing
         #expect(ClockCoverPolicy.mayIntercept(with { $0.sinceLastLift = .milliseconds(300) }))
     }
 
-    @Test func onlyAClickOnTheClockWithTheListClosedLifts() {
+    @Test func onlyAClickOnTheClockWithThePanelClosedLifts() {
         #expect(ClockCoverPolicy.lifts(onClock: true, panelOpen: false))
         #expect(!ClockCoverPolicy.lifts(onClock: true, panelOpen: true))
         #expect(!ClockCoverPolicy.lifts(onClock: false, panelOpen: false))

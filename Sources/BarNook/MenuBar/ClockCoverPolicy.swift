@@ -1,10 +1,7 @@
 import Foundation
 
 /// When a mouse-down on the clock in bar mode starts a covered lift, and the
-/// timings of that lift. Measured on macOS 27.0 (`docs/phase9.md`, cover-lift
-/// spike): MenuBarAgent ignores clicks on its own items while an assertion is
-/// held, so the click is replayed after a short lift, with the menu bars
-/// covered by a picture of themselves until the restriction has landed again.
+/// timings of that lift (`ClockCover`; measurements in `docs/notification-center-clock.md`).
 enum ClockCoverPolicy {
     /// Tags the click BarNook replays, so its own monitor does not start
     /// another lift. The value is arbitrary.
@@ -14,8 +11,7 @@ enum ClockCoverPolicy {
     static let coverComposite: Duration = .milliseconds(30)
     /// Lift to replayed click. MenuBarAgent handles the replay late anyway
     /// (it lays out the lift first), and the reapply waits for the panel
-    /// (`pressToReapplyCap`), so an early replay is not lost: 5/5 opened at
-    /// 10 ms on the host, 409-500 ms click to panel.
+    /// (`pressToReapplyCap`), so an early replay is not lost.
     static let liftToPress: Duration = .milliseconds(10)
     /// Replayed click to reapply, at least. Notification Center stays open after the reapply.
     static let pressToReapply: Duration = .milliseconds(150)
@@ -89,7 +85,7 @@ enum ClockCoverPolicy {
         }
     }
 
-    /// Whether the pointer on the clock starts a pre-lift.
+    /// Whether the pointer in bar mode on the clock starts a pre-lift.
     static func startsPrelift(phase: Phase, onClock: Bool, inBar: Bool, restrictionActive: Bool, permissionsGranted: Bool) -> Bool {
         phase == .idle && onClock && inBar && restrictionActive && permissionsGranted
     }

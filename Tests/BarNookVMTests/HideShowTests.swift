@@ -2,15 +2,25 @@ import BarNookCore
 import Foundation
 import Testing
 
-/// Acceptance criteria 2, 3, 4, 4b, 9 and 9a: hide, show, the always-hidden
-/// set, and every item returning when BarNook stops. Numbers are the rows
-/// of docs/testing.md.
+/// Acceptance criteria 2, 3, 3a, 3b, 4, 4b, 9 and 9a: hide, show, an app
+/// that quits and comes back, the always-hidden set, and every item
+/// returning when BarNook stops. Numbers are the rows of docs/testing.md.
 @Suite(.serialized, .enabled(if: Guest.isConfigured))
 struct HideShowTests {
     let guest = Guest()
 
     init() throws {
         try guest.startFixtures()
+    }
+
+    /// Launches with A hidden and waits for the first assertion.
+    private func hideAWithAFreshAssertion() throws {
+        try guest.enableDebugLogs()
+        let start = try guest.logMarker()
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.probe("move 500 400")
+        try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
+        try guest.waitUntil("a fresh assertion") { try guest.restrictionLog(since: start).contains { $0.contains("reason=fresh") } }
     }
 
     @Test func hiddenSetHidesAtLaunch() throws {
@@ -22,12 +32,7 @@ struct HideShowTests {
     /// Row 3b: the allow-list does not change when a hidden app quits and
     /// comes back, so MenuBarAgent is not asked again.
     @Test func quittingAHiddenAppKeepsTheAssertion() throws {
-        try guest.enableDebugLogs()
-        let m0 = try guest.logMarker()
-        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
-        try guest.probe("move 500 400")
-        try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
-        try guest.waitUntil("a fresh assertion") { try guest.restrictionLog(since: m0).contains { $0.contains("reason=fresh") } }
+        try hideAWithAFreshAssertion()
 
         let m1 = try guest.logMarker()
         try guest.quit(Fixture.name(Fixture.a))
@@ -41,12 +46,7 @@ struct HideShowTests {
     /// Row 3a: a visible app that quits and comes back stays on the
     /// allow-list, so MenuBarAgent is not asked again and it reappears.
     @Test func quittingAVisibleAppKeepsItAllowed() throws {
-        try guest.enableDebugLogs()
-        let m0 = try guest.logMarker()
-        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
-        try guest.probe("move 500 400")
-        try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
-        try guest.waitUntil("a fresh assertion") { try guest.restrictionLog(since: m0).contains { $0.contains("reason=fresh") } }
+        try hideAWithAFreshAssertion()
 
         let m1 = try guest.logMarker()
         try guest.quit(Fixture.name(Fixture.b))

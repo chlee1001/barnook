@@ -115,9 +115,8 @@ final class RehideMonitor {
 
     /// Hides now, or once the open menu closes and the pointer leaves the
     /// floating bar. A hide while a menu from a shown item is open would pull
-    /// the item out from under the menu. A
-    /// pin is an item the user put in the menu bar to click, so no rehide
-    /// condition takes it away: the icon ends it.
+    /// the item out from under the menu. A pin is an item the user put in the
+    /// menu bar to click, so no rehide condition takes it away: the icon ends it.
     private func requestHide() {
         guard isArmed, !hasPins() else { return }
         retry?.cancel()

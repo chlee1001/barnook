@@ -29,7 +29,7 @@ This fork checks its own GitHub Releases for updates with [Sparkle](https://spar
 - The hidden sets hold whole apps, not single items. An app with two menu bar items hides both.
 - The bar below the menu bar shows app icons, not the items. An item that changes (a timer, a meter) shows only its app icon there. A click on an app in the bar pins its item in the menu bar for you to click, up to three at once; without the Accessibility permission the other items give way while a pin is up.
 - An app that runs from outside `/Applications` cannot be pinned into view. `MenuBarAgent` matches its allow-list against `/Applications` only, so macOS hides that item whenever BarNook hides anything. The bar marks such an app. Synology Drive, which runs from `~/Library/Application Support`, is one. Keep it out of the hidden set, or switch "Show hidden items" to "In the menu bar", which lifts the restriction while the set is shown.
-- With the Accessibility permission, the app pickers in Settings list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. If the permission is revoked later, the pickers list every running app. Both permissions are required. They are asked for at first launch, and Settings stays closed until they are granted.
+- With the Accessibility permission, the app pickers in Settings list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. If the permission is revoked later, the pickers list every running app.
 
 ## Alternatives
 

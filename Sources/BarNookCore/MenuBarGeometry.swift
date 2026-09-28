@@ -21,9 +21,8 @@ public struct MenuBarGeometry: Sendable {
     @MainActor
     public static var current: MenuBarGeometry { MenuBarGeometry(screens: NSScreen.screens) }
 
-    /// The top `height` points of every screen frame. A menu bar that hides
-    /// itself reports none in `visibleFrame`, and the one under the pointer
-    /// is revealed, so the clock pre-filter uses the screen's top band.
+    /// The top `height` points of every screen frame. Unlike `visibleFrame`,
+    /// it includes a menu bar that hides itself.
     public init(topBandsOf screenFrames: [NSRect], height: CGFloat) {
         frames = screenFrames.map { NSRect(x: $0.minX, y: $0.maxY - height, width: $0.width, height: height) }
     }

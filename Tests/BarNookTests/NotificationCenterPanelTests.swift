@@ -1,7 +1,9 @@
 import BarNookCore
 import Testing
 
-/// Trees shaped like the ones read on the host (docs/phase9.md).
+/// Trees shaped like the ones read on the host (docs/notification-center-clock.md), except the
+/// panel with no notifications, which is constructed: that state has not been
+/// observed live.
 @Suite struct NotificationCenterPanelTests {
     typealias Node = NotificationCenterPanel.Node
 
@@ -21,7 +23,7 @@ import Testing
         #expect(!NotificationCenterPanel.isOpen(windows: [widget]))
     }
 
-    /// D0: the banner's window has the panel's owner, layer and frame.
+    /// The banner's window has the panel's owner, layer and frame.
     @Test func aBannerAloneIsClosed() {
         #expect(!NotificationCenterPanel.isOpen(windows: [window([banner]), widget]))
     }
@@ -34,8 +36,8 @@ import Testing
         #expect(NotificationCenterPanel.isOpen(windows: [window([list, banner])]))
     }
 
-    /// A panel with every notification cleared has no list, only widgets
-    /// and the widget editor button.
+    /// A panel with every notification cleared is assumed to have no list,
+    /// only widgets and the widget editor button (not observed live).
     @Test func aPanelWithNoNotificationsIsOpen() {
         let editor = Node(identifier: "widget-editor-button")
         #expect(NotificationCenterPanel.isOpen(windows: [window([editor]), widget]))
