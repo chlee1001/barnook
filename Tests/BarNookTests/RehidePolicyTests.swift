@@ -9,6 +9,14 @@ struct RehidePolicyTests {
     // A menu hanging from a status item at x 700.
     private let statusMenu = NSRect(x: 700, y: 576, width: 200, height: 200)
 
+    @Test(arguments: [
+        (0.0, 1.0), (1, 1), (0.4, 1), (1.5, 2), (15, 15), (299.6, 300), (300, 300), (301, 300),
+        (-5, 1), (.nan, 1), (.infinity, 300), (-.infinity, 1),
+    ] as [(Double, Double)])
+    func timeoutIsClampedToWholeSecondsInRange(seconds: Double, expected: Double) {
+        #expect(RehidePolicy.clampedTimeout(seconds) == expected)
+    }
+
     @Test func clickOnDesktopHides() {
         #expect(RehidePolicy.shouldHide(afterClickAt: NSPoint(x: 500, y: 300), menuBar: menuBar, menus: []))
     }

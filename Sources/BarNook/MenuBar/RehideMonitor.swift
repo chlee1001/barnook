@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): keep pinned items visible during rehide checks.
+// Modified by Chaehyeon Lee (2026): keep pinned items visible during rehide checks; clamp the timeout.
 import AppKit
 import BarNookCore
 
@@ -52,7 +52,7 @@ final class RehideMonitor {
     private func install() {
         uninstall()
         if state.rehideOnTimeout {
-            let timeout = state.rehideTimeout
+            let timeout = RehidePolicy.clampedTimeout(state.rehideTimeout)
             timer = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(timeout))
                 guard !Task.isCancelled else { return }

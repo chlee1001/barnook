@@ -1,10 +1,20 @@
-// Modified by Chaehyeon Lee (2026): the rehide waits while the pointer rests on the floating bar.
+// Modified by Chaehyeon Lee (2026): the rehide waits while the pointer rests on the floating bar; the timeout stays within 1-300 seconds.
 import BarNookCore
 import Foundation
 
 /// Pure decisions for auto-rehide, kept apart from the monitors so tests
 /// can cover them.
 enum RehidePolicy {
+    /// Seconds the rehide timeout may take (spec F3).
+    static let timeoutRange: ClosedRange<Double> = 1...300
+
+    /// A whole number of seconds in `timeoutRange`, for a value that came
+    /// from outside Settings: a hand-edited default, or a typed number.
+    static func clampedTimeout(_ seconds: Double) -> Double {
+        guard !seconds.isNaN else { return timeoutRange.lowerBound }
+        return min(max(seconds.rounded(), timeoutRange.lowerBound), timeoutRange.upperBound)
+    }
+
     /// A menu that hangs from the menu bar has its top edge at, or a few
     /// points below, the bar's bottom edge. Pop-up buttons and context
     /// menus elsewhere on screen do not count.

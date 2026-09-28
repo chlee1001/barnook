@@ -99,7 +99,7 @@ An AppKit window with toolbar panes that host SwiftUI views:
 - "Hide apps left of the BarNook icon": a switch (F7). Off without the Accessibility permission.
 - Auto-rehide: three switches and the timeout value.
 - Clock zone: the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
-- Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type.
+- Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
 - Version number and a quit button.
 
 Open the window from a right-click menu on the BarNook icon. The same menu has "Show always-hidden items", "Settings…", and "Quit".
