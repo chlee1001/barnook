@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.mainMenu = Self.editMenu()
         let restriction: MenuBarRestriction
         do {
             restriction = try MenuBarRestriction()
@@ -70,6 +71,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         onboarding?.show()
+    }
+
+    /// An agent app shows no menu bar, but text fields find Cut, Copy, Paste
+    /// and Select All through the main menu's key equivalents. Without one
+    /// the Settings fields ignore Cmd-X/C/V/A.
+    private static func editMenu() -> NSMenu {
+        let edit = NSMenu(title: "Edit")
+        edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        // The first item is always the application menu; Edit follows it.
+        let main = NSMenu()
+        let app = NSMenuItem()
+        app.submenu = NSMenu()
+        main.addItem(app)
+        let item = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        item.submenu = edit
+        main.addItem(item)
+        return main
     }
 
     private static func quit(with error: Error) {
