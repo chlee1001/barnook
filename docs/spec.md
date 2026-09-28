@@ -93,12 +93,12 @@ BarNook does not rehide while a menu from a shown item is open, or while the poi
 An AppKit window with toolbar panes that host SwiftUI views:
 
 - Launch at login (`SMAppService`).
-- Menu bar icon: separate pickers for the hidden and shown states; changes take effect immediately and are included in settings export/import.
+- Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
 - Hidden set: a list of running apps with a checkbox per app. BarNook lists apps with a `.regular` or `.accessory` activation policy.
 - Always-hidden set: the same list, and a switch to enable the set.
 - "Hide apps left of the BarNook icon": a switch (F7). Off without the Accessibility permission.
-- Auto-rehide: three switches and the timeout value.
-- Clock zone: the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
+- Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
+- Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
 - Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
 - Version number and a quit button.
 
@@ -142,7 +142,7 @@ A notch splits the menu bar. `MenuBarAgent` never pushes an item off-screen: it 
 
 No image of an item is available. On macOS 27 the window server has no window per item, so the ScreenCaptureKit method of Ice (capture each item window) does not work. A capture of the menu bar region needs the Screen Recording permission, and it cannot capture an item that is not drawn. So the bar shows the app icon (`NSRunningApplication.icon`) of each hidden app. Hiding is per app, so one icon per app is the same granularity.
 
-- Settings › General has "Show hidden items": "In the menu bar" or "In a bar below the menu bar". Until the user picks one, the default is the bar when a screen has a notch at launch (`NSScreen.safeAreaInsets.top` is more than zero), and the menu bar otherwise.
+- Settings › Menu Bar has "Show hidden items": two cards, "In the menu bar" and "In a bar below the menu bar". The bar card is marked Recommended when a screen has a notch. Until the user picks one, the default is the bar when a screen has a notch at launch (`NSScreen.safeAreaInsets.top` is more than zero), and the menu bar otherwise. Recommended reads the screens when Settings opens, so after a notch display is connected or removed it can differ from the default chosen at launch.
 - In bar mode, a click on the icon shows the panel with one icon per app in the hidden set. An Option click adds the always-hidden set. The icon changes to the chevron as it does today.
 - The panel is a non-activating `NSPanel` at the status bar level, on every Space and next to full-screen apps. Its right edge is under the BarNook icon. Its top is at the bottom edge of the menu bar. The frontmost app keeps the focus.
 - Each icon has a tooltip with the app name. A hover highlights it.

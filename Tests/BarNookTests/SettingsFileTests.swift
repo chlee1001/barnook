@@ -179,6 +179,20 @@ struct SettingsFileTests {
         #expect(target.object(forKey: AppState.Key.rehideOnTimeout) == nil)
     }
 
+    @Test @MainActor func placementDefaultFollowsTheNotch() {
+        #expect(AppState.recommendedPlacement(hasNotch: true) == .floatingBar)
+        #expect(AppState.recommendedPlacement(hasNotch: false) == .menuBar)
+
+        let notch = makeStore()
+        AppState.registerDefaults(in: notch, hasNotch: true)
+        #expect(AppState(store: notch).hiddenItemsPlacement == .floatingBar)
+
+        let chosen = makeStore()
+        chosen.set(AppState.HiddenItemsPlacement.menuBar.rawValue, forKey: AppState.Key.hiddenItemsPlacement)
+        AppState.registerDefaults(in: chosen, hasNotch: true)
+        #expect(AppState(store: chosen).hiddenItemsPlacement == .menuBar)
+    }
+
     @Test func outOfRangeErrorNamesTheRange() {
         let error = SettingsFile.ImportError.outOfRange(key: "rehideTimeout", range: 1...300)
         #expect(error.errorDescription == "The value of “rehideTimeout” is outside 1-300.")

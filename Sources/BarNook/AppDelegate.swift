@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding.
+// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding; one notch check.
 import AppKit
 
 @MainActor
@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var divider: IconDivider?
 
     override init() {
-        AppState.registerDefaults(hasNotch: NSScreen.screens.contains { $0.safeAreaInsets.top > 0 })
+        AppState.registerDefaults(hasNotch: NSScreen.anyHasNotch)
         sets = HiddenSets()
         state = AppState()
         super.init()
@@ -82,4 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
         NSApp.terminate(nil)
     }
+}
+
+extension NSScreen {
+    /// A screen with a camera housing reports a top safe-area inset.
+    static var anyHasNotch: Bool { screens.contains { $0.safeAreaInsets.top > 0 } }
 }

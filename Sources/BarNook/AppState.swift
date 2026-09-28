@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): persisted menu bar icon choices.
+// Modified by Chaehyeon Lee (2026): persisted menu bar icon choices; the recommended placement for a display.
 import Foundation
 import Observation
 
@@ -46,10 +46,14 @@ final class AppState {
     /// written, so a user who never chose follows the display at each launch.
     static func registerDefaults(in store: UserDefaults = .standard, hasNotch: Bool = false) {
         var defaults = defaults
-        if hasNotch {
-            defaults[Key.hiddenItemsPlacement] = HiddenItemsPlacement.floatingBar.rawValue
-        }
+        defaults[Key.hiddenItemsPlacement] = recommendedPlacement(hasNotch: hasNotch).rawValue
         store.register(defaults: defaults)
+    }
+
+    /// A notch collapses shown items that do not fit, so the bar suits it;
+    /// without one the items can return to the menu bar.
+    static func recommendedPlacement(hasNotch: Bool) -> HiddenItemsPlacement {
+        hasNotch ? .floatingBar : .menuBar
     }
 
     private let store: UserDefaults

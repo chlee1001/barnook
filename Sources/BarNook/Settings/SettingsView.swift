@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window.
+// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window; menu bar options moved to their own pane.
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -93,13 +93,11 @@ struct AlwaysHiddenPane: View {
 }
 
 struct GeneralSettings: View {
-    @Environment(AppState.self) private var state
     @Environment(LaunchAtLogin.self) private var loginItem
     @Environment(Permissions.self) private var permission
     @Environment(Updater.self) private var updater
 
     var body: some View {
-        @Bindable var state = state
         @Bindable var updater = updater
         Form {
             Section {
@@ -119,35 +117,6 @@ struct GeneralSettings: View {
                 }
             }
             Section {
-                Picker("Show hidden items", selection: $state.hiddenItemsPlacement) {
-                    Text("In the menu bar").tag(AppState.HiddenItemsPlacement.menuBar)
-                    Text("In a bar below the menu bar").tag(AppState.HiddenItemsPlacement.floatingBar)
-                }
-            } footer: {
-                Text("A notch, or a long app menu, leaves no room for every item. The bar shows the hidden apps below the menu bar instead, and a click on one opens its menu bar item.")
-            }
-            Section {
-                Picker("When items are hidden", selection: $state.hiddenMenuBarIcon) {
-                    iconOptions
-                }
-                Picker("When items are shown", selection: $state.shownMenuBarIcon) {
-                    iconOptions
-                }
-            } header: {
-                Text("Menu bar icon")
-            } footer: {
-                Text("Choose the icon shown in the menu bar for each state. Changes take effect immediately.")
-            }
-            Section("Hide again") {
-                Toggle("After a timeout", isOn: $state.rehideOnTimeout)
-                Stepper(value: $state.rehideTimeout, in: 1...300, step: 1) {
-                    Text("\(Int(state.rehideTimeout)) seconds")
-                }
-                .disabled(!state.rehideOnTimeout)
-                Toggle("On a click outside the menu bar", isOn: $state.rehideOnClickOutside)
-                Toggle("When the front app or Space changes", isOn: $state.rehideOnFocusChange)
-            }
-            Section {
                 ForEach(Permissions.Kind.allCases, id: \.self) { kind in
                     LabeledContent(kind.title) {
                         if permission.isGranted(kind) {
@@ -163,7 +132,6 @@ struct GeneralSettings: View {
             } footer: {
                 Text("Both are required. Accessibility reads the menu bar and clicks the clock in bar mode; Screen Recording takes the picture that covers the menu bar while the clock opens Notification Center.")
             }
-            ClockZoneSection()
             SettingsFileSection()
             Section("About") {
                 LabeledContent("Version", value: Self.version)
@@ -177,17 +145,6 @@ struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .frame(width: settingsPaneWidth, height: 460)
-    }
-
-    private var iconOptions: some View {
-        ForEach(MenuBarIcon.allCases, id: \.self) { icon in
-            Label {
-                Text(icon.title)
-            } icon: {
-                Image(nsImage: icon.image)
-            }
-            .tag(icon)
-        }
     }
 
     private static var version: String {
@@ -211,7 +168,7 @@ struct SettingsFileSection: View {
                 Button("Import…") { Task { await importSettings() } }
             }
         } footer: {
-            Text("The hidden sets and the options above, as a property list.")
+            Text("Hidden apps and the Menu Bar and Apps options, as a property list.")
         }
     }
 
@@ -252,12 +209,12 @@ struct SettingsFileSection: View {
 /// hidden items show while the pointer is in it, so that a clock click opens
 /// Notification Center; in bar mode it only pre-filters clock clicks for the
 /// covered lift. Measured from the clock item, or from one click on the clock.
-struct ClockZoneSection: View {
+struct ClockZoneRow: View {
     @Environment(AppState.self) private var state
     @Environment(ClockZone.self) private var clockZone
 
     var body: some View {
-        Section {
+        VStack(alignment: .leading, spacing: 6) {
             LabeledContent("Clock zone") {
                 if clockZone.isWaitingForClick {
                     Text("Click the left edge of the clock")
@@ -274,12 +231,14 @@ struct ClockZoneSection: View {
                     }
                 }
             }
-        } footer: {
             Text(state.hiddenItemsPlacement == .floatingBar
                 ? "In bar mode a click on the clock opens Notification Center under a picture of the menu bar, so hidden items stay covered."
                 : clockZone.isMeasured
                     ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
                     : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

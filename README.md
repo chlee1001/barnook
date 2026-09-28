@@ -1,6 +1,6 @@
 # BarNook
 
-Modified by Chaehyeon Lee (2026): floating-bar pins, BarNook branding and an independent update channel.
+Modified by Chaehyeon Lee (2026): floating-bar pins, BarNook branding, an independent update channel and the settings panes.
 Original project: [ronny/ellipsis](https://github.com/ronny/ellipsis).
 
 BarNook hides selected menu bar items on macOS 27. Click its icon to show them. Click again, or wait, to hide them again.
@@ -15,10 +15,10 @@ BarNook hides selected menu bar items on macOS 27. Click its icon to show them. 
 
 1. Download `BarNook-X.Y.Z.zip` from [GitHub Releases](../../releases).
 2. Open the zip. Move `BarNook.app` to `/Applications`.
-3. Open BarNook. Its small nook icon appears in the menu bar. Settings › General › "Menu bar icon" picks a different icon for the hidden and shown states.
+3. Open BarNook. Its small nook icon appears in the menu bar. Settings › Menu Bar › "Menu bar icon" picks a different icon for the hidden and shown states.
 4. Right-click the icon. Select "Settings…". Put apps in the hidden set. Or, with the Accessibility permission, turn on "Hide apps left of the BarNook icon" and Cmd-drag items to the left of the icon.
 
-On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the BarNook icon first. So on a notch display, BarNook shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar pins its item for you to click in the menu bar. Settings › General › "Show hidden items" switches between the bar and the menu bar on any display.
+On a MacBook with a notch, a shown set may not fit in the menu bar. macOS then collapses the items that do not fit behind a `«` button, the BarNook icon first. So on a notch display, BarNook shows the hidden apps in a bar below the menu bar instead, one app icon per app, and the menu bar stays as it is. A click on an app in the bar pins its item for you to click in the menu bar. Settings › Menu Bar › "Show hidden items" switches between the bar and the menu bar on any display.
 
 This fork checks its own GitHub Releases for updates with [Sparkle](https://sparkle-project.org). At the second launch, it asks whether it can check on its own. "Check for Updates…" in the icon menu checks now. The original app uses a different signing and update key; it cannot update itself into this fork. Install this fork manually once and reconfigure its separate settings.
 
