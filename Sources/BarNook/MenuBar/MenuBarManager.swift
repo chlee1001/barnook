@@ -59,7 +59,7 @@ final class MenuBarManager {
     private var isCoverLifting = false
     /// Bar mode: while the pointer rests on the clock the covers are up and
     /// the restriction is lifted, so a click there reaches MenuBarAgent as it
-    /// is and Notification Center opens at native speed (`ClockCoverPolicy.Phase`).
+    /// is instead of waiting for a lift (`ClockCoverPolicy.Phase`).
     private var clockPhase: ClockCoverPolicy.Phase = .idle
     private var clockPrelift: Task<Void, Never>?
     /// A click on the clock while the pre-lift was dwelling or covering,
@@ -659,7 +659,9 @@ final class MenuBarManager {
             }
             self.cachedLayout = layout
             let onClock = layout.clock(at: axPoint) != nil
-            let panelOpen = read.1 || self.panelBelievedOpen
+            // The belief was checked at the mouse-down (`route`); this read
+            // catches a panel opened outside BarNook.
+            let panelOpen = read.1
             guard ClockCoverPolicy.lifts(onClock: onClock, panelOpen: panelOpen) else {
                 Self.log.info("clock click: no lift onClock=\(onClock) panelOpen=\(panelOpen)")
                 return

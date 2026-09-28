@@ -71,6 +71,13 @@ import Testing
         #expect(ClockCoverPolicy.route(phase: .covering, onClock: true, isReplay: false, panelOpen: true) == .passThrough)
     }
 
+    /// Idle too: the click path reads the panel about 100 ms later, after
+    /// the click has begun to close it, and would reopen it.
+    @Test func anIdleClickThatClosesThePanelNeverLifts() {
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: false, panelOpen: true) == .passThrough)
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: false, isReplay: false, panelOpen: true) == .clickPath)
+    }
+
     @Test func aClickWhileLiftedGoesStraightThrough() {
         #expect(ClockCoverPolicy.route(phase: .lifted, onClock: true, isReplay: false, panelOpen: false) == .passThrough)
         #expect(ClockCoverPolicy.route(phase: .clickLift, onClock: true, isReplay: false, panelOpen: false) == .passThrough)
