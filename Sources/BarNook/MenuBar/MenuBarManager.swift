@@ -469,6 +469,7 @@ final class MenuBarManager {
                 let open = await Task.detached { NotificationCenterPanel.isOpenNow() }.value
                 guard let self, !Task.isCancelled else { return }
                 if !open {
+                    Self.log.debug("clock: panel read closed; belief cleared")
                     self.panelBelievedOpen = false
                     return
                 }
@@ -613,6 +614,7 @@ final class MenuBarManager {
             if !isReplay { pendingClockClick = nil }
             return
         case .queueForLift:
+            Self.log.debug("clock click: queued for the lift, belief=\(self.panelBelievedOpen)")
             pendingClockClick = point
             return
         case .clickPath:

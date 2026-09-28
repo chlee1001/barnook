@@ -34,6 +34,13 @@ import Testing
         #expect(NotificationCenterPanel.isOpen(windows: [window([list, banner])]))
     }
 
+    /// A panel with every notification cleared has no list, only widgets
+    /// and the widget editor button.
+    @Test func aPanelWithNoNotificationsIsOpen() {
+        let editor = Node(identifier: "widget-editor-button")
+        #expect(NotificationCenterPanel.isOpen(windows: [window([editor]), widget]))
+    }
+
     @Test func theListInAnotherWindowIsClosed() {
         let other: (title: String?, root: Node) = ("Other", Node(children: [list]))
         #expect(!NotificationCenterPanel.isOpen(windows: [other]))

@@ -4,13 +4,15 @@ import ApplicationServices
 /// Whether Notification Center's panel is open, read from its Accessibility
 /// tree. A banner and the panel share one full-display window at layer 21,
 /// so the window list cannot tell them apart (`docs/phase9.md`, D0). In the
-/// tree, a banner-only window holds `AXNotificationCenterBanner` groups, and
-/// the open panel also holds the `AXNotificationListItems` group. Needs the
+/// tree, a banner-only window holds `AXNotificationCenterBanner` groups. The
+/// open panel holds the `AXNotificationListItems` group when it lists
+/// notifications, and the widget editor button (`widget-editor-button`)
+/// either way, so a panel with no notifications still reads open. Needs the
 /// Accessibility permission.
 public enum NotificationCenterPanel {
     public static let bundleIdentifier = "com.apple.notificationcenterui"
     static let windowTitle = "Notification Center"
-    static let listIdentifier = "AXNotificationListItems"
+    static let panelIdentifiers: Set<String> = ["AXNotificationListItems", "widget-editor-button"]
 
     /// One node of the tree, reduced to what the decision reads.
     public struct Node: Sendable, Equatable {
@@ -26,14 +28,14 @@ public enum NotificationCenterPanel {
     /// Whether any window titled "Notification Center" holds the list.
     public static func isOpen(windows: [(title: String?, root: Node)]) -> Bool {
         windows.contains { window in
-            window.title == windowTitle && contains(listIdentifier, in: window.root, depth: 0)
+            window.title == windowTitle && contains(panelIdentifiers, in: window.root, depth: 0)
         }
     }
 
-    private static func contains(_ identifier: String, in node: Node, depth: Int) -> Bool {
-        if node.identifier == identifier { return true }
+    private static func contains(_ identifiers: Set<String>, in node: Node, depth: Int) -> Bool {
+        if let identifier = node.identifier, identifiers.contains(identifier) { return true }
         guard depth < 6 else { return false }
-        return node.children.contains { contains(identifier, in: $0, depth: depth + 1) }
+        return node.children.contains { contains(identifiers, in: $0, depth: depth + 1) }
     }
 
     /// Reads Notification Center's windows over Accessibility, with a
