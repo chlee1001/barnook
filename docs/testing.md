@@ -2,14 +2,16 @@
 
 Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6, G1 to G4) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c, O1, O2), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6, G1 to G4) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
-| 1 | Fresh install, launch | Icon shows a nook. "Welcome to BarNook" lists Accessibility and Screen Recording, both not granted; "Continue" is disabled. Hiding works. | |
+| 1 | Fresh install, launch | Icon shows a nook. "Welcome to BarNook" lists Accessibility and Screen Recording, both not allowed; "0 of 2 allowed"; "Continue" is disabled with "Allow both permissions to continue." beside it. Hiding works. | |
 | 1a | Close the window. Right-click the icon › "Settings…". Quit. Relaunch. | "Settings…" shows the onboarding again, not Settings. It shows again at launch. | |
-| 1b | "Grant…" for Accessibility, turn BarNook on in System Settings. | The row turns "Granted" within a second, without a relaunch. | |
-| 1c | "Grant…" for Screen Recording, turn BarNook on in System Settings. "Relaunch BarNook". | After the relaunch, no onboarding shows at launch. "Settings…" opens Settings; General › Permissions shows both "Allowed". | |
+| 1b | "Allow…" for Accessibility, turn BarNook on in System Settings. | The step turns "Allowed" within a second, without a relaunch; "1 of 2 allowed". | |
+| 1c | "Allow…" for Screen Recording, turn BarNook on in System Settings. "Relaunch BarNook". | After the relaunch, no onboarding shows at launch. "Settings…" opens Settings; General › Permissions shows both "Allowed". | |
+| O1 | `tccutil reset` both permissions. Launch; allow Accessibility; request Screen Recording; "Relaunch BarNook". | 0 then 1 of 2; step 1 green; step 2 orange with "Relaunch BarNook" inside it; the line beside Continue changes each step. No onboarding after the relaunch. | |
+| O2 | Expand "What does BarNook capture?"; Tab to Continue. | The text says the picture stays in memory and is discarded when the cover comes off; Continue stays disabled with the reason until both are allowed. | |
 | 2 | Put an app in the hidden set. Click the icon. Click again. | Items hide, show (`‹`), hide (nook). | vm |
 | 2a | Settings › Menu Bar › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each palette shows every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | Pass |
 | 3 | Show the set. Quit. Relaunch. | Set is still shown. Sets are unchanged. | vm |

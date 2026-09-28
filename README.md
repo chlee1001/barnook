@@ -9,7 +9,7 @@ BarNook hides selected menu bar items on macOS 27. Click its icon to show them. 
 
 - macOS 27.0 or later.
 - BarNook must run from `/Applications`. `MenuBarAgent` matches the allow-list against apps in that folder only. A copy in any other folder hides its own icon.
-- BarNook requires Accessibility and Screen Recording. The first window asks for both, and Settings opens once they are granted. Hiding and showing work in the meantime. See Limits.
+- BarNook requires Accessibility and Screen Recording. The first window asks for both, and Settings opens once they are allowed. Hiding and showing work in the meantime. See Limits.
 
 ## Install a release
 

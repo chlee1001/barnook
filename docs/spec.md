@@ -115,13 +115,13 @@ Open the window from a right-click menu on the BarNook icon. The same menu has "
 BarNook requires two permissions:
 
 - Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the Apps list (F4) shows only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
-- Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory.
+- Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory and is discarded when the cover comes off; the onboarding says so under "What does BarNook capture?".
 
 Hiding and showing work without either permission.
 
-- While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions with their state and a "Grant…" button each. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
-- Screen Recording takes effect after a relaunch. Once it was requested, the window offers "Relaunch BarNook".
-- "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state, and a banner at the top of the pane while one is missing.
+- While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions as steps, each with its state and an "Allow…" button, a progress bar ("n of 2 allowed") and, next to Continue, what is left to do. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
+- Screen Recording takes effect after a relaunch. Once it was requested, the Screen Recording step offers "Relaunch BarNook".
+- "Continue" opens Settings once both are allowed. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state, and a banner at the top of the pane while one is missing.
 - A Screen Recording change can take effect only after a relaunch; until then Settings may still show it as allowed.
 - BarNook re-reads Accessibility 0.5 s after the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
 - For VM tests, `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
@@ -163,7 +163,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 
 ## Acceptance criteria
 
-1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are granted; Screen Recording applies after the offered relaunch.
+1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are allowed; Screen Recording applies after the offered relaunch.
 2. Add an app to the hidden set. Its items disappear. Click the icon. The items return. Click again. The items disappear.
 3. Quit and relaunch. The hidden state and the sets are unchanged.
 4. Add an app to the always-hidden set. It stays hidden after a normal click. Option+click shows it.
