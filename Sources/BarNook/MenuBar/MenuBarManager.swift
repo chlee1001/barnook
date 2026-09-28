@@ -72,7 +72,8 @@ final class MenuBarManager {
     /// or it was open when a pre-lift ended. A click on the clock then closes
     /// it natively (Notification Center watches mouse-downs itself), and an
     /// Accessibility read after that click would already see it closing, so
-    /// the click path trusts this instead. Cleared by a poll once it is closed.
+    /// `ClockCoverPolicy.route` decides on this at the mouse-down. Cleared by
+    /// a poll once the panel is closed.
     private var panelBelievedOpen = false
     private var panelWatch: Task<Void, Never>?
     /// The last layout read, for the hover hit test; refreshed by each lift.
@@ -659,8 +660,9 @@ final class MenuBarManager {
             }
             self.cachedLayout = layout
             let onClock = layout.clock(at: axPoint) != nil
-            // The belief was checked at the mouse-down (`route`); this read
-            // catches a panel opened outside BarNook.
+            // The belief was checked at the mouse-down (`route`). This read is
+            // best effort for a panel opened outside BarNook (Fn+N, the
+            // trackpad): it may already see such a panel closing.
             let panelOpen = read.1
             guard ClockCoverPolicy.lifts(onClock: onClock, panelOpen: panelOpen) else {
                 Self.log.info("clock click: no lift onClock=\(onClock) panelOpen=\(panelOpen)")

@@ -59,10 +59,11 @@ enum ClockCoverPolicy {
     }
 
     enum ClickRoute: Equatable {
-        /// Not BarNook's: BarNook's own replay, a click off the clock during
-        /// a pre-lift, or a click MenuBarAgent takes as it is (lifted, a lift
-        /// in flight, or a restore under way, where a replay later could
-        /// reopen a panel this click just closed).
+        /// Not BarNook's: BarNook's own replay, any click while Notification
+        /// Center is believed open (it closes on the mouse-down itself), a
+        /// click off the clock during a pre-lift, or a click MenuBarAgent
+        /// takes as it is (lifted, a lift in flight, or a restore under way,
+        /// where a replay later could reopen a panel this click just closed).
         case passThrough
         /// The pre-lift replays it once lifted.
         case queueForLift
@@ -77,8 +78,10 @@ enum ClockCoverPolicy {
     static func route(phase: Phase, onClock: Bool, isReplay: Bool, panelOpen: Bool) -> ClickRoute {
         guard !isReplay else { return .passThrough }
         // Decided at the mouse-down: a poll that runs after it may already
-        // see the panel closing.
-        if panelOpen, onClock { return .passThrough }
+        // see the panel closing. Whatever the cached hit test says: a click
+        // off the clock never lifts anyway, and a stale cache (the clock
+        // grew since the last read) must not let a closing click lift.
+        if panelOpen { return .passThrough }
         switch phase {
         case .idle: return .clickPath
         case .dwelling, .covering: return onClock ? .queueForLift : .passThrough

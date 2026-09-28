@@ -72,10 +72,11 @@ import Testing
     }
 
     /// Idle too: the click path reads the panel about 100 ms later, after
-    /// the click has begun to close it, and would reopen it.
+    /// the click has begun to close it, and would reopen it. The cached hit
+    /// test may be stale, so it does not matter whether it says on the clock.
     @Test func anIdleClickThatClosesThePanelNeverLifts() {
         #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: false, panelOpen: true) == .passThrough)
-        #expect(ClockCoverPolicy.route(phase: .idle, onClock: false, isReplay: false, panelOpen: true) == .clickPath)
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: false, isReplay: false, panelOpen: true) == .passThrough)
     }
 
     @Test func aClickWhileLiftedGoesStraightThrough() {
