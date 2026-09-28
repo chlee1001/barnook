@@ -127,7 +127,8 @@ final class ClockCover {
 
     /// One covered lift for a click that MenuBarAgent ignored: cover, lift,
     /// replay the click, reapply once the panel opens (bounded), uncover.
-    /// Returns false, having lifted nothing, when a strip has no picture.
+    /// Returns whether the panel opened; false, having lifted nothing, when a
+    /// strip has no picture.
     /// The covers come off at most `pressToReapplyCap` + `reapplyTimeout` +
     /// `settleCap` after the replay, plus the last read and `settledToUncover`.
     func run(
@@ -149,7 +150,7 @@ final class ClockCover {
         let (reapplied, settled, readFailures) = await restore(reapply: reapply, hiddenStillDrawn: hiddenStillDrawn)
         let elapsed = ContinuousClock.now - started
         Self.log.info("lift done opened=\(opened) reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
-        return true
+        return opened
     }
 
     /// Waits for the panel after a replayed click: MenuBarAgent handles it up

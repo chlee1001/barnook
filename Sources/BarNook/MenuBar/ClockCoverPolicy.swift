@@ -71,12 +71,14 @@ enum ClockCoverPolicy {
         case clickPath
     }
 
-    /// Where a mouse-down goes, by phase.
-    static func route(phase: Phase, onClock: Bool, isReplay: Bool) -> ClickRoute {
+    /// Where a mouse-down goes, by phase. `panelOpen` is whether BarNook
+    /// believes Notification Center is open: a clock click then closes it
+    /// natively, and replaying it after the lift would reopen it.
+    static func route(phase: Phase, onClock: Bool, isReplay: Bool, panelOpen: Bool) -> ClickRoute {
         guard !isReplay else { return .passThrough }
         switch phase {
         case .idle: return .clickPath
-        case .dwelling, .covering: return onClock ? .queueForLift : .passThrough
+        case .dwelling, .covering: return onClock && !panelOpen ? .queueForLift : .passThrough
         case .lifted, .clickLift, .restoring: return .passThrough
         }
     }

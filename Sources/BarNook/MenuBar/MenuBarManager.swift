@@ -68,6 +68,13 @@ final class MenuBarManager {
     /// Ends the pre-lift hold: the pointer left the clock, the screens or the
     /// placement changed.
     private var clockHoldEnded = false
+    /// Notification Center is open, as far as BarNook knows: a lift opened it,
+    /// or it was open when a pre-lift ended. A click on the clock then closes
+    /// it natively (Notification Center watches mouse-downs itself), and an
+    /// Accessibility read after that click would already see it closing, so
+    /// the click path trusts this instead. Cleared by a poll once it is closed.
+    private var panelBelievedOpen = false
+    private var panelWatch: Task<Void, Never>?
     /// The last layout read, for the hover hit test; refreshed by each lift.
     private var cachedLayout: MenuBarLayout?
 
@@ -452,6 +459,22 @@ final class MenuBarManager {
 
     // MARK: Clock pre-lift in bar mode
 
+    private func notePanelOpen() {
+        panelBelievedOpen = true
+        panelWatch?.cancel()
+        panelWatch = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(250))
+                let open = await Task.detached { NotificationCenterPanel.isOpenNow() }.value
+                guard let self, !Task.isCancelled else { return }
+                if !open {
+                    self.panelBelievedOpen = false
+                    return
+                }
+            }
+        }
+    }
+
     /// The clock moves only with the displays or the clock format; a read
     /// at launch, on a display change and on each lift keeps the hover hit
     /// test off the Accessibility IPC.
@@ -533,7 +556,9 @@ final class MenuBarManager {
             pendingClockClick = nil
             try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
             await ClockCover.replayClick(at: click)
-            _ = await ClockCover.waitForPanel { await Task.detached { NotificationCenterPanel.isOpenNow() }.value }
+            if await ClockCover.waitForPanel({ await Task.detached { NotificationCenterPanel.isOpenNow() }.value }) {
+                notePanelOpen()
+            }
         }
         // Hold while the pointer stays on the clock. The pointer monitor
         // ends it at once; the poll catches moves it cannot see.
@@ -556,6 +581,11 @@ final class MenuBarManager {
             }
         )
         Self.log.info("clock hover: restored reapplied=\(result.reapplied) settled=\(result.settled) readFailures=\(result.readFailures)")
+        // A click during the hold went to MenuBarAgent as it is; if it opened
+        // the panel, the next clock click closes it and must not lift.
+        if await Task.detached(operation: { NotificationCenterPanel.isOpenNow() }).value {
+            notePanelOpen()
+        }
     }
 
     // MARK: Clock click in bar mode
@@ -574,7 +604,9 @@ final class MenuBarManager {
     }
 
     private func clockClicked(at point: NSPoint, isReplay: Bool) {
-        switch ClockCoverPolicy.route(phase: clockPhase, onClock: clockHit(point, layout: cachedLayout), isReplay: isReplay) {
+        switch ClockCoverPolicy.route(
+            phase: clockPhase, onClock: clockHit(point, layout: cachedLayout), isReplay: isReplay, panelOpen: panelBelievedOpen
+        ) {
         case .passThrough:
             // A click elsewhere while a clock click waits means the user moved on.
             if !isReplay { pendingClockClick = nil }
@@ -627,8 +659,9 @@ final class MenuBarManager {
             }
             self.cachedLayout = layout
             let onClock = layout.clock(at: axPoint) != nil
-            guard ClockCoverPolicy.lifts(onClock: onClock, panelOpen: read.1) else {
-                Self.log.info("clock click: no lift onClock=\(onClock) panelOpen=\(read.1)")
+            let panelOpen = read.1 || self.panelBelievedOpen
+            guard ClockCoverPolicy.lifts(onClock: onClock, panelOpen: panelOpen) else {
+                Self.log.info("clock click: no lift onClock=\(onClock) panelOpen=\(panelOpen)")
                 return
             }
             self.lastClockLift = .now
@@ -642,7 +675,7 @@ final class MenuBarManager {
             }
             let hidden = self.hiddenNow
             Self.log.info("clock click: covered lift")
-            _ = await self.clockCover.run(
+            let opened = await self.clockCover.run(
                 clickAt: point,
                 strips: strips,
                 bands: pictures,
@@ -662,6 +695,7 @@ final class MenuBarManager {
                     await Task.detached { MenuBarLayout.read()?.containsItem(ofAny: hidden) }.value
                 }
             )
+            if opened { self.notePanelOpen() }
         }
     }
 
