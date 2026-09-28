@@ -15,7 +15,7 @@ final class MenuBarManager {
     private let restriction: MenuBarRestriction
     private let rehide: RehideMonitor
     private let updater: Updater
-    private let permission: AccessibilityPermission
+    private let permission: Permissions
     private var floatingBar: FloatingBar?
     /// The apps a bar click pinned, oldest first. While the set is shown,
     /// the restriction lets their items through, so the user clicks them in
@@ -41,7 +41,7 @@ final class MenuBarManager {
         restriction: MenuBarRestriction,
         sets: HiddenSets,
         state: AppState,
-        permission: AccessibilityPermission,
+        permission: Permissions,
         updater: Updater,
         openSettings: @escaping () -> Void
     ) {

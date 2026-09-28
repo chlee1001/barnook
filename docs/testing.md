@@ -2,13 +2,14 @@
 
 Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Hidden and Settings › Always Hidden. They stay manual because they need the permission dialog (1 to 1b), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S9) or the release scripts (10, 11).
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Hidden and Settings › Always Hidden. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S9) or the release scripts (10, 11).
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
-| 1 | Fresh install, launch | Icon shows a nook. One BarNook dialog offers Accessibility. No macOS prompt. | |
-| 1a | Dialog: "Not Now". Quit. Relaunch. | No dialog. Settings › General shows "Grant Permission…". | |
-| 1b | Settings: "Grant Permission…", then turn BarNook on in System Settings › Accessibility. | Settings shows "Granted" without a relaunch. Hidden tab lists only apps with a menu bar item. | |
+| 1 | Fresh install, launch | Icon shows a nook. "Welcome to BarNook" lists Accessibility and Screen Recording, both not granted; "Continue" is disabled. Hiding works. | |
+| 1a | Close the window. Right-click the icon › "Settings…". Quit. Relaunch. | "Settings…" shows the onboarding again, not Settings. It shows again at launch. | |
+| 1b | "Grant…" for Accessibility, turn BarNook on in System Settings. | The row turns "Granted" within a second, without a relaunch. | |
+| 1c | "Grant…" for Screen Recording, turn BarNook on in System Settings. "Relaunch BarNook". | After the relaunch, no onboarding shows at launch. "Settings…" opens Settings; General › Permissions shows both "Granted". | |
 | 2 | Put an app in the hidden set. Click the icon. Click again. | Items hide, show (`‹`), hide (nook). | vm |
 | 2a | Settings › General › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each picker lists every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | Pass |
 | 3 | Show the set. Quit. Relaunch. | Set is still shown. Sets are unchanged. | vm |

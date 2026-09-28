@@ -9,7 +9,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 - Hide and show menu bar items with one click.
 - Keep an "always hidden" set of apps that you never want to see.
 - Rehide the items automatically after a timeout or after a click outside the menu bar.
-- Need no permission to hide and show. No Screen Recording, no Full Disk Access. Accessibility is optional (see F6).
+- Hiding and showing need no permission. BarNook requires Accessibility and Screen Recording, for the menu bar layout and for the covered clock click in bar mode (F6). No Full Disk Access.
 - Build with SwiftPM and shell scripts only. No `.xcodeproj`, no Xcode GUI.
 - Ship a Developer ID signed and notarized `.app`.
 
@@ -111,14 +111,20 @@ Open the window from a right-click menu on the BarNook icon. The same menu has "
 - Swift 6 language mode, strict concurrency.
 - Persist settings in `UserDefaults`.
 
-### F6: Optional Accessibility permission
+### F6: Required permissions and onboarding
 
-Without the permission, the app pickers (F4) list every running app. With it, BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, and the pickers list only those apps. With it, BarNook also reads the clock item's frame from `MenuBarAgent` and fits the clock zone to it. Hiding and showing work the same either way.
+BarNook requires two permissions:
 
-- First launch: a dialog explains this and offers "Grant Permission" or "Not Now". "Grant Permission" adds BarNook to the Accessibility list and shows the system prompt. "Not Now" is stored and the dialog does not return at launch.
-- Settings › General shows "Granted", or a "Grant Permission…" button that opens the same dialog.
-- BarNook notices a change in System Settings at once, through the `com.apple.accessibility.api` distributed notification.
-- BarNook never uses Accessibility for anything else.
+- **Accessibility.** BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the pickers (F4) list only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
+- **Screen Recording.** In bar mode a clock click lifts the restriction for a moment. BarNook covers the status-item strip with a picture of itself during that time, so hidden items do not appear on screen (`docs/phase9.md`). The picture stays in memory.
+
+Hiding and showing work without either permission.
+
+- **Launch.** While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions with their state and a "Grant…" button each. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
+- **Screen Recording takes effect after a relaunch.** Once it was requested, the window offers "Relaunch BarNook".
+- **Settings.** "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state.
+- **Changes.** BarNook notices an Accessibility change at once, through the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
+- **VM tests.** `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
 
 ### F7: The icon as divider
 
@@ -157,7 +163,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 
 ## Acceptance criteria
 
-1. A fresh install on macOS 27 shows the BarNook icon. BarNook shows one dialog that offers the optional Accessibility permission. "Not Now" is remembered. macOS shows no prompt of its own.
+1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are granted; Screen Recording applies after the offered relaunch.
 2. Add an app to the hidden set. Its items disappear. Click the icon. The items return. Click again. The items disappear.
 3. Quit and relaunch. The hidden state and the sets are unchanged.
 4. Add an app to the always-hidden set. It stays hidden after a normal click. Option+click shows it.

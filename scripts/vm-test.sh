@@ -59,16 +59,17 @@ fi
 "$vm" scp "$probe" /Users/admin/probe
 
 # The image grants Accessibility to sshd, not to apps it launches. BarNook
-# needs it for the divider (D1 to D5) and the measured clock zone. SIP is
-# off in the guest, so the row goes straight into the TCC database, as the
-# image's own rows did; tccd restarts to read it.
+# requires Accessibility and Screen Recording. SIP is off in the guest, so
+# the rows go straight into the TCC database, as the image's own rows did;
+# tccd restarts to read them.
 "$vm" ssh 'sh -s' <<'GUEST'
 set -e
 result="$(sudo sqlite3 -bail "/Library/Application Support/com.apple.TCC/TCC.db" \
   "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, indirect_object_identifier, flags)
-   VALUES ('kTCCServiceAccessibility', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0);
-   SELECT COUNT(*) = 1 FROM access
-   WHERE service = 'kTCCServiceAccessibility' AND client = 'com.chlee1001.BarNookDev'
+   VALUES ('kTCCServiceAccessibility', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0),
+          ('kTCCServiceScreenCapture', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0);
+   SELECT COUNT(*) = 2 FROM access
+   WHERE service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture') AND client = 'com.chlee1001.BarNookDev'
      AND client_type = 0 AND auth_value = 2 AND auth_reason = 0 AND auth_version = 1
      AND indirect_object_identifier = 'UNUSED' AND flags = 0;
   ")"

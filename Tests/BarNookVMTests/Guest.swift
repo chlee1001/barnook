@@ -153,7 +153,8 @@ struct Guest: Sendable {
         try run("defaults delete \(Self.appIdentifier) 2>/dev/null || true")
         try setPosition("status:\(Self.appIdentifier)::barnook.icon", Self.iconPosition)
         var all: [String: Setting] = [
-            "accessibilityDeclined": .bool(true),
+            // The guest grants both permissions through the TCC database.
+            "skipsPermissionOnboarding": .bool(true),
             "rehideOnTimeout": .bool(false),
             "rehideOnClickOutside": .bool(false),
             "rehideOnFocusChange": .bool(false),

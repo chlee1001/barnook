@@ -9,7 +9,7 @@ BarNook hides selected menu bar items on macOS 27. Click its icon to show them. 
 
 - macOS 27.0 or later.
 - BarNook must run from `/Applications`. `MenuBarAgent` matches the allow-list against apps in that folder only. A copy in any other folder hides its own icon.
-- No permission is necessary. BarNook offers the Accessibility permission once, as an option. See Limits.
+- BarNook requires Accessibility and Screen Recording. The first window asks for both, and Settings opens once they are granted. Hiding and showing work in the meantime. See Limits.
 
 ## Install a release
 
@@ -29,7 +29,7 @@ This fork checks its own GitHub Releases for updates with [Sparkle](https://spar
 - The hidden sets hold whole apps, not single items. An app with two menu bar items hides both.
 - The bar below the menu bar shows app icons, not the items. An item that changes (a timer, a meter) shows only its app icon there. A click on an app in the bar pins its item in the menu bar for you to click, up to three at once; without the Accessibility permission the other items give way while a pin is up.
 - An app that runs from outside `/Applications` cannot be pinned into view. `MenuBarAgent` matches its allow-list against `/Applications` only, so macOS hides that item whenever BarNook hides anything. The bar marks such an app. Synology Drive, which runs from `~/Library/Application Support`, is one. Keep it out of the hidden set, or switch "Show hidden items" to "In the menu bar", which lifts the restriction while the set is shown.
-- The app pickers in Settings list every running app, not only apps with a menu bar item. With the Accessibility permission, they list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. The permission is optional. BarNook asks once at first launch, and again only from Settings.
+- The app pickers in Settings list every running app, not only apps with a menu bar item. With the Accessibility permission, they list only apps with a menu bar item, the icon can work as a divider (Cmd-drag items to its left to hide them), and the clock zone fits the clock. Both permissions are required. They are asked for at first launch, and Settings stays closed until they are granted.
 
 ## Alternatives
 
