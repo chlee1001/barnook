@@ -29,7 +29,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 8 | Menu-bar mode. While the set is hidden, move the pointer to the clock. Click. Move away. | Hidden items show near the clock. Notification Center opens. Items hide again after 0.5 s. | vm |
 | 8c | Menu-bar mode, 4 s timeout. Show the set, rest the pointer on the clock. | The set hides after 4 s but the items stay while the pointer is there; they hide once it leaves. | vm |
 | 8g | Menu-bar mode. Rest on the clock, then move straight onto the Settings window. | The items hide within about 0.7 s. | |
-| B8 | Bar mode, both permissions. Click the clock 10 times on each display (open, close). | Notification Center opens and closes each time. No hidden item appears in any menu bar, on any display. | |
+| B8 | Bar mode, both permissions. Click the clock 10 times on each display (open, close). | Notification Center opens and closes each time. No hidden item appears in any menu bar, on any display. | Synthetic clicks: externals 0 hidden frames, NC 13/14 (docs/phase9.md); real clicks pending |
 | B8h | Bar mode. Move the pointer across and onto the clock. | Nothing lifts: no hidden item appears. | |
 | 8a | Without Accessibility: General, "Click the Clock…", click the left edge of the clock. | The width becomes the distance to the right edge plus 30. "Reset" returns 300. | Pass |
 | 8b | With Accessibility: open General. | "N points, measured". Hidden items show over the clock, not over Control Center. | vm |

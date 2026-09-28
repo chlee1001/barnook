@@ -260,3 +260,14 @@ Recommended: (b), since it is the only new permission and turning it on is the u
 - In the VM, Screen Recording has to be granted to BarNookDev.
 
 This packet goes into a new ralplan run for consensus review. The current run has used all 5 of its iterations.
+
+
+### Product path on the host (BarNookDev, commits `901704f` and `40da177`)
+
+- **Setup.** Both permissions were granted and bar mode was on, with the user's 14 hidden apps. A separate process sampled the status strip of every menu bar, about 13 frames per second per display. It counted icon edges that were not there at rest, within 700 points left of the resting items.
+- **Control.** In menu-bar mode, a hover lift over the clock drew hidden items in 13–15 of 33 frames on each display.
+- **Covered lift, 9 clicks spread over the 1512, 1920 and 2560 displays.** On the two externals, no frame out of 533 showed a new icon. On the built-in display the metric counted the front app's menus and RunCat's running animation. The frames were stacked and checked by eye: the status strip stays at its resting items (a second run of 5 clicks with Finder in front showed the same).
+- **Notification Center.** It opened 8/9 in the three-display run and 5/5 in the Finder run. It closed every time.
+- **The one open that failed.** A click came about 1.5 s after the previous lift and was ignored. The layout was probably still settling.
+- **The first fix.** The first product build skipped displays whose menu bar hides itself: `visibleFrame` reports no menu bar there. `40da177` takes the strips from the Accessibility layout instead.
+- **Not tested.** Real mouse clicks, fullscreen spaces, a banner during the cover, and a screen recording at display refresh rate.
