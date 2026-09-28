@@ -33,12 +33,15 @@ final class MenuBarRestriction {
 
     private let configurationClass: NSObject.Type
     private let assertionClass: NSObject.Type
-    /// Every assertion not yet invalidated, by identity, oldest first in `ledger`.
-    private var assertions: [ObjectIdentifier: NSObject] = [:]
-    private var ledger = AssertionLedger<ObjectIdentifier>()
+    /// Every assertion not yet invalidated, by token, oldest first in
+    /// `ledger`. Tokens only grow: an object identity can come back once an
+    /// invalidated assertion is freed, and a late reply must not match it.
+    private var assertions: [UInt64: NSObject] = [:]
+    private var ledger = AssertionLedger<UInt64>()
+    private var nextToken: UInt64 = 0
     /// What the bar shows, or is about to: the newest requested assertion.
     private var applied: AssertionPolicy.Applied?
-    private var newest: ObjectIdentifier?
+    private var newest: UInt64?
     private var retry: Task<Void, Never>?
     private var retryAttempt = 0
     /// Callers waiting for the newest assertion to report back.
@@ -128,7 +131,8 @@ final class MenuBarRestriction {
                      with: Self.allSystemItems as NSArray, with: wanted.allowList as NSArray)?
             .takeUnretainedValue()
         let assertion = assertionClass.init()
-        let token = ObjectIdentifier(assertion)
+        nextToken += 1
+        let token = nextToken
         assertions[token] = assertion
         ledger.requested(token, key: wanted)
         newest = token
@@ -142,7 +146,7 @@ final class MenuBarRestriction {
                               with: configuration, with: completion)
     }
 
-    private func reported(_ token: ObjectIdentifier, failure: String?, hidden: Set<String>) {
+    private func reported(_ token: UInt64, failure: String?, hidden: Set<String>) {
         if let failure {
             let outcome = ledger.failed(token)
             invalidate([token])
@@ -173,13 +177,13 @@ final class MenuBarRestriction {
     }
 
     /// Resumes the waiters once the newest assertion has reported back.
-    private func finishActivating(_ token: ObjectIdentifier) {
+    private func finishActivating(_ token: UInt64) {
         guard token == newest else { return }  // an older one; the newest is still on its way
         newest = nil
         resumeWaiters()
     }
 
-    private func invalidate(_ tokens: [ObjectIdentifier]) {
+    private func invalidate(_ tokens: [UInt64]) {
         for token in tokens {
             _ = assertions.removeValue(forKey: token)?.perform(NSSelectorFromString("invalidate"))
         }

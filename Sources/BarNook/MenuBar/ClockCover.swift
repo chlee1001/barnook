@@ -19,46 +19,76 @@ final class ClockCover {
         var displayID: CGDirectDisplayID
         /// The same strip, local to the display, top-left origin, for ScreenCaptureKit.
         var local: CGRect
+        var scale: CGFloat
     }
 
     private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "clockCover")
+
+    /// Resumes one continuation once, with the first answer.
+    @MainActor private final class BoundedRace {
+        var continuation: CheckedContinuation<Bool, Never>?
+        func finish(_ value: Bool) {
+            continuation?.resume(returning: value)
+            continuation = nil
+        }
+    }
     private var windows: [NSWindow] = []
 
-    /// The strip left of the clock on every menu bar in `layout`. The
-    /// layout, not `visibleFrame`, gives the bar: a display whose menu bar
-    /// hides itself reports no menu bar in `visibleFrame`, and the clicked
-    /// bar is revealed.
-    static func strips(layout: MenuBarLayout) -> [Strip] {
-        let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
-        var seen = Set<String>()
-        return layout.displays.compactMap { display in
-            let bar = display.frame
-            guard seen.insert("\(bar)").inserted,
-                  let clock = display.items.first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier })
+    /// A screen as the strip math needs it: its Cocoa frame and display.
+    struct Screen: Equatable {
+        var frame: NSRect
+        var displayID: CGDirectDisplayID
+        var scale: CGFloat
+    }
+
+    @MainActor static var currentScreens: [Screen] {
+        NSScreen.screens.compactMap { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
             else { return nil }
-            let frame = NSRect(x: bar.minX, y: primaryHeight - bar.maxY, width: clock.frame.minX - bar.minX - 4, height: bar.height)
-            guard frame.width > 0, frame.height > 0,
-                  let screen = NSScreen.screens.first(where: { $0.frame.contains(NSPoint(x: frame.midX, y: frame.midY)) }),
-                  let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
-            else { return nil }
-            return Strip(
-                frame: frame,
-                displayID: id,
-                local: CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
-            )
+            return Screen(frame: screen.frame, displayID: id, scale: screen.backingScaleFactor)
         }
     }
 
+    /// The strip left of the clock on every distinct menu bar in `layout`,
+    /// or nil when one of them yields none: a bar left uncovered would show
+    /// every hidden item during the lift, so the lift does not happen. The
+    /// layout, not `visibleFrame`, gives the bar: a display whose menu bar
+    /// hides itself reports no menu bar in `visibleFrame`. `layout` is in
+    /// Accessibility coordinates, top-left of the primary screen (`screens[0]`).
+    nonisolated static func strips(layout: MenuBarLayout, screens: [Screen]) -> [Strip]? {
+        guard let primaryHeight = screens.first?.frame.maxY else { return nil }
+        var seen = Set<String>()
+        var strips: [Strip] = []
+        for display in layout.displays {
+            let bar = display.frame
+            guard seen.insert("\(bar)").inserted else { continue }  // one bar reported twice
+            guard let clock = display.items.first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier })
+            else { return nil }
+            let frame = NSRect(x: bar.minX, y: primaryHeight - bar.maxY, width: clock.frame.minX - bar.minX - 4, height: bar.height)
+            guard frame.width > 0, frame.height > 0,
+                  let screen = screens.first(where: { $0.frame.contains(NSPoint(x: frame.midX, y: frame.midY)) })
+            else { return nil }
+            strips.append(Strip(
+                frame: frame,
+                displayID: screen.displayID,
+                local: CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height),
+                scale: screen.scale
+            ))
+        }
+        return strips.isEmpty ? nil : strips
+    }
+
     /// Runs one covered lift. `lift` drops the restriction; `reapply` puts it
-    /// back and returns once MenuBarAgent reported; `hiddenStillDrawn` reads
-    /// the layout. Returns false, having lifted nothing, when a strip cannot
-    /// be captured.
+    /// back and waits for MenuBarAgent, bounded by `reapplyTimeout`;
+    /// `hiddenStillDrawn` reads the layout and returns nil when the read
+    /// fails. Returns false, having lifted nothing, when a strip cannot be
+    /// captured. The covers always come off, by `settleCap` at the latest.
     func run(
         clickAt point: CGPoint,
         strips: [Strip],
         lift: () -> Void,
-        reapply: () async -> Void,
-        hiddenStillDrawn: @escaping @Sendable () async -> Bool
+        reapply: @escaping @MainActor () async -> Void,
+        hiddenStillDrawn: @escaping @Sendable () async -> Bool?
     ) async -> Bool {
         let started = ContinuousClock.now
         guard let pictures = await capture(strips) else {
@@ -69,19 +99,25 @@ final class ClockCover {
         try? await Task.sleep(for: ClockCoverPolicy.coverComposite)
         lift()
         try? await Task.sleep(for: ClockCoverPolicy.liftToPress)
-        Self.replayClick(at: point)
+        await Self.replayClick(at: point)
         try? await Task.sleep(for: ClockCoverPolicy.pressToReapply)
-        await reapply()
+        let reapplied = await Self.bounded(ClockCoverPolicy.reapplyTimeout, reapply)
         let settleStart = ContinuousClock.now
         var settled = false
+        var readFailures = 0
         while ContinuousClock.now - settleStart < ClockCoverPolicy.settleCap {
-            if !(await hiddenStillDrawn()) { settled = true; break }
+            switch await hiddenStillDrawn() {
+            case false?: settled = true
+            case true?: break
+            case nil: readFailures += 1  // an unreadable layout is not a settled one
+            }
+            if settled { break }
             try? await Task.sleep(for: .milliseconds(20))
         }
         try? await Task.sleep(for: ClockCoverPolicy.settledToUncover)
         hide()
         let elapsed = ContinuousClock.now - started
-        Self.log.info("lift done settled=\(settled) covered=\(elapsed, privacy: .public)")
+        Self.log.info("lift done reapplied=\(reapplied) settled=\(settled) readFailures=\(readFailures) covered=\(elapsed, privacy: .public)")
         return true
     }
 
@@ -92,9 +128,8 @@ final class ClockCover {
             guard let display = content.displays.first(where: { $0.displayID == strip.displayID }) else { return nil }
             let configuration = SCStreamConfiguration()
             configuration.sourceRect = strip.local
-            let scale = NSScreen.screens.first { $0.frame.contains(NSPoint(x: strip.frame.midX, y: strip.frame.midY)) }?.backingScaleFactor ?? 2
-            configuration.width = Int(strip.local.width * scale)
-            configuration.height = Int(strip.local.height * scale)
+            configuration.width = Int(strip.local.width * strip.scale)
+            configuration.height = Int(strip.local.height * strip.scale)
             configuration.showsCursor = false
             let filter = SCContentFilter(display: display, excludingWindows: [])
             guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
@@ -130,9 +165,29 @@ final class ClockCover {
         windows.removeAll()
     }
 
+    /// Runs `work`, giving up after `limit`. MenuBarAgent's reply to an
+    /// activation is a private XPC completion; one that never comes must not
+    /// leave the covers up. Returns whether `work` finished in time.
+    /// A task group would wait for the stuck child, so `work` runs as its
+    /// own task and whichever of it or the timer finishes first answers.
+    static func bounded(_ limit: Duration, _ work: @escaping @MainActor () async -> Void) async -> Bool {
+        let race = BoundedRace()
+        return await withCheckedContinuation { continuation in
+            race.continuation = continuation
+            Task { @MainActor in
+                await work()
+                race.finish(true)
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: limit)
+                race.finish(false)
+            }
+        }
+    }
+
     /// Posts a click at `point`, tagged so BarNook's own monitor skips it.
     /// Cocoa coordinates in, CG (top-left) out.
-    private static func replayClick(at point: CGPoint) {
+    private static func replayClick(at point: CGPoint) async {
         let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
         let location = CGPoint(x: point.x, y: primaryHeight - point.y)
         for type in [CGEventType.leftMouseDown, .leftMouseUp] {
@@ -140,7 +195,7 @@ final class ClockCover {
             else { continue }
             event.setIntegerValueField(.eventSourceUserData, value: ClockCoverPolicy.replayTag)
             event.post(tap: .cghidEventTap)
-            if type == .leftMouseDown { usleep(60_000) }
+            if type == .leftMouseDown { try? await Task.sleep(for: ClockCoverPolicy.replayClickHold) }
         }
     }
 }

@@ -22,6 +22,7 @@ enum PermissionGate {
 final class PermissionsOnboarding {
     private let window: NSWindow
     private let permissions: Permissions
+    private var closeObserver: NSObjectProtocol?
 
     init(permissions: Permissions, openSettings: @escaping () -> Void) {
         self.permissions = permissions
@@ -34,9 +35,13 @@ final class PermissionsOnboarding {
         window.title = "Welcome to BarNook"
         window.isReleasedWhenClosed = false
         window.center()
+        // The close button hides the window; the permission poll stops with it.
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak permissions] _ in
+            Task { @MainActor in permissions?.stopPolling() }
+        }
     }
-
-    var isVisible: Bool { window.isVisible }
 
     func show() {
         permissions.refresh()

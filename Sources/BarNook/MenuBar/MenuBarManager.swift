@@ -45,6 +45,9 @@ final class MenuBarManager {
     /// A global monitor is blind while the pointer is over BarNook's own
     /// windows, so the lift also checks the pointer on this interval.
     private static let hoverWatchInterval: Duration = .milliseconds(200)
+    /// Height of the band at the top of a screen that counts as its menu
+    /// bar for the clock pre-filter; the Accessibility clock frame decides.
+    private static let menuBarBand: CGFloat = 40
     /// The apps the restriction hides now, for the cover's settle check.
     private var hiddenNow: Set<String> = []
     private let clockCover = ClockCover()
@@ -91,7 +94,10 @@ final class MenuBarManager {
         // A newly launched app is not in the allow-list snapshot, so it would hide.
         launchObserver = Task { [weak self] in
             for await _ in NSWorkspace.runningApplicationChanges() {
-                guard let self, restriction.isActive else { continue }
+                // Reassert whenever something should be hidden, not only
+                // while an assertion is live: one whose activation gave up
+                // after its retries leaves none, and a launch retries it.
+                guard let self, !self.hiddenNow.isEmpty else { continue }
                 self.applyCurrentState()
             }
         }
@@ -427,9 +433,18 @@ final class MenuBarManager {
             inFlight: clockLift != nil,
             sinceLastLift: lastClockLift.map { ContinuousClock.now - $0 }
         )
-        guard ClockCoverPolicy.mayIntercept(facts),
-              MenuBarGeometry.current.clockZoneContains(point, width: state.clockZoneWidth)
-        else { return }
+        // The top band of each screen, not `visibleFrame`: a menu bar that
+        // hides itself reports none there, and the clicked one is revealed.
+        let bands = MenuBarGeometry(frames: NSScreen.screens.map {
+            NSRect(x: $0.frame.minX, y: $0.frame.maxY - Self.menuBarBand, width: $0.frame.width, height: Self.menuBarBand)
+        })
+        let inZone = bands.clockZoneContains(point, width: state.clockZoneWidth)
+        guard ClockCoverPolicy.mayIntercept(facts), inZone else {
+            if inZone {
+                Self.log.debug("clock click: not intercepted \(String(describing: facts), privacy: .public)")
+            }
+            return
+        }
         permission.refresh()
         guard permission.areGranted else { return }
         let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
@@ -439,15 +454,26 @@ final class MenuBarManager {
             let read = await Task.detached(priority: .userInitiated) {
                 (MenuBarLayout.read(), NotificationCenterPanel.isOpenNow())
             }.value
-            guard let self, let layout = read.0,
-                  ClockCoverPolicy.lifts(onClock: layout.clock(at: axPoint) != nil, panelOpen: read.1)
-            else { return }
+            guard let self else { return }
+            guard let layout = read.0 else {
+                Self.log.error("clock click: no layout; not lifting")
+                return
+            }
+            let onClock = layout.clock(at: axPoint) != nil
+            guard ClockCoverPolicy.lifts(onClock: onClock, panelOpen: read.1) else {
+                Self.log.info("clock click: no lift onClock=\(onClock) panelOpen=\(read.1)")
+                return
+            }
             self.lastClockLift = .now
+            guard let strips = ClockCover.strips(layout: layout, screens: ClockCover.currentScreens) else {
+                Self.log.error("clock click: a menu bar has no strip to cover; not lifting")
+                return
+            }
             let hidden = self.hiddenNow
             Self.log.info("clock click: covered lift")
             _ = await self.clockCover.run(
                 clickAt: point,
-                strips: ClockCover.strips(layout: layout),
+                strips: strips,
                 lift: {
                     self.isCoverLifting = true
                     self.restriction.release()
@@ -458,7 +484,7 @@ final class MenuBarManager {
                     await self.restriction.waitUntilActivated()
                 },
                 hiddenStillDrawn: {
-                    await Task.detached { MenuBarLayout.read()?.containsItem(ofAny: hidden) ?? false }.value
+                    await Task.detached { MenuBarLayout.read()?.containsItem(ofAny: hidden) }.value
                 }
             )
         }

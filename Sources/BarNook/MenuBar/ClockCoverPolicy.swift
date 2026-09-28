@@ -20,6 +20,11 @@ enum ClockCoverPolicy {
     static let settledToUncover: Duration = .milliseconds(150)
     /// The longest wait for the layout; the cover comes off after it either way.
     static let settleCap: Duration = .seconds(3)
+    /// The longest wait for MenuBarAgent to confirm the reapplied restriction.
+    /// The settle check still guards the uncover after it.
+    static let reapplyTimeout: Duration = .seconds(1)
+    /// Mouse-down to mouse-up of the replayed click.
+    static let replayClickHold: Duration = .milliseconds(60)
     /// Clicks closer together than this start one lift: a double click opens
     /// Notification Center once.
     static let debounce: Duration = .milliseconds(300)

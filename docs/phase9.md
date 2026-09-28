@@ -1,6 +1,17 @@
 # Phase 9 record: the clock in bar mode
 
-Status: **D0 failed on the host.** No trigger opens NC while an assertion is held. At the user's request, the follow-up tested a cover-lift instead: on 3 displays, a cover over the bar hid the lift in 30 of 30 tries (see "N3(c) follow-up"). The window-list detector is diagnostic only. An accessibility detector does tell a banner from the panel.
+Status: **decided and shipped (2026-09-28).** The maintainer chose A1: in bar mode, a clock click always uses the cover-lift. Accessibility and Screen Recording are required, and a first-launch onboarding window keeps Settings closed until both are granted.
+
+What shipped:
+
+- `901704f` the covered lift;
+- `40da177` covering every menu bar;
+- `5f42bef` the onboarding.
+
+The D0, R0, S1 and S2 sections below are the historical spike record.
+
+- **Detector.** `901704f` replaced the window-list Notification Center detector with the Accessibility one described under "N3(c) follow-up". It removed `probe nc-windows` and made `probe nc-state` read Accessibility. Where this record mentions `nc-windows`, or `nc-state` reporting a banner as open, it describes the old detector.
+- **Not measured.** The revised latency gate (median ≤ 600 ms, p90 ≤ 1 s on the product path) and a recording at the display's refresh rate have not been run. Both remain Not-tested.
 
 ## Question
 
@@ -204,7 +215,7 @@ The displays were the built-in 1512×982 and two externals, 1920×1200 and 2560�
 - **Not measured.** A real mouse click, a banner arriving during the cover, and fullscreen spaces.
 
 
-## Proposed revision after the spike (pending the user's approval)
+## Proposed revision after the spike (approved as A1 with required permissions; B(a)/(b) replaced by the onboarding)
 
 The approved plan has two rules for bar mode: the restriction is never lifted on a hover or click, and the hidden items are never drawn. The cover-lift breaks both on purpose. The restriction is lifted for about 0.4–0.9 s, and MenuBarAgent draws the hidden items under the cover. The spike shows only that no hidden item appeared in the frames it sampled, about 20 per second. The user asked for items to be "never shown, even briefly". The cover meets that only on screen, as far as sampling can tell, and only when BarNook has Screen Recording.
 

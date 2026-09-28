@@ -4,6 +4,7 @@ import AppKit
 import ApplicationServices
 import CoreGraphics
 import Observation
+import os
 
 /// The two permissions BarNook requires. Accessibility reads the menu bar
 /// layout and clicks the clock for the user in bar mode; Screen Recording
@@ -26,6 +27,8 @@ final class Permissions {
         }
     }
 
+    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "permissions")
+
     private(set) var isTrusted: Bool
     private(set) var isScreenRecordingGranted: Bool
     /// Screen Recording was requested in this process. macOS applies a grant
@@ -35,10 +38,6 @@ final class Permissions {
     private var poll: Task<Void, Never>?
 
     var areGranted: Bool { isTrusted && isScreenRecordingGranted }
-
-    var missing: [Kind] {
-        Kind.allCases.filter { !isGranted($0) }
-    }
 
     init() {
         isTrusted = AXIsProcessTrusted()
@@ -100,13 +99,26 @@ final class Permissions {
         poll = nil
     }
 
-    /// Quits and opens BarNook again, so that a Screen Recording grant takes effect.
+    /// Quits and opens BarNook again, so that a Screen Recording grant takes
+    /// effect. A helper waits for this process to exit, then opens the app;
+    /// if the helper cannot start, BarNook stays running and says so.
     func relaunch() {
-        let path = Bundle.main.bundleURL.path
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")
-        task.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
-        try? task.run()
+        task.arguments = [
+            "-c", "while /bin/kill -0 \"$1\" 2>/dev/null; do sleep 0.2; done; /usr/bin/open \"$0\"",
+            Bundle.main.bundleURL.path, String(ProcessInfo.processInfo.processIdentifier),
+        ]
+        do {
+            try task.run()
+        } catch {
+            Self.log.error("relaunch helper failed: \(error.localizedDescription, privacy: .public)")
+            let alert = NSAlert()
+            alert.messageText = "BarNook could not reopen itself"
+            alert.informativeText = "Quit BarNook and open it again for Screen Recording to take effect."
+            alert.runModal()
+            return
+        }
         NSApp.terminate(nil)
     }
 
