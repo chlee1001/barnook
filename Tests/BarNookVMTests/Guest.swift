@@ -216,6 +216,30 @@ struct Guest: Sendable {
         Set(try items().compactMap(\.bundleIdentifier))
     }
 
+    /// The clock's frame on the guest's one display.
+    func clockFrame() throws -> CGRect {
+        guard let clock = try items().first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier }) else {
+            throw CommandFailure(command: "clock", status: 1, output: "no clock item")
+        }
+        return clock.frame
+    }
+
+    /// Whether Notification Center's panel is open. See `NotificationCenterPanel`.
+    func ncState() throws -> Bool {
+        struct State: Decodable { var open: Bool }
+        return try probe("nc-state", as: State.self).open
+    }
+
+    /// The IDs among `ids` drawn in any layout read over `milliseconds`.
+    func watchHidden(_ ids: [String], for milliseconds: Int) throws -> [String] {
+        struct Watched: Decodable { var reads: Int; var drawn: [String] }
+        return try probe("watch-hidden \(ids.joined(separator: ",")) --for \(milliseconds)", as: Watched.self).drawn
+    }
+
+    func doubleClick(_ point: CGPoint, gap milliseconds: Int) throws {
+        try probe("double-click \(Int(point.x)) \(Int(point.y)) --gap \(milliseconds)")
+    }
+
     /// Whether the app's item is on screen: in the layout and not collapsed.
     func isDrawn(_ bundleIdentifier: String) throws -> Bool {
         try layout().drawnItem(of: bundleIdentifier) != nil

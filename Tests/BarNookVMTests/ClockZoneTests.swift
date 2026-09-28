@@ -12,17 +12,10 @@ struct ClockZoneTests {
         try guest.startFixtures()
     }
 
-    private func clock() throws -> CGRect {
-        guard let clock = try guest.items().first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier }) else {
-            throw Guest.CommandFailure(command: "clock", status: 1, output: "no clock item")
-        }
-        return clock.frame
-    }
-
     @Test func pointerOverTheClockShowsHiddenItems() throws {
         try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
-        let clock = try clock()
+        let clock = try guest.clockFrame()
         try guest.probe("move \(Int(clock.midX)) \(Int(clock.midY))")
         try guest.waitUntil("A shows") { try guest.appItems().contains(Fixture.a) }
         try guest.probe("move 500 400")
@@ -33,7 +26,7 @@ struct ClockZoneTests {
         try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         let width = Double(try guest.setting("clockZoneWidth")) ?? 0
-        let clock = try clock()
+        let clock = try guest.clockFrame()
         let bar = try #require(try guest.layout().displays.first?.frame)
         #expect(abs(width - (bar.maxX - clock.minX + 30)) < 0.01, "measured width is the clock offset plus the margin")
         try guest.probe("move \(Int(clock.minX - 40)) \(Int(clock.midY))")
