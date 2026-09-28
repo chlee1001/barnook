@@ -1,4 +1,5 @@
 import AppKit
+import BarNookCore
 import os
 import ScreenCaptureKit
 
@@ -23,19 +24,27 @@ final class ClockCover {
     private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "clockCover")
     private var windows: [NSWindow] = []
 
-    /// The strip left of the clock on every screen, from the clock's distance
-    /// to the right edge (the same on every display).
-    static func strips(clockOffset: CGFloat) -> [Strip] {
-        NSScreen.screens.compactMap { screen in
-            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+    /// The strip left of the clock on every menu bar in `layout`. The
+    /// layout, not `visibleFrame`, gives the bar: a display whose menu bar
+    /// hides itself reports no menu bar in `visibleFrame`, and the clicked
+    /// bar is revealed.
+    static func strips(layout: MenuBarLayout) -> [Strip] {
+        let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
+        var seen = Set<String>()
+        return layout.displays.compactMap { display in
+            let bar = display.frame
+            guard seen.insert("\(bar)").inserted,
+                  let clock = display.items.first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier })
             else { return nil }
-            let height = screen.frame.maxY - screen.visibleFrame.maxY
-            let width = screen.frame.width - clockOffset - 4
-            guard height > 0, width > 0 else { return nil }
+            let frame = NSRect(x: bar.minX, y: primaryHeight - bar.maxY, width: clock.frame.minX - bar.minX - 4, height: bar.height)
+            guard frame.width > 0, frame.height > 0,
+                  let screen = NSScreen.screens.first(where: { $0.frame.contains(NSPoint(x: frame.midX, y: frame.midY)) }),
+                  let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+            else { return nil }
             return Strip(
-                frame: NSRect(x: screen.frame.minX, y: screen.frame.maxY - height, width: width, height: height),
+                frame: frame,
                 displayID: id,
-                local: CGRect(x: 0, y: 0, width: width, height: height)
+                local: CGRect(x: frame.minX - screen.frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
             )
         }
     }

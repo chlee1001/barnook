@@ -439,7 +439,7 @@ final class MenuBarManager {
             let read = await Task.detached(priority: .userInitiated) {
                 (MenuBarLayout.read(), NotificationCenterPanel.isOpenNow())
             }.value
-            guard let self, let layout = read.0, let offset = layout.clockOffset,
+            guard let self, let layout = read.0,
                   ClockCoverPolicy.lifts(onClock: layout.clock(at: axPoint) != nil, panelOpen: read.1)
             else { return }
             self.lastClockLift = .now
@@ -447,7 +447,7 @@ final class MenuBarManager {
             Self.log.info("clock click: covered lift")
             _ = await self.clockCover.run(
                 clickAt: point,
-                strips: ClockCover.strips(clockOffset: offset),
+                strips: ClockCover.strips(layout: layout),
                 lift: {
                     self.isCoverLifting = true
                     self.restriction.release()
