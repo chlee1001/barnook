@@ -51,9 +51,9 @@ mise run vm-test                                # clone, install, test, delete: 
 mise run vm-test -- --filter RehideTests        # one suite
 ```
 
-`scripts/vm-test.sh` clones `BARNOOK_VM_GOLDEN` (default `barnook-golden`) as `BARNOOK_VM` (default `barnook-test`), copies `BarNookDev.app`, five fixture apps and the probe into it, grants the app Accessibility in the guest's TCC database, runs `swift test --filter BarNookVMTests` (or the requested VM suite), copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `BARNOOK_VM_KEEP=1` leaves the VM running after the run. `BARNOOK_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `BARNOOK_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run barnook-test --vnc` after `scripts/vm.sh stop` shows its screen. `scripts/vm.sh` uses `~/.tart/barnook_ed25519` as its SSH key.
+`scripts/vm-test.sh` clones `BARNOOK_VM_GOLDEN` (default `barnook-golden`) as `BARNOOK_VM` (default `barnook-test`), copies `BarNookDev.app`, five fixture apps and the probe into it, grants the app Accessibility and Screen Recording in the guest's TCC database, runs `swift test --filter BarNookVMTests` (or the requested VM suite), copies `~/screenshots` from the guest to `build/vm-screenshots`, and deletes the VM. `BARNOOK_VM_KEEP=1` leaves the VM running after the run. `BARNOOK_VM_REUSE=1` runs against a VM that is already up, which is the loop while writing a test: `scripts/vm.sh clone` once, then `BARNOOK_VM_REUSE=1 scripts/vm-test.sh` as often as needed, then `scripts/vm.sh delete`. `scripts/vm.sh ssh` opens a shell in the guest, and `tart run barnook-test --vnc` after `scripts/vm.sh stop` shows its screen. `scripts/vm.sh` uses `~/.tart/barnook_ed25519` as its SSH key.
 
-Without `BARNOOK_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest grants Accessibility; the no-permission case F5 remains manual. The guest has no notch.
+Without `BARNOOK_VM` the suites skip, so `mise run test` and CI stay unit tests. The rows of `docs/testing.md` marked `vm` have a test. The guest grants Accessibility and Screen Recording; the no-Accessibility case F5 remains manual. The guest has no notch.
 
 ## Make a release
 
@@ -114,5 +114,6 @@ If the key is lost, create a new Ed25519 key and put its public half in `Resourc
 - `docs/plan.md`: how it is built, phase by phase.
 - `docs/phase0.md`: what was tried against `MenuBarAgent`, and what worked.
 - `docs/phase7.md`: what was tried in a Tart guest, and what worked.
+- `docs/notification-center-clock.md`: the clock in bar mode: the Notification Center detector, the trigger research, the cover-lift spike and the decision.
 - `docs/testing.md`: the test checklist, VM and manual.
 

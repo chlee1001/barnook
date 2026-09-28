@@ -6,7 +6,7 @@ struct SettingsView: View {
     @Environment(AppState.self) private var state
     @Environment(HiddenSets.self) private var sets
     @Environment(RunningApps.self) private var apps
-    @Environment(AccessibilityPermission.self) private var permission
+    @Environment(Permissions.self) private var permission
 
     var body: some View {
         TabView {
@@ -19,11 +19,6 @@ struct SettingsView: View {
                     Section {
                         Toggle("Hide apps left of the BarNook icon", isOn: $state.hidesAppsLeftOfIcon)
                             .disabled(!permission.isTrusted)
-                        if !permission.isTrusted {
-                            LabeledContent("Needs the Accessibility permission") {
-                                Button("Grant Permission…", action: permission.ask)
-                            }
-                        }
                     } footer: {
                         Text("Cmd-drag items across the icon. Apps left of it join the hidden set. Apps right of it leave it when the set is shown. The always-hidden set is not affected.")
                     }
@@ -101,7 +96,7 @@ struct SettingsView: View {
 private struct GeneralSettings: View {
     @Environment(AppState.self) private var state
     @Environment(LaunchAtLogin.self) private var loginItem
-    @Environment(AccessibilityPermission.self) private var permission
+    @Environment(Permissions.self) private var permission
     @Environment(Updater.self) private var updater
 
     var body: some View {
@@ -154,18 +149,20 @@ private struct GeneralSettings: View {
                 Toggle("When the front app or Space changes", isOn: $state.rehideOnFocusChange)
             }
             Section {
-                LabeledContent("Accessibility") {
-                    if permission.isTrusted {
-                        Text("Granted")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Button("Grant Permission…", action: permission.ask)
+                ForEach(Permissions.Kind.allCases, id: \.self) { kind in
+                    LabeledContent(kind.title) {
+                        if permission.isGranted(kind) {
+                            Text("Granted")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Button("Open System Settings…") { permission.request(kind) }
+                        }
                     }
                 }
+            } header: {
+                Text("Permissions")
             } footer: {
-                Text(permission.isTrusted
-                    ? "The app pickers list only the apps that have a menu bar item."
-                    : "Optional. With it, the app pickers list only the apps that have a menu bar item.")
+                Text("Both are required. Accessibility reads the menu bar and clicks the clock in bar mode; Screen Recording takes the picture that covers the menu bar while the clock opens Notification Center.")
             }
             ClockZoneSection()
             SettingsFileSection()
@@ -252,9 +249,10 @@ private struct SettingsFileSection: View {
     }
 }
 
-/// The trailing zone of the menu bar where hidden items show, so that a
-/// clock click opens Notification Center. Measured from the clock item with
-/// the Accessibility permission, or from one click on the clock without it.
+/// The trailing zone of the menu bar around the clock. In menu-bar mode
+/// hidden items show while the pointer is in it, so that a clock click opens
+/// Notification Center; in bar mode it only pre-filters clock clicks for the
+/// covered lift. Measured from the clock item, or from one click on the clock.
 private struct ClockZoneSection: View {
     @Environment(AppState.self) private var state
     @Environment(ClockZone.self) private var clockZone
@@ -278,9 +276,11 @@ private struct ClockZoneSection: View {
                 }
             }
         } footer: {
-            Text(clockZone.isMeasured
-                ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
-                : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
+            Text(state.hiddenItemsPlacement == .floatingBar
+                ? "In bar mode a click on the clock opens Notification Center under a picture of the menu bar, so hidden items stay covered."
+                : clockZone.isMeasured
+                    ? "Hidden items show while the pointer is over the clock, so that a click opens Notification Center."
+                    : "Hidden items show while the pointer is in the trailing \(width) points of the menu bar, so that a clock click opens Notification Center. Click the clock once to fit the zone to it.")
         }
         .onAppear(perform: clockZone.measureIfTrusted)
     }

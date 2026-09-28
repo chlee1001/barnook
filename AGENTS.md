@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 derivative of ronny/ellipsis. It hides and reveals menu-bar app groups, with a floating app-icon bar for notched displays. Accessibility improves item detection and interaction but is optional; macOS/private MenuBarClientCore behavior limits per-item control. Preserve the original license, copyright, attribution, and bundled Sparkle licenses; mark modifications to inherited files.
+BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 derivative of ronny/ellipsis. It hides and reveals menu-bar app groups, with a floating app-icon bar for notched displays. Accessibility and Screen Recording are required (first-launch onboarding gates Settings; hiding itself needs neither); macOS/private MenuBarClientCore behavior limits per-item control. Preserve the original license, copyright, attribution, and bundled Sparkle licenses; mark modifications to inherited files.
 
 ## Architecture & Data Flow
 
@@ -14,7 +14,7 @@ BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 deriva
 ## Key Directories
 
 - `Sources/BarNook/MenuBar/`: status-item control, hidden sets, rehide, floating bar, placement and policies.
-- `Sources/BarNook/Accessibility/`: Accessibility permission handling; `Sources/BarNook/Settings/`: persisted settings and UI.
+- `Sources/BarNook/Accessibility/`: required-permission model and onboarding; `Sources/BarNook/Settings/`: persisted settings and UI.
 - `Sources/BarNookCore/`: reusable layout/geometry logic; `Tests/BarNookTests/`: in-process tests; `Tests/BarNookVMTests/`: Tart guest tests.
 - `Resources/`: app metadata, icon, entitlements; `scripts/`: bundling, development installation, VM, signing and release; `docs/`: specification, development and QA checklists.
 

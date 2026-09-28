@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): fork overflow marker identity.
+// Modified by Chaehyeon Lee (2026): fork overflow marker identity; clock hit test and hidden-owner check.
 import AppKit
 import ApplicationServices
 
@@ -82,6 +82,25 @@ public struct MenuBarLayout: Sendable, Codable {
             }
         }
         return nil
+    }
+
+    /// The clock item under `point`, with a 2-point margin: a click on the
+    /// clock's edge still counts. Accessibility coordinates.
+    public func clock(at point: CGPoint) -> Item? {
+        for display in displays {
+            for item in display.items where item.systemIdentifier == Self.clockIdentifier {
+                if item.frame.insetBy(dx: -2, dy: -2).contains(point) { return item }
+            }
+        }
+        return nil
+    }
+
+    /// Whether an item of any app in `bundleIdentifiers` is in the layout,
+    /// drawn or collapsed. After a restriction lands, a hidden app has none.
+    public func containsItem(ofAny bundleIdentifiers: Set<String>) -> Bool {
+        displays.contains { display in
+            display.items.contains { $0.bundleIdentifier.map(bundleIdentifiers.contains) ?? false }
+        }
     }
 
     /// The app items on the display that holds `point`, split by their left

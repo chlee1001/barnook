@@ -20,14 +20,14 @@ final class ClockZone {
     static let margin: Double = 30
 
     private let state: AppState
-    private let permission: AccessibilityPermission
+    private let permission: Permissions
     private var clickMonitors: [Any] = []
 
     /// The width came from the clock item, not from a click or the default.
     private(set) var isMeasured = false
     private(set) var isWaitingForClick = false
 
-    init(state: AppState, permission: AccessibilityPermission) {
+    init(state: AppState, permission: Permissions) {
         self.state = state
         self.permission = permission
         measureIfTrusted()

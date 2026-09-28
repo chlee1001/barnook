@@ -24,11 +24,11 @@ final class RunningApps {
     /// Bundle identifiers of the running apps that have a menu bar item, or
     /// nil without the Accessibility permission.
     private(set) var withMenuBarItem: Set<String>?
-    private let permission: AccessibilityPermission
+    private let permission: Permissions
     private var observer: Task<Void, Never>?
     private var scan: Task<Void, Never>?
 
-    init(permission: AccessibilityPermission) {
+    init(permission: Permissions) {
         self.permission = permission
         refresh()
         observer = Task { [weak self] in
@@ -81,7 +81,7 @@ final class RunningApps {
             var found = Set<String>()
             for (id, pid) in pids {
                 guard !Task.isCancelled else { return }
-                if AccessibilityPermission.hasMenuBarItem(pid: pid) {
+                if Permissions.hasMenuBarItem(pid: pid) {
                     found.insert(id)
                 }
             }

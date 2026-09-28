@@ -11,7 +11,7 @@ import Observation
 final class IconDivider {
     private let state: AppState
     private let sets: HiddenSets
-    private let permission: AccessibilityPermission
+    private let permission: Permissions
     private let iconFrame: () -> NSRect?
     private var dragMonitors: [Any] = []
     private var launchObserver: Task<Void, Never>?
@@ -25,7 +25,7 @@ final class IconDivider {
     init(
         state: AppState,
         sets: HiddenSets,
-        permission: AccessibilityPermission,
+        permission: Permissions,
         iconFrame: @escaping () -> NSRect?
     ) {
         self.state = state

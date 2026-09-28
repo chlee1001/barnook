@@ -2,9 +2,9 @@ import BarNookCore
 import Foundation
 import Testing
 
-/// Acceptance criteria 2, 3, 4, 4b, 9 and 9a: hide, show, the always-hidden
-/// set, and every item returning when BarNook stops. Numbers are the rows
-/// of docs/testing.md.
+/// Acceptance criteria 2, 3, 3a, 3b, 4, 4b, 9 and 9a: hide, show, an app
+/// that quits and comes back, the always-hidden set, and every item
+/// returning when BarNook stops. Numbers are the rows of docs/testing.md.
 @Suite(.serialized, .enabled(if: Guest.isConfigured))
 struct HideShowTests {
     let guest = Guest()
@@ -13,10 +13,49 @@ struct HideShowTests {
         try guest.startFixtures()
     }
 
+    /// Launches with A hidden and waits for the first assertion.
+    private func hideAWithAFreshAssertion() throws {
+        try guest.enableDebugLogs()
+        let start = try guest.logMarker()
+        try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
+        try guest.probe("move 500 400")
+        try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
+        try guest.waitUntil("a fresh assertion") { try guest.restrictionLog(since: start).contains { $0.contains("reason=fresh") } }
+    }
+
     @Test func hiddenSetHidesAtLaunch() throws {
         try guest.launchBarNook(["hiddenBundleIdentifiers": .strings([Fixture.a])])
         try guest.waitUntil("A hides") { try !guest.appItems().contains(Fixture.a) }
         #expect(try guest.appItems().isSuperset(of: [Fixture.b, Fixture.c]))
+    }
+
+    /// Row 3b: the allow-list does not change when a hidden app quits and
+    /// comes back, so MenuBarAgent is not asked again.
+    @Test func quittingAHiddenAppKeepsTheAssertion() throws {
+        try hideAWithAFreshAssertion()
+
+        let m1 = try guest.logMarker()
+        try guest.quit(Fixture.name(Fixture.a))
+        try guest.launch(Fixture.name(Fixture.a))
+        try guest.expectStable("A stays hidden") { try !guest.appItems().contains(Fixture.a) }
+        let lines = try guest.restrictionLog(since: m1)
+        #expect(lines.contains { $0.contains("skip: unchanged") })
+        #expect(!lines.contains { $0.contains("reason=fresh") })
+    }
+
+    /// Row 3a: a visible app that quits and comes back stays on the
+    /// allow-list, so MenuBarAgent is not asked again and it reappears.
+    @Test func quittingAVisibleAppKeepsItAllowed() throws {
+        try hideAWithAFreshAssertion()
+
+        let m1 = try guest.logMarker()
+        try guest.quit(Fixture.name(Fixture.b))
+        try guest.launch(Fixture.name(Fixture.b))
+        try guest.waitUntil("B reappears") { try guest.appItems().contains(Fixture.b) }
+        try guest.expectStable("B stays") { try guest.appItems().contains(Fixture.b) }
+        let lines = try guest.restrictionLog(since: m1)
+        #expect(lines.contains { $0.contains("skip: unchanged") })
+        #expect(!lines.contains { $0.contains("activate") && $0.contains(Fixture.b) })
     }
 
     @Test func clickTogglesTheHiddenSet() throws {

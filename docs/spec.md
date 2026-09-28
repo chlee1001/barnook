@@ -9,7 +9,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 - Hide and show menu bar items with one click.
 - Keep an "always hidden" set of apps that you never want to see.
 - Rehide the items automatically after a timeout or after a click outside the menu bar.
-- Need no permission to hide and show. No Screen Recording, no Full Disk Access. Accessibility is optional (see F6).
+- Hiding and showing need no permission. BarNook requires Accessibility and Screen Recording, for the menu bar layout and for the covered clock click in bar mode (F6). No Full Disk Access.
 - Build with SwiftPM and shell scripts only. No `.xcodeproj`, no Xcode GUI.
 - Ship a Developer ID signed and notarized `.app`.
 
@@ -55,9 +55,9 @@ Known limits of this mechanism:
 - Focus and the camera/microphone indicator are hidden while a restriction is active. No system item code brings them back.
 - The framework is private. BarNook loads it with `dlopen` and checks that the classes exist at launch. If they do not exist, BarNook shows an alert and quits.
 - The `allowedSystemItems` codes are undocumented. Code 2 is the clock, code 6 is Wi-Fi, code 8 is Control Center.
-- Notification Center does not open from a clock click while a restriction is active. Control Center and Wi-Fi menus do open. No system item code changes this (tested 0 to 2000). `MenuBarAgent` decides at mouse-down, so a release on mouse-down is too late. BarNook releases the restriction while the pointer is in the trailing zone of the menu bar, and applies it again 0.5 seconds after the pointer leaves. Hidden items show while the pointer is there. The zone is 300 points by default, the clock plus 30 points when measured (F6), or set by one click on the clock (F4).
+- Notification Center does not open from a clock click while a restriction is active. Control Center and Wi-Fi menus do open. No system item code changes this (tested 0 to 2000). `MenuBarAgent` decides at mouse-down, so a release on mouse-down is too late. In menu-bar mode BarNook releases the restriction while the pointer is in the trailing zone of the menu bar, and applies it again 0.5 seconds after the pointer leaves; hidden items show while the pointer is there. In bar mode, when the pointer rests on the clock for 60 ms, BarNook covers every menu bar left of its clock (status items and app menu titles) with a picture of itself and lifts the restriction under the covers, so a click reaches MenuBarAgent as it is instead of waiting for a lift. How fast Notification Center then opens depends on how long MenuBarAgent is still busy with the lift; on the host, mouse-down to panel ranged from about 25 ms to about 400 ms after a 1 s rest, about 500 ms after a 300 ms rest, and about 320–720 ms with no rest. The test gate (testing.md B8p, after a rest) is 700 ms. While the pointer rests there, that part of every menu bar is a still picture. The restriction returns and the covers come off once the pointer leaves the clock, the displays change or the placement does. A click that comes before the covers are up is replayed once they are: BarNook covers every status strip, lifts the restriction, replays the click 10 ms later, reapplies it once Notification Center opens (at most 900 ms), and removes the covers once the layout has no hidden app again (about 1.3 s; at the latest after 1 s for MenuBarAgent's reply plus 3 s for the layout, and an unreadable layout counts as not yet settled). A menu bar without a strip to cover (no clock, no matching screen) stops the lift before it starts. The lift draws the hidden items under the covers; the covers keep them off screen. Needs Accessibility and Screen Recording (F6). A click while Notification Center is open closes it with no lift. The zone is 300 points by default, the clock plus 30 points when measured (F6), or set by one click on the clock (F4).
 - Item frames are not readable without the Accessibility permission. `MenuBarAgent` has a utilities service (`listMenuBarItemsForSpaceID:`, `getPreferredTrailingItemPositions:`) but it needs the private entitlement `com.apple.private.menubar.utilities`. The window server exposes no window per item. With the permission, the windows of `MenuBarAgent` expose one slot per item with its frame and owner.
-- Activation is asynchronous. The newest assertion wins while several are alive, and an `invalidate` of an older one leaves the newer one intact. BarNook keeps the old assertion until the new one reports back, or every item flashes for a moment.
+- Activation is asynchronous. The newest assertion wins while several are alive, and an `invalidate` of an older one leaves the newer one intact. BarNook keeps older assertions until a newer one reports success, or every item flashes for a moment. A failed activation leaves the previous assertion live and is retried after 250 ms, 1 s and 4 s. An allow-list MenuBarAgent already holds (same apps, same MenuBarAgent pid) is not asked for again. A release also invalidates any assertion still on its way, so none outlives it; one that did (seen on 27.0 when two activations overlapped) kept the bar restricted through every later release. Hidden items can show only when no assertion is live: after MenuBarAgent restarts, until the next running-apps change reasserts, and after an activation fails with none live before it, until a retry succeeds; once three retries have failed, the next running-apps change tries again. Both windows are logged under the `restriction` category. An allowed app that quits stays on the list until the next release, so a background agent that restarts does not change the assertion.
 - `MenuBarAgent` matches the allow-list only against apps that run from `/Applications`. An app that runs from another folder is always hidden while a restriction is active. This includes BarNook itself. The BarNook icon disappears if BarNook runs from a build folder.
 
 BarNook releases the restriction when it shows the hidden set. BarNook holds a restriction that hides only the always-hidden set when it shows the hidden set with a normal click.
@@ -86,7 +86,7 @@ BarNook rehides the hidden set when one of these conditions is true and the rela
 
 Each condition has its own switch in Settings. Defaults: timeout on, click outside on, focus change off.
 
-BarNook does not rehide while a menu from a shown item is open.
+BarNook does not rehide while a menu from a shown item is open, or while the pointer rests on the floating bar (F8).
 
 ### F4: Settings window
 
@@ -111,14 +111,20 @@ Open the window from a right-click menu on the BarNook icon. The same menu has "
 - Swift 6 language mode, strict concurrency.
 - Persist settings in `UserDefaults`.
 
-### F6: Optional Accessibility permission
+### F6: Required permissions and onboarding
 
-Without the permission, the app pickers (F4) list every running app. With it, BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, and the pickers list only those apps. With it, BarNook also reads the clock item's frame from `MenuBarAgent` and fits the clock zone to it. Hiding and showing work the same either way.
+BarNook requires two permissions:
 
-- First launch: a dialog explains this and offers "Grant Permission" or "Not Now". "Grant Permission" adds BarNook to the Accessibility list and shows the system prompt. "Not Now" is stored and the dialog does not return at launch.
-- Settings › General shows "Granted", or a "Grant Permission…" button that opens the same dialog.
-- BarNook notices a change in System Settings at once, through the `com.apple.accessibility.api` distributed notification.
-- BarNook never uses Accessibility for anything else.
+- Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the pickers (F4) list only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
+- Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory.
+
+Hiding and showing work without either permission.
+
+- While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions with their state and a "Grant…" button each. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
+- Screen Recording takes effect after a relaunch. Once it was requested, the window offers "Relaunch BarNook".
+- "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state.
+- BarNook re-reads Accessibility 0.5 s after the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
+- For VM tests, `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
 
 ### F7: The icon as divider
 
@@ -142,7 +148,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 - Each icon has a tooltip with the app name. A hover highlights it.
 - The rehide conditions of F3 close the panel: timeout, a click outside the panel and the menu bar, and a focus change.
 - A click on an icon pins that app. The restriction lets its item through, the panel closes, and the user clicks the item itself in the menu bar, as they would any other item. Nothing is pressed on the user's behalf: the press raced the layout and lost the item its menu. Up to three apps are pinned at once (`PinPolicy`); a click past the limit drops the oldest pin, and a click on a pinned app unpins it. With the Accessibility permission the pins are checked against the layout once it settles: a pin that does not fit (macOS put it behind `«`) hides every other app, so every pin is drawn whenever the region holds the icon and the pins. Without the permission nothing can be read, so every other app hides at once, the one arrangement that always leaves the pin on screen.
-- While a pin is up, the icon brings the bar back on the first click and hides the set, the pins and the bar on the second. No rehide condition takes a pin away: a pin is an item the user put in the menu bar to click, and a timeout or a focus change that pulled it back would be the click-through race again, one step removed. The conditions resume once the last pin is gone.
+- Whenever the set is shown in bar mode and the bar is closed — a pin closed it or the last pin went — the icon brings the bar back on the first click and hides the set, the pins and the bar on the second. A relaunch with the set shown opens the bar. No rehide condition takes a pin away: a pin is an item the user put in the menu bar to click, and a timeout or a focus change that pulled it back would be the click-through race again, one step removed. The conditions resume once the last pin is gone.
 - An app that runs from outside `/Applications` is marked in the bar and cannot be pinned into view: `MenuBarAgent` matches the allow-list against `/Applications` only, so the item stays hidden whatever the allow-list says (see "How it hides"). Such an app is left out of the fit check too — hiding every other app would empty the menu bar and still not draw it.
 - An app with an item that changes (a timer, a meter) shows only its app icon in the bar. The README lists this limit.
 
@@ -157,7 +163,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 
 ## Acceptance criteria
 
-1. A fresh install on macOS 27 shows the BarNook icon. BarNook shows one dialog that offers the optional Accessibility permission. "Not Now" is remembered. macOS shows no prompt of its own.
+1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are granted; Screen Recording applies after the offered relaunch.
 2. Add an app to the hidden set. Its items disappear. Click the icon. The items return. Click again. The items disappear.
 3. Quit and relaunch. The hidden state and the sets are unchanged.
 4. Add an app to the always-hidden set. It stays hidden after a normal click. Option+click shows it.

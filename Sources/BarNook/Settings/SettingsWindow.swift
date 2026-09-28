@@ -9,7 +9,7 @@ final class SettingsWindow {
     private let apps: RunningApps
     private let loginItem = LaunchAtLogin()
 
-    init(state: AppState, sets: HiddenSets, permission: AccessibilityPermission, clockZone: ClockZone, updater: Updater) {
+    init(state: AppState, sets: HiddenSets, permission: Permissions, clockZone: ClockZone, updater: Updater) {
         apps = RunningApps(permission: permission)
         let content = SettingsView()
             .environment(state)

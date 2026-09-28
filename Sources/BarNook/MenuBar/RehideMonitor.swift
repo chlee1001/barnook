@@ -113,14 +113,16 @@ final class RehideMonitor {
         }
     }
 
-    /// Hides now, or once the open menu closes. A hide while a menu from a
-    /// shown item is open would pull the item out from under the menu. A
-    /// pin is an item the user put in the menu bar to click, so no rehide
-    /// condition takes it away: the icon ends it.
+    /// Hides now, or once the open menu closes and the pointer leaves the
+    /// floating bar. A hide while a menu from a shown item is open would pull
+    /// the item out from under the menu. A pin is an item the user put in the
+    /// menu bar to click, so no rehide condition takes it away: the icon ends it.
     private func requestHide() {
         guard isArmed, !hasPins() else { return }
         retry?.cancel()
-        if RehidePolicy.isMenuOpen(MenuBarGeometry.openMenuFrames(), menuBar: .current) {
+        if RehidePolicy.shouldWait(
+            menus: MenuBarGeometry.openMenuFrames(), menuBar: .current, panel: panelFrame(), pointer: NSEvent.mouseLocation
+        ) {
             retry = Task { [weak self] in
                 try? await Task.sleep(for: Self.retryInterval)
                 guard !Task.isCancelled else { return }

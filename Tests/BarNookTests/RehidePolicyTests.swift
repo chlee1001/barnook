@@ -40,6 +40,28 @@ struct RehidePolicyTests {
         #expect(RehidePolicy.shouldHide(afterClickAt: NSPoint(x: 350, y: 350), menuBar: menuBar, menus: [popUp]))
     }
 
+    // The floating bar under the menu bar.
+    private let panel = NSRect(x: 600, y: 700, width: 200, height: 40)
+
+    @Test func anOpenMenuWaits() {
+        #expect(RehidePolicy.shouldWait(menus: [statusMenu], menuBar: menuBar, panel: nil, pointer: NSPoint(x: 10, y: 10)))
+    }
+
+    @Test func thePointerOnTheBarWaits() {
+        #expect(RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 650, y: 720)))
+        #expect(RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 600, y: 700)))
+    }
+
+    @Test func thePointerOffTheBarDoesNotWait() {
+        #expect(!RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 800, y: 720)))
+        #expect(!RehidePolicy.shouldWait(menus: [], menuBar: menuBar, panel: nil, pointer: NSPoint(x: 650, y: 720)))
+    }
+
+    @Test func aPopUpElsewhereDoesNotWait() {
+        let popUp = NSRect(x: 300, y: 300, width: 150, height: 100)
+        #expect(!RehidePolicy.shouldWait(menus: [popUp], menuBar: menuBar, panel: panel, pointer: NSPoint(x: 350, y: 350)))
+    }
+
     @Test func menuOnAnotherScreenDoesNotCount() {
         let menu = NSRect(x: 1200, y: 576, width: 200, height: 200)
         #expect(!RehidePolicy.isMenuOpen([menu], menuBar: menuBar))
@@ -52,6 +74,19 @@ struct MenuBarGeometryTests {
     @Test func containsMenuBarPoints() {
         #expect(menuBar.contains(NSPoint(x: 10, y: 780)))
         #expect(!menuBar.contains(NSPoint(x: 10, y: 770)))
+    }
+
+    /// An auto-hidden menu bar reports none in visibleFrame; the top band of
+    /// the screen still finds the clock zone.
+    @Test func topBandsFindTheClockZoneOfAnAutoHiddenBar() {
+        let bands = MenuBarGeometry(topBandsOf: [
+            NSRect(x: 0, y: 0, width: 1512, height: 982),
+            NSRect(x: 1512, y: -1200, width: 1920, height: 1200),
+        ], height: 40)
+        #expect(bands.clockZoneContains(NSPoint(x: 3335, y: -15), width: 203))
+        #expect(bands.clockZoneContains(NSPoint(x: 1415, y: 966), width: 203))
+        #expect(!bands.clockZoneContains(NSPoint(x: 3335, y: -60), width: 203))
+        #expect(!bands.clockZoneContains(NSPoint(x: 3000, y: -15), width: 203))
     }
 
     @Test func clockZoneIsTrailingStrip() {

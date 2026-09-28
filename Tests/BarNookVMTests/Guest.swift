@@ -153,7 +153,8 @@ struct Guest: Sendable {
         try run("defaults delete \(Self.appIdentifier) 2>/dev/null || true")
         try setPosition("status:\(Self.appIdentifier)::barnook.icon", Self.iconPosition)
         var all: [String: Setting] = [
-            "accessibilityDeclined": .bool(true),
+            // The guest grants both permissions through the TCC database.
+            "skipsPermissionOnboarding": .bool(true),
             "rehideOnTimeout": .bool(false),
             "rehideOnClickOutside": .bool(false),
             "rehideOnFocusChange": .bool(false),
@@ -185,6 +186,27 @@ struct Guest: Sendable {
         try run("defaults read \(Self.appIdentifier) \(key)")
     }
 
+    // MARK: Logs
+
+    /// Keeps BarNook's debug lines, such as a skipped assertion, in the log.
+    func enableDebugLogs() throws {
+        try run("sudo log config --subsystem com.chlee1001.BarNook --mode 'level:debug,persist:debug'")
+    }
+
+    /// The guest's clock, for `restrictionLog(since:)`, read a second after
+    /// the call: `log show --start` includes the whole marker second, so
+    /// every line logged before the call is earlier than the marker.
+    func logMarker() throws -> String {
+        Thread.sleep(forTimeInterval: 1)
+        return try run("date '+%Y-%m-%d %H:%M:%S'")
+    }
+
+    /// BarNook's restriction log lines since `marker`.
+    func restrictionLog(since marker: String) throws -> [String] {
+        try run("log show --start '\(marker)' --style compact --info --debug --predicate 'process == \"\(Self.appName)\" AND category == \"restriction\"'")
+            .split(separator: "\n").map(String.init).filter { $0.contains("restriction]") }
+    }
+
     enum Setting {
         case bool(Bool)
         case double(Double)
@@ -214,6 +236,14 @@ struct Guest: Sendable {
 
     func appItems() throws -> Set<String> {
         Set(try items().compactMap(\.bundleIdentifier))
+    }
+
+    /// The clock's frame on the guest's one display.
+    func clockFrame() throws -> CGRect {
+        guard let clock = try items().first(where: { $0.systemIdentifier == MenuBarLayout.clockIdentifier }) else {
+            throw CommandFailure(command: "clock", status: 1, output: "no clock item")
+        }
+        return clock.frame
     }
 
     /// Whether the app's item is on screen: in the layout and not collapsed.

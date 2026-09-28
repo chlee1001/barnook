@@ -14,6 +14,13 @@ import Foundation
 //   probe move X Y
 //   probe click X Y [--option] [--command] [--right]
 //   probe drag X1 Y1 X2 Y2 [--command]
+//   probe nc-state                     whether the Notification Center panel is open (Accessibility)
+//   probe press-system ID [--display N]  AX-press a system item, com.apple.menuextra.clock and the like
+//   probe key CODE [--fn] [--command] [--option] [--control]
+//   probe click-press X Y --trigger none|press|key:CODE[+fn]|script --at down|up --delay MS
+//                                      one click with a trigger at mouse-down or mouse-up, then
+//                                      Notification Center polled every 20 ms for 1500 ms
+//   probe watch-hidden ID,ID,... --for MS   layout reads until MS elapse; which IDs were ever drawn
 
 struct ProbeError: Error, CustomStringConvertible {
     var description: String
@@ -120,9 +127,140 @@ func flipped(_ rect: NSRect) -> CGRect {
     return CGRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
 }
 
+/// The value after `name`, as in `--delay 20`.
+func value(of name: String, in args: ArraySlice<String>) -> String? {
+    guard let index = args.firstIndex(of: name), args.index(after: index) < args.endIndex else { return nil }
+    return args[args.index(after: index)]
+}
+
+func milliseconds() -> Double { Double(DispatchTime.now().uptimeNanoseconds) / 1_000_000 }
+
+/// A system item's element from the layout. `display` picks one display;
+/// otherwise the first match.
+func systemItem(_ id: String, display: Int?) throws -> MenuBarLayout.Item {
+    guard let layout = MenuBarLayout.read() else { throw ProbeError(description: "MenuBarAgent did not answer") }
+    let displays = display.map { index in layout.displays.indices.contains(index) ? [layout.displays[index]] : [] } ?? layout.displays
+    guard let item = displays.lazy.flatMap(\.items).first(where: { $0.systemIdentifier == id }) else {
+        throw ProbeError(description: "\(id) is not in the layout")
+    }
+    return item
+}
+
+struct Pressed: Codable {
+    var pressed: Bool
+    var frame: CGRect
+}
+
+/// A key press. `--fn` sets the function (globe) modifier.
+func key(_ code: CGKeyCode, options: Set<String>) throws {
+    var keyFlags = flags(options)
+    if options.contains("--fn") { keyFlags.insert(.maskSecondaryFn) }
+    if options.contains("--control") { keyFlags.insert(.maskControl) }
+    for down in [true, false] {
+        guard let event = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down) else {
+            throw ProbeError(description: "cannot make a key event")
+        }
+        event.flags = keyFlags
+        event.post(tap: .cghidEventTap)
+        usleep(20_000)
+    }
+}
+
+/// The trigger of `click-press`, fired at mouse-down or mouse-up.
+func fire(_ trigger: String) throws {
+    switch trigger {
+    case "none":
+        return
+    case "press":
+        _ = try systemItem(MenuBarLayout.clockIdentifier, display: nil).element?.press()
+    case "script":
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        task.arguments = ["-e", "tell application \"System Events\" to key code 45 using {function down}"]
+        try task.run()
+        task.waitUntilExit()
+    case let spec where spec.hasPrefix("key:"):
+        let parts = spec.dropFirst(4).split(separator: "+")
+        guard let code = parts.first.flatMap({ CGKeyCode($0) }) else { throw ProbeError(description: "bad key trigger \(spec)") }
+        try key(code, options: parts.contains("fn") ? ["--fn"] : [])
+    default:
+        throw ProbeError(description: "unknown trigger \(trigger)")
+    }
+}
+
+struct ClickPress: Codable {
+    var tTrigger: Double?
+    var tUp: Double
+    var ncOpenedAtMs: Double?
+    var openAtStart: Bool
+    var openAtEnd: Bool
+    /// Every change of the panel state, in ms after mouse-down.
+    var transitions: [Double]
+}
+
+/// Mouse events posted without the 50 ms settle of `post`, for timing.
+func postNow(_ type: CGEventType, at point: CGPoint) throws {
+    guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: .left) else {
+        throw ProbeError(description: "cannot make a \(type) event")
+    }
+    event.post(tap: .cghidEventTap)
+}
+
+@MainActor
+func clickPress(at p: CGPoint, trigger: String, atDown: Bool, delay: Double) throws -> ClickPress {
+    let openAtStart = NotificationCenterPanel.isOpenNow()
+    try post(.mouseMoved, at: p)
+    let start = milliseconds()
+    try postNow(.leftMouseDown, at: p)
+    var tTrigger: Double?
+    if atDown {
+        usleep(useconds_t(delay * 1000))
+        tTrigger = milliseconds() - start
+        try fire(trigger)
+    }
+    // A click lasts about 80 ms from a person.
+    let upAt = max(80, (tTrigger ?? 0) + 10)
+    while milliseconds() - start < upAt { usleep(1000) }
+    let tUp = milliseconds() - start
+    try postNow(.leftMouseUp, at: p)
+    if !atDown {
+        usleep(useconds_t(delay * 1000))
+        tTrigger = milliseconds() - start
+        try fire(trigger)
+    }
+    var state = openAtStart
+    var transitions: [Double] = []
+    var opened: Double?
+    while milliseconds() - start < 1500 {
+        let now = NotificationCenterPanel.isOpenNow()
+        if now != state {
+            let t = milliseconds() - start
+            transitions.append(t)
+            if now, opened == nil { opened = t }
+            state = now
+        }
+        usleep(20_000)
+    }
+    return ClickPress(
+        tTrigger: trigger == "none" ? nil : tTrigger, tUp: tUp,
+        ncOpenedAtMs: opened, openAtStart: openAtStart, openAtEnd: state, transitions: transitions
+    )
+}
+
+struct Watched: Codable {
+    var reads: Int
+    /// The watched IDs drawn in any read.
+    var drawn: [String]
+}
+
 let arguments = CommandLine.arguments.dropFirst()
 let options = Set(arguments.filter { $0.hasPrefix("--") })
-let positional = arguments.filter { !$0.hasPrefix("--") }
+/// Values that follow an option, as in `--delay 20`, are not positional.
+let optionValues: Set<Int> = Set(arguments.indices.filter { index in
+    index > arguments.startIndex
+        && ["--display", "--trigger", "--at", "--delay", "--for"].contains(arguments[index - 1])
+})
+let positional = arguments.indices.filter { !arguments[$0].hasPrefix("--") && !optionValues.contains($0) }.map { arguments[$0] }
 let button: CGMouseButton = options.contains("--right") ? .right : .left
 
 do {
@@ -161,8 +299,41 @@ do {
             try post(.leftMouseDragged, at: p, flags: flags(options))
         }
         try post(.leftMouseUp, at: to, flags: flags(options))
+    case "nc-state":
+        try emit(["open": NotificationCenterPanel.isOpenNow()])
+    case "press-system":
+        guard let id = positional.dropFirst().first else { throw ProbeError(description: "expected ID") }
+        let item = try systemItem(id, display: value(of: "--display", in: arguments).flatMap { Int($0) })
+        try emit(Pressed(pressed: item.element?.press() ?? false, frame: item.frame))
+    case "key":
+        guard let code = positional.dropFirst().first.flatMap({ CGKeyCode($0) }) else { throw ProbeError(description: "expected CODE") }
+        try key(code, options: options)
+    case "click-press":
+        let p = try point(positional.dropFirst())
+        let at = value(of: "--at", in: arguments) ?? "down"
+        guard at == "down" || at == "up" else { throw ProbeError(description: "--at is down or up") }
+        try emit(try clickPress(
+            at: p,
+            trigger: value(of: "--trigger", in: arguments) ?? "none",
+            atDown: at == "down",
+            delay: value(of: "--delay", in: arguments).flatMap { Double($0) } ?? 0
+        ))
+    case "watch-hidden":
+        guard let list = positional.dropFirst().first else { throw ProbeError(description: "expected ID,ID,...") }
+        let ids = Set(list.split(separator: ",").map(String.init))
+        let span = value(of: "--for", in: arguments).flatMap { Double($0) } ?? 1000
+        let start = milliseconds()
+        var reads = 0
+        var drawn = Set<String>()
+        while milliseconds() - start < span {
+            if let layout = MenuBarLayout.read() {
+                reads += 1
+                drawn.formUnion(ids.filter { layout.drawnItem(of: $0) != nil })
+            }
+        }
+        try emit(Watched(reads: reads, drawn: drawn.sorted()))
     default:
-        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]")
+        fail("usage: probe layout|menus|screens|move X Y|click X Y [--option] [--command] [--right]|drag X1 Y1 X2 Y2 [--command]|nc-state|press-system ID [--display N]|key CODE [--fn] [--command] [--option] [--control]|click-press X Y --trigger T --at down|up --delay MS|watch-hidden IDS --for MS")
     }
 } catch {
     fail("\(error)")
