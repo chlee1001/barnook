@@ -25,7 +25,7 @@ public enum NotificationCenterPanel {
         }
     }
 
-    /// Whether any window titled "Notification Center" holds the list.
+    /// Whether any window titled "Notification Center" holds a panel marker (`panelIdentifiers`).
     public static func isOpen(windows: [(title: String?, root: Node)]) -> Bool {
         windows.contains { window in
             window.title == windowTitle && contains(panelIdentifiers, in: window.root, depth: 0)

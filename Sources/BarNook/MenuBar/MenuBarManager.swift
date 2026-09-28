@@ -614,7 +614,7 @@ final class MenuBarManager {
             if !isReplay { pendingClockClick = nil }
             return
         case .queueForLift:
-            Self.log.debug("clock click: queued for the lift, belief=\(self.panelBelievedOpen)")
+            Self.log.debug("clock click: queued for the lift")
             pendingClockClick = point
             return
         case .clickPath:
