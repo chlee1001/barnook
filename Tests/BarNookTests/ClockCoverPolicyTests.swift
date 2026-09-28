@@ -49,29 +49,36 @@ import Testing
     // MARK: Phases
 
     @Test func aClickOffTheClockIsNeverQueued() {
-        for phase in [ClockCoverPolicy.Phase.idle, .dwelling, .covering, .lifted, .restoring, .clickLift] {
-            #expect(ClockCoverPolicy.route(phase: phase, onClock: false, isReplay: false) == .native)
+        for phase in [ClockCoverPolicy.Phase.dwelling, .covering, .lifted, .restoring, .clickLift] {
+            #expect(ClockCoverPolicy.route(phase: phase, onClock: false, isReplay: false) == .passThrough)
         }
     }
 
     @Test func theReplayedClickPassesThrough() {
-        #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: true) == .native)
-        #expect(ClockCoverPolicy.route(phase: .covering, onClock: true, isReplay: true) == .native)
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: true) == .passThrough)
+        #expect(ClockCoverPolicy.route(phase: .covering, onClock: true, isReplay: true) == .passThrough)
     }
 
-    @Test func aClickWhileCoveringIsQueued() {
-        #expect(ClockCoverPolicy.route(phase: .dwelling, onClock: true, isReplay: false) == .queue)
-        #expect(ClockCoverPolicy.route(phase: .covering, onClock: true, isReplay: false) == .queue)
+    @Test func aClickWhileCoveringWaitsForTheLift() {
+        #expect(ClockCoverPolicy.route(phase: .dwelling, onClock: true, isReplay: false) == .queueForLift)
+        #expect(ClockCoverPolicy.route(phase: .covering, onClock: true, isReplay: false) == .queueForLift)
     }
 
     @Test func aClickWhileLiftedGoesStraightThrough() {
-        #expect(ClockCoverPolicy.route(phase: .lifted, onClock: true, isReplay: false) == .native)
-        #expect(ClockCoverPolicy.route(phase: .clickLift, onClock: true, isReplay: false) == .native)
+        #expect(ClockCoverPolicy.route(phase: .lifted, onClock: true, isReplay: false) == .passThrough)
+        #expect(ClockCoverPolicy.route(phase: .clickLift, onClock: true, isReplay: false) == .passThrough)
     }
 
-    @Test func aClickWhileIdleOrRestoringNeedsACoveredLift() {
-        #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: false) == .coveredLift)
-        #expect(ClockCoverPolicy.route(phase: .restoring, onClock: true, isReplay: false) == .coveredLift)
+    /// A replay after the restore could reopen a panel this click closed.
+    @Test func aClickWhileRestoringIsNeverReplayed() {
+        #expect(ClockCoverPolicy.route(phase: .restoring, onClock: true, isReplay: false) == .passThrough)
+    }
+
+    /// Idle clicks go to the click path, which reads the clock itself: the
+    /// cached layout may be stale.
+    @Test func anIdleClickGoesToTheClickPath() {
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: true, isReplay: false) == .clickPath)
+        #expect(ClockCoverPolicy.route(phase: .idle, onClock: false, isReplay: false) == .clickPath)
     }
 
     @Test func onlyAnIdleBarModeRestOnTheClockPrelifts() {

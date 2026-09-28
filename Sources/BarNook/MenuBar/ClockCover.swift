@@ -162,22 +162,15 @@ final class ClockCover {
         _ panelOpen: @escaping @Sendable () async -> Bool
     ) async -> Bool {
         try? await Task.sleep(for: floor)
-        // The cap bounds the whole wait, a slow Accessibility read included.
-        return await withTaskGroup(of: Bool.self) { group in
-            group.addTask {
-                while !Task.isCancelled {
-                    if await panelOpen() { return true }
-                    try? await Task.sleep(for: poll)
-                }
-                return false
+        let deadline = ContinuousClock.now + (cap - floor)
+        // The cap bounds the whole wait, a hung read included; the polling
+        // task stops at the deadline on its own.
+        return await raced(cap - floor, timeout: false) {
+            while ContinuousClock.now < deadline {
+                if await panelOpen() { return true }
+                try? await Task.sleep(for: poll)
             }
-            group.addTask {
-                try? await Task.sleep(for: cap - floor)
-                return false
-            }
-            let first = await group.next() ?? false
-            group.cancelAll()
-            return first
+            return false
         }
     }
 
@@ -281,37 +274,51 @@ final class ClockCover {
         }
     }
 
+    /// Takes the covers down at once, when a lift does not happen.
+    func hideNow() {
+        hide()
+    }
+
     private func hide() {
         windows.forEach { $0.orderOut(nil) }
         windows.removeAll()
     }
 
     /// Resumes one continuation once, with the first answer.
-    @MainActor private final class BoundedRace {
-        var continuation: CheckedContinuation<Bool, Never>?
-        func finish(_ value: Bool) {
+    @MainActor private final class Race<T: Sendable> {
+        var continuation: CheckedContinuation<T, Never>?
+        func finish(_ value: sending T) {
             continuation?.resume(returning: value)
             continuation = nil
+        }
+    }
+
+    /// The first of `work` and a `limit` timer; the timer answers `timeout`.
+    /// A task group would wait for a stuck child (a synchronous
+    /// Accessibility read, a private XPC reply that never comes), so `work`
+    /// runs as its own task and whichever finishes first answers; the loser
+    /// finishes on its own.
+    static func raced<T: Sendable>(_ limit: Duration, timeout: T, _ work: @escaping @MainActor () async -> T) async -> T {
+        let race = Race<T>()
+        return await withCheckedContinuation { continuation in
+            race.continuation = continuation
+            Task { @MainActor in
+                race.finish(await work())
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: limit)
+                race.finish(timeout)
+            }
         }
     }
 
     /// Runs `work`, giving up after `limit`. MenuBarAgent's reply to an
     /// activation is a private XPC completion; one that never comes must not
     /// leave the covers up. Returns whether `work` finished in time.
-    /// A task group would wait for the stuck child, so `work` runs as its
-    /// own task and whichever of it or the timer finishes first answers.
     static func bounded(_ limit: Duration, _ work: @escaping @MainActor () async -> Void) async -> Bool {
-        let race = BoundedRace()
-        return await withCheckedContinuation { continuation in
-            race.continuation = continuation
-            Task { @MainActor in
-                await work()
-                race.finish(true)
-            }
-            Task { @MainActor in
-                try? await Task.sleep(for: limit)
-                race.finish(false)
-            }
+        await raced(limit, timeout: false) {
+            await work()
+            return true
         }
     }
 

@@ -59,22 +59,25 @@ enum ClockCoverPolicy {
     }
 
     enum ClickRoute: Equatable {
-        /// MenuBarAgent takes the click as it is, or it is not on the clock.
-        case native
+        /// Not BarNook's: BarNook's own replay, a click off the clock during
+        /// a pre-lift, or a click MenuBarAgent takes as it is (lifted, a lift
+        /// in flight, or a restore under way, where a replay later could
+        /// reopen a panel this click just closed).
+        case passThrough
         /// The pre-lift replays it once lifted.
-        case queue
-        /// A covered lift replays it; after a restore, once the restore ends.
-        case coveredLift
+        case queueForLift
+        /// The click path decides: it checks the zone and reads the clock
+        /// frame itself, since the cached layout may be stale.
+        case clickPath
     }
 
-    /// Where a mouse-down goes, by phase. Only a click on the clock is
-    /// queued or replayed; any other click is the user's business.
+    /// Where a mouse-down goes, by phase.
     static func route(phase: Phase, onClock: Bool, isReplay: Bool) -> ClickRoute {
-        guard !isReplay, onClock else { return .native }
+        guard !isReplay else { return .passThrough }
         switch phase {
-        case .lifted, .clickLift: return .native
-        case .dwelling, .covering: return .queue
-        case .idle, .restoring: return .coveredLift
+        case .idle: return .clickPath
+        case .dwelling, .covering: return onClock ? .queueForLift : .passThrough
+        case .lifted, .clickLift, .restoring: return .passThrough
         }
     }
 

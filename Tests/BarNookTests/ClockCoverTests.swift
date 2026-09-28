@@ -3,6 +3,12 @@ import BarNookCore
 import Testing
 @testable import BarNook
 
+/// A synchronous call that blocks for a second and ignores cancellation,
+/// as a hung Accessibility read does.
+nonisolated func blockingRead() {
+    usleep(1_000_000)
+}
+
 /// The strips over the user's three displays: a 1512x982 primary, a
 /// 1920x1200 display right of and below it, and a 2560x1440 display right
 /// of and above it (Cocoa coordinates, as NSScreen reports them).
@@ -67,12 +73,15 @@ import Testing
         #expect(ClockCover.strips(layout: MenuBarLayout(displays: []), screens: screens) == nil)
     }
 
-    /// A reply from MenuBarAgent that never comes must not hold the cover.
+    /// A reply from MenuBarAgent that never comes must not hold the cover:
+    /// the stuck work ignores cancellation, as a blocking read does.
     @Test func aStuckWaitIsCutOff() async {
+        let start = ContinuousClock.now
         let finished = await ClockCover.bounded(.milliseconds(50)) {
-            try? await Task.sleep(for: .seconds(5))
+            await Task.detached { blockingRead() }.value
         }
         #expect(!finished)
+        #expect(ContinuousClock.now - start < .milliseconds(500))
     }
 
     @Test func aPromptWaitFinishes() async {
@@ -133,12 +142,12 @@ import Testing
         #expect(ContinuousClock.now - start < .milliseconds(500))
     }
 
-    /// A read that hangs (an Accessibility timeout) still ends at the cap.
+    /// A read that hangs (a blocking Accessibility call, which ignores
+    /// cancellation) still ends at the cap.
     @Test func aHangingReadStopsAtTheCap() async {
         let start = ContinuousClock.now
         let opened = await ClockCover.waitForPanel(floor: .milliseconds(1), cap: .milliseconds(40), poll: .milliseconds(1)) {
-            try? await Task.sleep(for: .seconds(5))
-            return true
+            await Task.detached { blockingRead(); return true }.value
         }
         #expect(!opened)
         #expect(ContinuousClock.now - start < .milliseconds(500))

@@ -62,9 +62,8 @@ final class MenuBarManager {
     /// is and Notification Center opens at native speed (`ClockCoverPolicy.Phase`).
     private var clockPhase: ClockCoverPolicy.Phase = .idle
     private var clockPrelift: Task<Void, Never>?
-    /// A click on the clock while the pre-lift was dwelling or covering
-    /// (replayed once lifted), or while it was restoring (a covered lift once
-    /// the restore ends). Cleared on every pre-lift exit.
+    /// A click on the clock while the pre-lift was dwelling or covering,
+    /// replayed once lifted. Cleared on every pre-lift exit.
     private var pendingClockClick: NSPoint?
     /// Ends the pre-lift hold: the pointer left the clock, the screens or the
     /// placement changed.
@@ -188,8 +187,8 @@ final class MenuBarManager {
             }
         }
         hiddenNow = hidden
-        if !inBar, clockPhase == .lifted {
-            clockHoldEnded = true  // a switch to menu-bar mode ends the bar-mode hold
+        if !inBar, clockPhase != .idle {
+            clockHoldEnded = true  // a switch to menu-bar mode ends the bar-mode pre-lift
         }
         if inBar, isHoverReleased {
             // A switch to bar mode ends a menu-bar hover lift.
@@ -361,8 +360,9 @@ final class MenuBarManager {
             for _ in 0..<16 {
                 try? await Task.sleep(for: .milliseconds(250))
                 guard !Task.isCancelled, let self, !self.pins.isEmpty, self.sets.isHiddenSetShown else { return }
-                // A clock lift draws every hidden item: no verdict from that layout.
-                if self.isCoverLifting { continue }
+                // A clock lift, and its restore, draw every hidden item: no
+                // verdict from that layout.
+                if self.clockPhase != .idle { continue }
                 // An app the allow-list cannot reach stays hidden whatever
                 // the restriction says, so hiding every other app for it
                 // would empty the menu bar and still not draw it.
@@ -478,6 +478,7 @@ final class MenuBarManager {
             restrictionActive: restriction.isActive, permissionsGranted: permission.areGranted
         ) {
             clockPhase = .dwelling
+            clockHoldEnded = false
             clockPrelift = Task { [weak self] in await self?.prelift() }
         }
     }
@@ -487,18 +488,19 @@ final class MenuBarManager {
     /// or the placement does. A pass across the clock shorter than
     /// `ClockCoverPolicy.hoverDwell` does nothing.
     private func prelift() async {
-        var afterRestore: NSPoint?
         defer {
             clockPrelift = nil
             clockPhase = .idle
             pendingClockClick = nil
-            if let afterRestore { clockClicked(at: afterRestore, isReplay: false) }
         }
         try? await Task.sleep(for: ClockCoverPolicy.hoverDwell)
         permission.refresh()
         guard !Task.isCancelled, pendingClockClick != nil || clockHit(NSEvent.mouseLocation, layout: cachedLayout),
               restriction.isActive, permission.areGranted
-        else { return }
+        else {
+            if pendingClockClick != nil { Self.log.info("clock hover: not lifting; queued click dropped") }
+            return
+        }
         async let bands = clockCover.captureBands(ClockCover.currentScreens)
         let layout = await Task.detached(priority: .userInitiated) { MenuBarLayout.read() }.value
         let pictures = await bands
@@ -516,7 +518,13 @@ final class MenuBarManager {
         }
         clockPhase = .covering
         try? await Task.sleep(for: ClockCoverPolicy.coverComposite)
-        clockHoldEnded = false
+        // A display or placement change while dwelling or covering: the
+        // covers match the old displays, so do not lift.
+        guard !clockHoldEnded, state.hiddenItemsPlacement == .floatingBar else {
+            clockCover.hideNow()
+            Self.log.info("clock hover: displays or placement changed before the lift; not lifting")
+            return
+        }
         isCoverLifting = true
         clockPhase = .lifted
         restriction.release()
@@ -548,7 +556,6 @@ final class MenuBarManager {
             }
         )
         Self.log.info("clock hover: restored reapplied=\(result.reapplied) settled=\(result.settled) readFailures=\(result.readFailures)")
-        afterRestore = pendingClockClick
     }
 
     // MARK: Clock click in bar mode
@@ -568,16 +575,15 @@ final class MenuBarManager {
 
     private func clockClicked(at point: NSPoint, isReplay: Bool) {
         switch ClockCoverPolicy.route(phase: clockPhase, onClock: clockHit(point, layout: cachedLayout), isReplay: isReplay) {
-        case .native:
-            if clockPhase != .idle { return }
-        case .queue:
+        case .passThrough:
+            // A click elsewhere while a clock click waits means the user moved on.
+            if !isReplay { pendingClockClick = nil }
+            return
+        case .queueForLift:
             pendingClockClick = point
             return
-        case .coveredLift:
-            if clockPhase == .restoring {
-                pendingClockClick = point
-                return
-            }
+        case .clickPath:
+            break
         }
         let facts = ClockCoverPolicy.Facts(
             inBar: state.hiddenItemsPlacement == .floatingBar,
