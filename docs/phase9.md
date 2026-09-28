@@ -1,6 +1,6 @@
 # Phase 9 record: the clock in bar mode
 
-Status: **D0 failed on the host; stop before R0/S1/S2 under the approved spike gate.** The detector is diagnostic tooling, not a safe product signal. No winning trigger has been established.
+Status: **D0 failed on the host.** No trigger opens NC while an assertion is held. At the user's request, the follow-up tested a cover-lift instead: on 3 displays, a cover over the bar hid the lift in 30 of 30 tries (see "N3(c) follow-up"). The window-list detector is diagnostic only. An accessibility detector does tell a banner from the panel.
 
 ## Question
 
@@ -129,3 +129,76 @@ The work stops after this record. Nothing else lands and no pull request opens. 
 - **N3:** use menu-bar placement when the clock must open NC; approve S3 only after reviewing a display-refresh-rate recording and the MenuBarAgent log; or propose a different design, such as investigating richer window fields and testing Fn+N against an unrestricted control. Any NC-state-gated reapplication inherits the banner false positive until the detector is redesigned. N2 and menu-bar placement do not rely on this detector.
 
 There is no verified basis yet to recommend N1's menu item as a strict no-flash route. The user's choice requires a ralplan revision before more implementation.
+
+
+## N3(c) follow-up (2026-09-28)
+
+### No trigger works under an assertion
+
+A `/tmp` harness held its own assertion with the pointer away from the clock. Under it, none of these opened NC in any try:
+
+- Fn+N, as a flag and as a real fn key-down;
+- AXPress and AXShowMenu on the clock;
+- a synthetic clock click;
+- System Events Fn+N;
+- distributed notifications.
+
+In the repeated runs (Fn+N and AXPress, 5 each, with the hidden set and with a restriction that hides nothing) NC opened 0 of 20 times. The block comes from the assertion itself, not from the allow-list.
+
+With no assertion, Fn+N opened NC in 135–183 ms, AXPress in about 500 ms and a click in 177 ms. In the log, MenuBarAgent forwards the click to ControlCenter, but under an assertion ControlCenter never logs `Sending mouse down event to Notification Center`.
+
+The same limit is reported for Hidden Bar (#437), Ice (PR #995) and Barline (PR #46).
+
+### An accessibility detector tells a banner from the panel
+
+With a banner only, the NC window's AX tree holds only `AXGroup` subrole `AXNotificationCenterBanner`. When the panel is open, it also holds `AXGroup` id `AXNotificationListItems`. On the host:
+
+- 10/10 clock toggles were classified correctly;
+- 3/3 banners were classified as a banner, while `nc-state` reported open;
+- the panel with a banner over it was classified as the panel.
+
+This needs Accessibility.
+
+### A stale assertion
+
+At 11:09:38, two overlapping activations left one assertion behind. From then on, hover lifts showed nothing and the clock stayed inert until BarNook relaunched. The MenuBarAgent activate/invalidate balance shows it. Commit `616addb` fixes this (the plan's commits 1 and 1b).
+
+### Cover-lift spike
+
+The harness is `/tmp/ncx/cover.swift` and is not committed. BarNook was not running.
+
+For each try, the harness:
+
+1. captures the status-item strip left of the clock with ScreenCaptureKit;
+2. shows that image in a borderless window at level `mainMenu + 2` that ignores the mouse;
+3. lifts the assertion and, 80 ms later, posts a click on the clock (or AXPresses it);
+4. waits 150 ms and reapplies;
+5. waits until no hidden app owns a slot in the AX layout, then removes the cover 150 ms later.
+
+Menu-bar frames were sampled throughout. The flash metric counts changed columns left of the baseline's leftmost icon, where hidden items appear.
+
+| Run | Tries | Frames with hidden items | NC opened |
+|---|---|---|---|
+| No cover, click (control) | 3 | 12 of 12 sampled frames per try | 3/3 |
+| No cover, AXPress (control) | 5 | 5–7 per try | 5/5 |
+| Cover, fixed 150 ms hold after reapply | 5 | 1 try with a fading ghost | 5/5 |
+| Cover, click, fixed 400 ms hold (display 0) | 5 | 3 tries with the MenuBarAgent crossfade | 5/5 |
+| **Cover, click, wait for layout + 150 ms, 3 displays** | **30** | **0** | **30/30** |
+| Cover, AXPress, 3 displays, fixed 400 ms hold | 15 | 2 tries with 1 frame | 14/15 |
+
+For the final row:
+
+- NC appeared a median 461 ms after the lift, 90th percentile 825 ms, maximum 1097 ms.
+- The cover stays up a median 1343 ms, maximum 1581 ms. Uncovering must wait for the layout, not a timer: MenuBarAgent redraws and crossfades for 640–920 ms after the assertion reports active.
+- NC stayed open after the reapply.
+- Escape closed it with no lift.
+
+The displays were the built-in 1512×982 and two externals, 1920×1200 and 2560×1440.
+
+### Limits
+
+- **Frame sampling.** Sampling runs at about 20 frames per second, not at the display's refresh rate. A single-frame flash between samples cannot be excluded. The final row shows no hidden item in any sample.
+- **What the cover hides.** Under the cover, the real bar still draws the hidden items; only the screen shows the old image. Anything that changes the strip during those 1.3 s is frozen too: an icon's own update, or the clock's highlight left of the cover.
+- **Permissions.** The cover needs Screen Recording for the capture, and BarNook does not ask for it today. Posting the click needs Accessibility.
+- **Hover.** The bar-mode hover lift is still in the product. The spike ran with BarNook quit, so it says nothing about the product path.
+- **Not measured.** A real mouse click, a banner arriving during the cover, and fullscreen spaces.
