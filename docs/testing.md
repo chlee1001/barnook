@@ -2,14 +2,14 @@
 
 Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6, G1 to G4) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
 | 1 | Fresh install, launch | Icon shows a nook. "Welcome to BarNook" lists Accessibility and Screen Recording, both not granted; "Continue" is disabled. Hiding works. | |
 | 1a | Close the window. Right-click the icon › "Settings…". Quit. Relaunch. | "Settings…" shows the onboarding again, not Settings. It shows again at launch. | |
 | 1b | "Grant…" for Accessibility, turn BarNook on in System Settings. | The row turns "Granted" within a second, without a relaunch. | |
-| 1c | "Grant…" for Screen Recording, turn BarNook on in System Settings. "Relaunch BarNook". | After the relaunch, no onboarding shows at launch. "Settings…" opens Settings; General › Permissions shows both "Granted". | |
+| 1c | "Grant…" for Screen Recording, turn BarNook on in System Settings. "Relaunch BarNook". | After the relaunch, no onboarding shows at launch. "Settings…" opens Settings; General › Permissions shows both "Allowed". | |
 | 2 | Put an app in the hidden set. Click the icon. Click again. | Items hide, show (`‹`), hide (nook). | vm |
 | 2a | Settings › Menu Bar › Menu bar icon: pick a different icon for each state. Toggle the set in light and dark menu bars. Quit. Relaunch. | Each palette shows every icon with its image. The icon changes at once, matches the state, stays readable and clickable, and survives the relaunch. | Pass |
 | 3 | Show the set. Quit. Relaunch. | Set is still shown. Sets are unchanged. | vm |
@@ -52,6 +52,10 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | W3 | Keyboard only through every control; in each text field use Cmd-X/C/V/A. | Tab reaches every control; the four shortcuts work in every text field. | |
 | W4 | VoiceOver over every pane and the onboarding. | Pane buttons and every control are read by name. | |
 | W5 | Built-in 13-inch display at the default scale: open each pane. | The window stays on screen; a long pane scrolls inside. | |
+| G1 | Open General. Turn "Check for updates automatically" on, quit, relaunch; click "Check Now…". | Header with the icon, the version from Info.plist and "Permissions OK"; Launch at login; both permissions "Allowed"; Updates; Settings file; Quit at the bottom right; no scrolling. The switch stays on (`SUEnableAutomaticChecks` 1). Sparkle's check window opens; the button is disabled meanwhile. | |
+| G2 | Window open: turn Screen Recording off in System Settings, come back; turn Accessibility off; turn both on (Screen Recording: relaunch). | Accessibility: a banner and "missing" in the header within about 1 s; its button opens the list. Screen Recording: either (a) the banner on return or (b) nothing until a relaunch, then the onboarding; record which. On again: the banners go. | |
+| G3 | Quit. `defaults delete com.chlee1001.BarNookDev <key>` for the 12 settings keys. Launch the new build. Import a file exported by an earlier build. Before reopening Settings, `defaults read` the 12 keys. | All 12 equal the file; each shows in its new place; no alert. `clockZoneWidth` may be measured again when Settings opens with Accessibility. | |
+| G4 | Window open: turn BarNook off in System Settings › Login Items, come back; turn it on there, come back. | "Waiting for approval in System Settings" with "Open Login Items"; then the switch follows without reopening the window. | |
 | M1 | Reset the settings on a Mac without a notch and on a notch MacBook; open Menu Bar. | No notch: no Recommended, "In the menu bar" chosen. Notch: Recommended on the bar card only, the bar chosen. | |
 | M2 | Pick the same icon for both states, then change one. | The warning shows and the choice is saved; the warning goes. | |
 | M3 | Timeout field: 0, 999, abc, 42 and Return; the stepper to both ends; turn the switch off. | 1, 300, the previous value, 42; 1–300; the field and stepper disabled. | |

@@ -23,7 +23,7 @@ final class SettingsWindow {
         )
         let tabs = SettingsTabViewController()
         tabs.tabStyle = .toolbar
-        tabs.addPane("General", symbol: "gearshape", GeneralSettings().modifier(environment))
+        tabs.addPane("General", symbol: "gearshape", GeneralPane().modifier(environment))
         tabs.addPane("Menu Bar", symbol: "menubar.rectangle", MenuBarPane().modifier(environment))
         tabs.addPane("Apps", symbol: "square.grid.2x2", AppsPane().modifier(environment))
         window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)

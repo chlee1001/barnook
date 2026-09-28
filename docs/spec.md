@@ -92,15 +92,14 @@ BarNook does not rehide while a menu from a shown item is open, or while the poi
 
 An AppKit window with toolbar panes that host SwiftUI views:
 
-- Launch at login (`SMAppService`).
+- General: the app icon, name and version with a permission summary; a banner at the top while a permission is missing; launch at login (`SMAppService`); each permission's state with "Allow…" or "Relaunch BarNook"; update options (Sparkle); the settings file; a quit button.
 - Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
 - Apps (Settings › Apps): one list of running apps with Shown, Hidden or Always hidden per app, a search field and the count of each set. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running.
 - Choose hidden apps: "From this list" or "By position" (F7). "By position" needs the Accessibility permission.
 - Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused.
 - Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
 - Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
-- Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
-- Version number and a quit button.
+- Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing.
 
 Open the window from a right-click menu on the BarNook icon. The same menu has "Show always-hidden items", "Settings…", and "Quit".
 
@@ -122,7 +121,8 @@ Hiding and showing work without either permission.
 
 - While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions with their state and a "Grant…" button each. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
 - Screen Recording takes effect after a relaunch. Once it was requested, the window offers "Relaunch BarNook".
-- "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state.
+- "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state, and a banner at the top of the pane while one is missing.
+- A Screen Recording change can take effect only after a relaunch; until then Settings may still show it as allowed.
 - BarNook re-reads Accessibility 0.5 s after the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
 - For VM tests, `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
 
