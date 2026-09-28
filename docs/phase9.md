@@ -202,3 +202,61 @@ The displays were the built-in 1512×982 and two externals, 1920×1200 and 2560�
 - **Permissions.** The cover needs Screen Recording for the capture, and BarNook does not ask for it today. Posting the click needs Accessibility.
 - **Hover.** The bar-mode hover lift is still in the product. The spike ran with BarNook quit, so it says nothing about the product path.
 - **Not measured.** A real mouse click, a banner arriving during the cover, and fullscreen spaces.
+
+
+## Proposed revision after the spike (pending the user's approval)
+
+The approved plan has two rules for bar mode: the restriction is never lifted on a hover or click, and the hidden items are never drawn. The cover-lift breaks both on purpose. The restriction is lifted for about 0.4–0.9 s, and MenuBarAgent draws the hidden items under the cover. The spike shows only that no hidden item appeared in the frames it sampled, about 20 per second. The user asked for items to be "never shown, even briefly". The cover meets that only on screen, as far as sampling can tell, and only when BarNook has Screen Recording.
+
+### What to approve
+
+**A. The contract for bar mode.**
+
+1. **Cover-lift (recommended).** A click on the clock opens NC. No hidden item is visible on screen, within the sampling limit above. What is gained and what it costs:
+   - NC appears about 0.46 s after the click, median; the native click takes about 0.18 s. This is above the plan's 400 ms gate, so the gate becomes "median ≤ 600 ms and p90 ≤ 1 s, measured on the product path."
+   - The status strip is frozen for about 1.3 s after the click.
+   - Two permissions are needed: Screen Recording (new) and Accessibility.
+2. **Strict.** In bar mode the clock does nothing. The Settings footer points to the trackpad edge swipe and to menu-bar placement.
+3. **Cover-lift, then strict.** Use the cover-lift when both permissions are granted, and strict otherwise.
+
+**B. Screen Recording.** Pick one:
+
+- (a) Ask for it the first time the clock is clicked in bar mode, with a one-line reason.
+- (b) Put it behind a Settings toggle, "Clock opens Notification Center (needs Screen Recording)", which is off by default.
+
+Recommended: (b), since it is the only new permission and turning it on is the user's choice.
+
+### Revised commits
+
+- **Commits 1 and 1b.** Landed as `616addb`.
+- **Commit 2** (monotonic allow-list). Unchanged and still gated by its four conditions. On this host the running-app churn comes from background agents, such as `AXVisualSupportAgent` flapping. So commit 2 is the likely fix for the repeated reassertions, if the gate holds.
+- **Commit 3** (menu-bar-mode hover hold and watch). Unchanged. It does not depend on the cover.
+- **Commit 4, rewritten** as `fix(floating-bar): open Notification Center from the clock behind a cover`:
+  - Remove the bar-mode hover lift, as before.
+  - A global `leftMouseDown` monitor, filtered to the clock (`clockZone` plus the AX clock frame), starts one `ClockCover` action at a time, with a 300 ms debounce. The action:
+    1. captures the status strip with ScreenCaptureKit;
+    2. shows a `mainMenu + 2` window that ignores the mouse;
+    3. calls `restriction.release()`;
+    4. waits 80 ms and replays the click at the clock;
+    5. waits 150 ms and calls `applyCurrentState()`;
+    6. waits for a layout with no hidden owner, capped at 3 s, then 150 ms;
+    7. removes the cover.
+  - A click that lands while NC is already open is not intercepted. Escape and the dismissing click close NC with no lift. The AX detector reports NC's state: it looks for `AXNotificationListItems`, not the window list.
+  - Pure policy in `ClockCoverPolicy`: the timings, when to intercept, and debounce. The whole commit touches only `MenuBarManager`, a new `ClockCover` class and Settings.
+- **Commit 5** (rehide waits while the pointer is on the bar; `IconClickPolicy`). Unchanged.
+- **Commit 6** (reopen the bar at relaunch). Unchanged.
+
+### Verification of the revised commit 4
+
+- Unit tests for `ClockCoverPolicy`.
+- Host rows. Run each on the 1512, 1920 and 2560 displays, 10 times each, with the product installed:
+  - a real mouse click opens NC;
+  - 0 frames in which a hidden item is visible, using the sampled metric from the spike;
+  - a banner arriving under the cover;
+  - a fullscreen space;
+  - NC's latency against the new gate.
+- A 120 Hz screen recording of at least 3 clicks, reviewed frame by frame.
+- VM rows B8 and B8c, adapted, if Tart is available.
+- In the VM, Screen Recording has to be granted to BarNookDev.
+
+This packet goes into a new ralplan run for consensus review. The current run has used all 5 of its iterations.
