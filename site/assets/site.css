@@ -82,8 +82,9 @@ button.more:hover { background: rgba(255,255,255,.22); }
 .overflow { position: absolute; top: 34px; right: 120px; display: flex; flex-direction: column; min-width: 150px; padding: 5px; border-radius: 10px; background: rgba(246,246,242,.95); box-shadow: 0 10px 30px rgba(0,0,0,.3); color: var(--ink); font-size: 13px; z-index: 3; }
 .overflow.off { display: none; }
 .overflow div { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
-.overflow div.bn-row { cursor: pointer; }
-.overflow div.bn-row:hover { background: rgba(0,0,0,.07); }
+.overflow .bn-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 8px; border: 0; border-radius: 6px;
+                    background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.overflow .bn-row:hover { background: rgba(0,0,0,.07); }
 .panel { position: absolute; top: 34px; display: flex; gap: 2px; padding: 5px; border-radius: 12px; background: rgba(246,246,242,.92);
          box-shadow: 0 10px 30px rgba(0,0,0,.3); transition: opacity .18s, transform .18s; z-index: 3; }
 .panel.off { opacity: 0; transform: translateY(-6px); pointer-events: none; }
@@ -99,7 +100,7 @@ button.more:hover { background: rgba(255,255,255,.22); }
 /* Sections */
 section { padding: 76px 0; }
 section + section { border-top: 1px solid var(--line); }
-.eyebrow { color: #c0712a; font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+.eyebrow { color: #9a5412; font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
 h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; letter-spacing: -.015em; margin: 0 0 14px; }
 .intro { color: var(--muted); max-width: 680px; margin: 0 0 36px; font-size: 17px; }
 .grid { display: grid; gap: 18px; }
@@ -156,7 +157,7 @@ details p { margin: 0; padding-bottom: 18px; color: var(--muted); }
 .final { text-align: center; }
 .final h2 { margin-top: 12px; }
 .final .btn.ghost { color: var(--ink); border-color: #c9cdc3; }
-.final .meta { color: var(--soft); }
+.final .meta { color: var(--muted); }
 footer { background: var(--deep); color: #9fb0ab; font-size: 13.5px; padding: 36px 0 44px; }
 footer .row { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-bottom: 14px; }
 footer .row a { color: var(--cream); text-decoration: none; }

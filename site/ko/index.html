@@ -13,7 +13,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BarNook">
 <meta property="og:title" content="BarNook — macOS 27 메뉴 막대 앱 숨기기">
-<meta property="og:description" content="안 쓰는 메뉴 막대 앱은 숨겨 두고, 필요할 때 아이콘을 클릭해 꺼내 쓰세요. 노치가 있는 MacBook에서도 앱이 가려지지 않습니다. 무료 오픈 소스입니다.">
+<meta property="og:description" content="안 쓰는 메뉴 막대 앱은 숨겨 두고, 필요할 때 아이콘을 클릭해 꺼내 쓰세요. 노치가 있는 MacBook을 위해 만들었습니다. 무료 오픈 소스입니다.">
 <meta property="og:url" content="https://chlee1001.github.io/barnook/ko/">
 <meta property="og:locale" content="ko_KR">
 <meta property="og:locale:alternate" content="en_US">
@@ -88,7 +88,7 @@
           <div class="desk-hint" id="deskHint">메뉴 막대의 <b>BarNook 아이콘</b>을 클릭하세요.</div>
         </div>
       </div>
-      <p class="demo-caption" id="caption" aria-live="polite">노치가 있는 MacBook입니다. 숨긴 앱 6개, 항상 숨김 2개. 메뉴 막대에 남은 앱은 2개입니다.</p>
+      <p class="demo-caption" id="caption" aria-live="polite">노치가 있는 MacBook입니다. 숨긴 앱은 6개, 항상 숨기는 앱은 2개이고, 메뉴 막대에 남은 앱은 2개입니다.</p>
     </div>
   </div>
 </div>
@@ -103,7 +103,7 @@
         <div class="mini">
           <div class="bar"><span class="more">«</span><span class="it" style="background:#10b981">G</span><span class="it" style="background:#6366f1">T</span><span class="it" style="background:#3b82f6">S</span><span>⌁</span><span>(화) 오후 2:25</span></div>
           <div class="n"></div>
-          <div class="tag bad">항목 6개와 BarNook 아이콘이 « 뒤로 접힘</div>
+          <div class="tag bad">항목 5개와 BarNook 아이콘이 « 뒤로 접힘</div>
         </div>
         <h3>모두 메뉴 막대에 표시할 때</h3>
         <p>숨긴 앱이 한꺼번에 메뉴 막대로 돌아옵니다. 노치가 있는 화면에는 자리가 부족해서 macOS가 이 앱들을 BarNook 아이콘과 함께 « 안으로 접습니다.</p>
@@ -119,7 +119,7 @@
         <p>메뉴 막대는 그대로 두고, 숨긴 앱을 BarNook 아이콘 아래 막대에 앱 아이콘으로 보여 줍니다. 여기서 앱을 클릭하면 그 앱의 항목이 메뉴 막대에 고정되고(최대 3개), 고정된 항목을 클릭해 쓰면 됩니다.</p>
       </div>
     </div>
-    <p class="intro note">노치가 있는 화면에서는 아래 막대, 없는 화면에서는 메뉴 막대가 기본값입니다. Settings › Menu Bar › "Show hidden items"에서 언제든 바꿀 수 있습니다.</p>
+    <p class="intro note">노치가 있는 화면이 하나라도 있으면 아래 막대, 없으면 메뉴 막대가 기본값입니다. Settings › Menu Bar › "Show hidden items"에서 언제든 바꿀 수 있습니다.</p>
   </div>
 </section>
 
@@ -151,14 +151,14 @@
     <p class="intro">BarNook은 메뉴 막대 앱을 숨기고 보여 주는 일만 합니다. 항목 순서를 바꾸거나 메뉴 막대 모양을 꾸미지는 않습니다.</p>
     <div class="grid g3">
       <div class="card"><div class="k" aria-hidden="true">1×</div><h3>클릭 한 번으로 전환</h3><p>아이콘을 클릭하면 숨긴 앱이 나타나고, 한 번 더 클릭하면 다시 숨겨집니다.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">⌥</div><h3>항상 숨김</h3><p>거의 쓰지 않는 앱은 아이콘을 그냥 클릭해서는 나오지 않습니다. <kbd>⌥</kbd>를 누른 채 클릭하면 이 앱들도 함께 나옵니다.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">⏱</div><h3>자동으로 다시 숨김</h3><p>정해 둔 시간(1–300초)이 지나거나, 메뉴 막대 밖을 클릭하거나, 앱이나 Space를 바꾸면 다시 숨깁니다. 메뉴가 열려 있을 때는 숨기지 않습니다.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">⌥</div><h3>항상 숨김</h3><p>거의 쓰지 않는 앱은 아이콘을 그냥 클릭해서는 나오지 않습니다. <kbd>⌥</kbd> Option 키를 누른 채 클릭하면 이 앱들도 함께 나옵니다.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">⏱</div><h3>자동으로 다시 숨김</h3><p>정해 둔 시간(1–300초)이 지나거나, 메뉴 막대 밖을 클릭하면 다시 숨깁니다. 설정을 켜 두면 앱이나 Space를 바꿀 때도 숨깁니다. 메뉴가 열려 있을 때는 숨기지 않습니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">⌘</div><h3>아이콘 기준으로 나누기</h3><p>"By position"에서는 <kbd>⌘</kbd>를 누른 채 항목을 아이콘 왼쪽으로 옮기면 그 앱이 숨겨지고, 오른쪽으로 옮기면 다시 보입니다.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">▭</div><h3>노치용 막대</h3><p>디스플레이별로 숨긴 앱을 아이콘 아래 막대에 띄울 수 있습니다. 그중 최대 3개를 메뉴 막대에 고정할 수 있습니다.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">▭</div><h3>노치용 막대</h3><p>노치가 있든 없든 숨긴 앱을 아이콘 아래 막대에 띄울 수 있습니다. 그중 최대 3개를 메뉴 막대에 고정할 수 있습니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">◎</div><h3>시계 클릭은 그대로</h3><p>앱을 숨긴 동안에도 시계를 클릭하면 알림 센터가 열립니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">✦</div><h3>아이콘 모양 선택</h3><p>숨김 상태와 표시 상태의 아이콘을 따로 고를 수 있습니다. 기본 아이콘, 말줄임표, 화살표, 점, 별 중에서 고르면 됩니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">⇅</div><h3>설정 내보내기·가져오기</h3><p>숨김 목록과 옵션을 파일로 내보내 다른 Mac에서 그대로 가져올 수 있습니다.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">↻</div><h3>자동 실행·자동 업데이트</h3><p>로그인하면 자동으로 실행되고, GitHub Releases에 올라온 서명된 업데이트를 Sparkle로 받습니다.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">↻</div><h3>자동 실행·자동 업데이트</h3><p>로그인할 때 자동으로 실행되게 할 수 있고, GitHub Releases에 올라온 서명된 업데이트를 Sparkle로 받습니다.</p></div>
     </div>
   </div>
 </section>
@@ -170,7 +170,7 @@
     <p class="intro">앱 숨기기는 권한 없이도 바로 됩니다. 처음 실행하면 환영 창에서 아래 두 권한을 요청하고, 둘 다 허용하면 Settings가 열립니다.</p>
     <div class="grid g2">
       <div class="card"><div class="k" aria-hidden="true">Ax</div><h3>손쉬운 사용</h3><p>메뉴 막대 배치를 읽는 데 씁니다. 덕분에 Apps 목록에는 메뉴 막대 항목이 있는 앱만 나오고, 아이콘 기준으로 앱을 나눌 수 있고, 시계 클릭 영역이 시계 크기에 맞춰집니다.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">▣</div><h3>화면 및 시스템 오디오 녹음</h3><p>아래 막대 모드에서 시계를 클릭하면 숨긴 항목이 잠깐 비칠 수 있습니다. 이를 막으려고 그 순간에만 메뉴 막대를 캡처한 이미지로 덮어 둡니다. 이미지는 파일로 저장하지 않고 메모리에만 두었다가 바로 지웁니다.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">▣</div><h3>화면 및 시스템 오디오 녹음</h3><p>아래 막대 모드에서 시계를 클릭하면 숨긴 항목이 잠깐 비칠 수 있습니다. 그래서 그동안만 메뉴 막대를 캡처한 이미지로 덮어 둡니다. 이미지는 파일로 저장하지 않고 메모리에만 두었다가, 덮개를 걷을 때 지웁니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">∅</div><h3>분석 도구·계정 없음</h3><p>BarNook이 접속하는 곳은 업데이트 확인용 GitHub뿐입니다. 시스템 정보는 보내지 않으며, 자동 확인은 Settings › General에서 끌 수 있습니다.</p></div>
       <div class="card"><div class="k" aria-hidden="true">{ }</div><h3>오픈 소스</h3><p>소스 코드는 GitHub에 모두 공개되어 있고, SwiftPM으로 직접 빌드할 수 있습니다. 라이선스는 Apache 2.0입니다.</p></div>
     </div>
@@ -181,7 +181,7 @@
   <div class="wrap">
     <p class="eyebrow">한계</p>
     <h2>BarNook이 못 하는 일</h2>
-    <p class="intro">아래 제약은 macOS 27의 동작 방식에서 오는 것이라 설정으로 바꿀 수 없습니다.</p>
+    <p class="intro">아래 제약은 macOS 27의 동작 방식 때문에 생깁니다.</p>
     <ul class="limits">
       <li><b>항목이 아니라 앱 단위로 숨깁니다.</b> 메뉴 막대 항목이 두 개인 앱은 둘 다 숨겨집니다.</li>
       <li><b>집중 모드와 카메라·마이크 표시등</b>도 앱을 하나라도 숨긴 동안에는 함께 숨겨집니다. 따로 보이게 하는 설정은 없습니다.</li>
@@ -202,7 +202,7 @@
     </details>
     <details>
       <summary>집중 모드와 카메라 표시등이 왜 사라지나요?</summary>
-      <p>앱을 하나라도 숨기고 있으면 macOS가 이 표시들도 함께 숨깁니다. BarNook이 쓰는 시스템 기능의 제약입니다. 숨긴 앱을 다시 보이게 하면 돌아옵니다.</p>
+      <p>앱을 하나라도 숨기고 있으면 macOS가 이 표시들도 함께 숨깁니다. BarNook이 쓰는 시스템 기능의 제약입니다. 숨긴 앱이 하나도 없을 때(예: BarNook을 종료했을 때)만 다시 나타납니다.</p>
     </details>
     <details>
       <summary>한 앱의 항목 중 하나만 숨길 수 있나요?</summary>
@@ -210,11 +210,11 @@
     </details>
     <details>
       <summary>앱 화면도 한국어로 나오나요?</summary>
-      <p>아직은 아닙니다. BarNook의 메뉴와 Settings는 영어로만 나옵니다. 이 페이지에서도 앱 화면에 나오는 이름은 영어 그대로 적었습니다.</p>
+      <p>아니요. BarNook의 메뉴와 Settings는 영어로만 나옵니다. 이 페이지에서도 앱 화면에 나오는 이름은 영어 그대로 적었습니다.</p>
     </details>
     <details>
-      <summary>Bartender나 Thaw와는 무엇이 다른가요?</summary>
-      <p>BarNook은 앱을 숨기고 보여 주는 기능과 노치용 막대만 있습니다. 항목 재배치, 검색, 메뉴 막대 꾸미기는 지원하지 않습니다. 이런 기능이 필요하면 Bartender나 Thaw가 더 맞습니다.</p>
+      <summary>Bartender와는 무엇이 다른가요?</summary>
+      <p>BarNook은 앱을 숨기고 보여 주는 일, 그리고 노치용 막대만 제공합니다. 항목 재배치, 검색, 메뉴 막대 꾸미기는 지원하지 않습니다. 이런 기능이 필요하면 Bartender가 더 맞습니다.</p>
     </details>
     <details>
       <summary>Ellipsis를 쓰고 있었습니다. BarNook으로 업데이트되나요?</summary>
@@ -251,7 +251,7 @@
     <p>업데이트는 <a href="https://sparkle-project.org">Sparkle</a>로 제공합니다. 글꼴은 길형진(Kil&nbsp;Hyung-jin)의 <a href="../assets/fonts/LICENSE.txt">Pretendard</a>이며 SIL Open Font License 1.1을 따릅니다.</p>
     <p>이 사이트는 분석 도구나 외부 스크립트를 쓰지 않습니다.</p>
     <p>macOS는 미국 및 기타 국가와 지역에서 등록된 Apple&nbsp;Inc.&#8288;의 상표입니다.</p>
-    <p>BarNook은 독립 프로젝트이며 Apple과 제휴하거나 Apple의 보증을 받지 않았습니다.</p>
+    <p>BarNook은 독립 프로젝트로, Apple&nbsp;Inc.&#8288;와 제휴 관계가 없으며 Apple&nbsp;Inc.&#8288;의 보증을 받지 않았습니다.</p>
   </div>
 </footer>
 

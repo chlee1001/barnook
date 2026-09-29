@@ -16,20 +16,20 @@ const STRINGS = {
     captionPinned: names => `Pinned ${names.join(", ")}. Click the item in the menu bar as you would any other. Pins stay until you hide the set.`,
     captionBar: "The menu bar stays as it is. Click an app in the bar to pin its item into the menu bar, up to three at once.",
     captionMenubar: "Hidden apps are back in the menu bar. They're hidden again when you click the icon, click the desktop, or wait 15 seconds.",
-    captionIdle: (hidden, always, stay, notch) => `${notch ? "This MacBook has a notch. " : ""}Hidden: ${hidden} apps, plus ${always} always hidden. In the menu bar: ${stay}.`,
+    captionIdle: (hidden, always, stay, notch) => `${notch ? "This MacBook has a notch. " : ""}${hidden} apps are hidden, plus ${always} always hidden. ${stay} stay in the menu bar.`,
   },
   ko: {
-    iconTitle: shown => `BarNook — 클릭하면 숨긴 앱을 ${shown ? "다시 숨깁니다" : "보여 줍니다"}`,
+    iconTitle: shown => `BarNook — ${shown ? "클릭하면 앱을 다시 숨깁니다" : "클릭하면 숨긴 앱을 보여 줍니다"}`,
     moreTitle: "macOS가 메뉴 막대에 다 넣지 못한 항목",
     pinTitle: (name, pinned) => `${name} — 클릭하면 ${pinned ? "고정을 풉니다" : "메뉴 막대에 고정합니다"}`,
     hintIdle: opt => `메뉴 막대의 <b>BarNook 아이콘</b>을 클릭하세요${opt ? " (Option 키를 누른 상태라 항상 숨김 앱도 함께 나옵니다)" : ""}.`,
-    hintCountdown: s => `<b>${s}초</b> 뒤에 다시 숨겨집니다 · 데스크탑을 클릭하면 바로 숨겨집니다`,
-    captionCollapsed: n => `macOS가 항목 ${n}개와 BarNook 아이콘을 « 뒤로 접었습니다. 아이콘을 누르려면 먼저 « 버튼을 열어야 합니다. 노치가 있는 화면에서는 "아래 막대에 표시"를 고르면 이런 일이 생기지 않습니다.`,
+    hintCountdown: s => `<b>${s}초</b> 뒤 다시 숨김 · 데스크탑을 클릭하면 바로 숨깁니다`,
+    captionCollapsed: n => `macOS가 항목 ${n}개와 BarNook 아이콘을 « 뒤로 접었습니다. 아이콘을 클릭하려면 먼저 « 버튼을 열어야 합니다. 노치가 있는 화면에서는 "아래 막대에 표시"를 고르면 이런 일이 생기지 않습니다.`,
     captionEscalated: "고정한 항목이 노치 옆에 다 들어가지 않아서, 고정이 풀릴 때까지 BarNook이 나머지 앱을 모두 숨겼습니다. 아이콘을 클릭하면 막대가 다시 열리고, 한 번 더 클릭하면 전부 숨겨집니다.",
     captionPinned: names => `고정한 앱: ${names.join(", ")}. 메뉴 막대에서 해당 항목을 평소처럼 클릭해 쓰면 됩니다. 앱을 다시 숨기면 고정도 풀립니다.`,
     captionBar: "메뉴 막대는 그대로입니다. 아래 막대에서 앱을 클릭하면 그 앱의 항목이 메뉴 막대에 고정됩니다(최대 3개).",
     captionMenubar: "숨긴 앱이 메뉴 막대에 다시 나타났습니다. 아이콘이나 데스크탑을 클릭하거나 15초가 지나면 다시 숨겨집니다.",
-    captionIdle: (hidden, always, stay, notch) => `${notch ? "노치가 있는 MacBook입니다. " : ""}숨긴 앱 ${hidden}개, 항상 숨김 ${always}개. 메뉴 막대에 남은 앱은 ${stay}개입니다.`,
+    captionIdle: (hidden, always, stay, notch) => `${notch ? "노치가 있는 MacBook입니다. " : ""}숨긴 앱은 ${hidden}개, 항상 숨기는 앱은 ${always}개이고, 메뉴 막대에 남은 앱은 ${stay}개입니다.`,
   },
 };
 const T = STRINGS[document.documentElement.lang];
@@ -114,7 +114,7 @@ function render() {
   lastVisible = visible;
   if (!L.iconCollapsed) overflowOpen = false;
   const hiddenByMacOS = APPS.filter(a => !visible.has(a.id) && (a.set === "shown" || shown && (a.set === "hidden" || (a.set === "always" && withAlways))));
-  $("overflow").innerHTML = hiddenByMacOS.map(a => `<div>${chip(a, false)}${a.name}</div>`).join("") + `<div class="bn-row" id="overflowIcon">${NOOK} BarNook</div>`;
+  $("overflow").innerHTML = hiddenByMacOS.map(a => `<div>${chip(a, false)}${a.name}</div>`).join("") + `<button type="button" class="bn-row" id="overflowIcon">${NOOK} BarNook</button>`;
   $("overflow").classList.toggle("off", !overflowOpen);
 
   const { always, hidden } = panelApps();
@@ -122,6 +122,9 @@ function render() {
   $("panel").innerHTML = always.map(cell).join("") + (always.length ? '<div class="sep"></div>' : "") + hidden.map(cell).join("");
   const barOpen = placement === "bar" && panelOpen;
   $("panel").classList.toggle("off", !barOpen);
+  // A closed panel is only faded out; keep its buttons away from Tab and screen readers.
+  $("panel").inert = !barOpen;
+  $("overflow").inert = !overflowOpen;
   requestAnimationFrame(() => {
     const icon = $("bnIcon");
     if (!icon) return;
@@ -141,6 +144,22 @@ function render() {
   document.querySelectorAll("#displaySeg button").forEach(b => b.classList.toggle("on", b.dataset.v === display));
   document.querySelectorAll("#placementSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === placement)));
   document.querySelectorAll("#placementSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === placement));
+  restoreFocus();
+}
+
+// render() rebuilds the menu bar and panel, which drops keyboard focus to the page.
+// Put it back on the same control, or on the BarNook icon if that control is gone.
+let stageFocus = null;
+$("stage").addEventListener("focusin", e => {
+  const el = e.target;
+  stageFocus = el.id ? `#${el.id}` : el.dataset.pin ? `[data-pin="${el.dataset.pin}"]` : null;
+});
+$("stage").addEventListener("focusout", e => { if (e.relatedTarget && !$("stage").contains(e.relatedTarget)) stageFocus = null; });
+function restoreFocus() {
+  if (!stageFocus || document.activeElement !== document.body) return;
+  const usable = el => el && !el.closest("[inert]");
+  const target = [document.querySelector(`#stage ${stageFocus}`), $("bnIcon"), $("moreBtn")].find(usable);
+  if (target) target.focus({ preventScroll: true });
 }
 
 function caption(L) {
@@ -178,6 +197,7 @@ function clickIcon(alt) {
 }
 
 function togglePin(id) {
+  if (!shown || placement !== "bar") return;
   if (pins.includes(id)) pins = pins.filter(p => p !== id);
   else { pins.push(id); if (pins.length > PIN_LIMIT) pins.shift(); }
   panelOpen = false;
