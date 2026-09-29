@@ -36,6 +36,18 @@ expect_failure '(f) index.html must have exactly one inline script'
 perl -0pi -e 's#</body>#<script type="module">console.log(1)</script>\n</body>#' "$work/site/index.html"
 expect_failure '(f) index.html must have exactly one inline script'
 
+perl -0pi -e 's#</body>#<script data-src="assets/site.js">console.log(1)</script>\n</body>#' "$work/site/index.html"
+expect_failure '(f) index.html must have exactly one inline script'
+
+perl -0pi -e 's#</head>#<img src="assets/icon-256.png" srcset="assets/icon-256.png 1x, https://cdn.example.com/x.png 2x" alt="">\n</head>#' "$work/site/index.html"
+expect_failure '(f) index.html loads a third-party resource'
+
+perl -0pi -e 's#</head>#<IMG SRC = "https://cdn.example.com/x.png" alt="">\n</head>#' "$work/site/ko/index.html"
+expect_failure '(f) ko/index.html loads a third-party resource'
+
+printf '\n.x { background: url(//cdn.example.com/x.png); }\n' >> "$work/site/assets/site.css"
+expect_failure '(f) site.css loads a third-party resource'
+
 perl -0pi -e 's# id="deskHint"##' "$work/site/index.html"; perl -0pi -e 's# id="deskHint"##' "$work/site/ko/index.html"
 expect_failure '(j) index.html lacks #deskHint'
 
@@ -57,4 +69,4 @@ expect_failure '(h) mockup leftovers'
 perl -0pi -e 's#</footer>#<img src="assets/missing.png" alt="">\n</footer>#' "$work/site/index.html"
 expect_failure '(e) index.html links to missing assets/missing.png'
 
-echo 'check-site passes the site and rejects all 12 broken copies.'
+echo 'check-site passes the site and rejects all 16 broken copies.'

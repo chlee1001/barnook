@@ -71,15 +71,16 @@ external() { scan 'href="(https?:[^"]+)"' "$1" | grep -v '^https://chlee1001\.gi
 [[ "$(external "$en")" == "$(external "$ko")" ]] || fail "(d) the external links of the en and ko pages differ"
 
 # (e) Every local src/href resolves; url() in site.css resolves relative to assets/.
+# Absolute and protocol-relative URLs are left to (f).
 for page in "$en" "$ko"; do
   while IFS= read -r ref; do
-    case "$ref" in ''|'#'*|http:*|https:*|mailto:*|data:*) continue ;; esac
+    case "$ref" in ''|'#'*|//*|http:*|https:*|mailto:*|data:*) continue ;; esac
     ref="${ref%%[#?]*}"
     resolves "$(dirname "$page")" "$ref" || fail "(e) ${page#"$dir"/} links to missing $ref"
   done < <(scan '\b(?:src|href)="([^"]*)"' "$page")
 done
 while IFS= read -r ref; do
-  case "$ref" in data:*|http:*|https:*) continue ;; esac
+  case "$ref" in data:*|//*|http:*|https:*) continue ;; esac
   resolves "$dir/assets" "${ref%%[#?]*}" || fail "(e) site.css links to missing $ref"
 done < <(scan 'url\(\s*["'"'"']?([^"'"'"')]+)' "$css")
 
@@ -88,15 +89,24 @@ done < <(scan 'url\(\s*["'"'"']?([^"'"'"')]+)' "$css")
 for page in "$en" "$ko"; do
   name="${page#"$dir"/}"
   foreign="$(perl -0ne '
-    my $abs = qr/=\s*["\x27]?(?:https?:)?\/\//i;
-    while (/<(?:script|img|iframe|source|video|audio|embed|object)\b[^>]*>/gi) { my $t = $&; print "$t\n" if $t =~ /\b(?:src|srcset|data)$abs/ }
-    while (/<link\b[^>]*>/gi) { my $t = $&; print "$t\n" if $t =~ /\bhref$abs/ && $t !~ /rel="(?:canonical|alternate)"/ }
+    my $abs = qr/["\x27\s,=](?:https?:)?\/\//i;
+    while (/<(?:script|img|iframe|source|video|audio|embed|object)\b[^>]*>/gi) {
+      my $t = $&;
+      while ($t =~ /(?:^|\s)(?:src|srcset|data)\s*=\s*("[^"]*"|\x27[^\x27]*\x27|\S+)/gi) { if ("=$1" =~ $abs) { print "$t\n"; last } }
+    }
+    while (/<link\b[^>]*>/gi) {
+      my $t = $&;
+      print "$t\n" if $t =~ /(?:^|\s)href\s*=\s*["\x27]?(?:https?:)?\/\//i && $t !~ /rel="(?:canonical|alternate)"/;
+    }
   ' "$page")"
   [[ -z "$foreign" ]] || fail "(f) $name loads a third-party resource: $foreign"
-  inline="$(perl -0ne 'while (/<script\b([^>]*)>(.*?)<\/script>/gis) { print "$2\n" unless $1 =~ /\bsrc=/i }' "$page")"
+  inline="$(perl -0ne 'while (/<script\b([^>]*)>(.*?)<\/script>/gis) { print "$2\n" unless $1 =~ /(?:^|\s)src\s*=/i }' "$page")"
   [[ "$(printf '%s' "$inline" | grep -c '')" == 1 ]] || fail "(f) $name must have exactly one inline script"
   [[ "$inline" == "$inline_script" ]] || fail "(f) $name has an unexpected inline script"
 done
+if perl -0ne 'exit((/url\(\s*["'"'"']?(?:https?:)?\/\// || /\@import/) ? 0 : 1)' "$css"; then
+  fail "(f) site.css loads a third-party resource"
+fi
 
 # (j) The elements site.js drives are on both pages.
 for page in "$en" "$ko"; do
@@ -105,9 +115,6 @@ for page in "$en" "$ko"; do
   done
   grep -q 'class="stage-scroll' "$page" || fail "(j) ${page#"$dir"/} lacks .stage-scroll, which site.js needs"
 done
-if perl -0ne 'exit((/url\(\s*["'"'"']?https?:/ || /\@import/) ? 0 : 1)' "$css"; then
-  fail "(f) site.css loads a third-party resource"
-fi
 
 # (g) Canonical, alternates, Open Graph and required metadata.
 for page in "$en" "$ko"; do
