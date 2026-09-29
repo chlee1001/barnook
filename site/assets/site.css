@@ -104,8 +104,8 @@ section + section { border-top: 1px solid var(--line); }
 h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; letter-spacing: -.015em; margin: 0 0 14px; }
 .intro { color: var(--muted); max-width: 680px; margin: 0 0 36px; font-size: 17px; }
 .grid { display: grid; gap: 18px; }
-.g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
 .card { background: var(--card); border-radius: 16px; padding: 22px 22px 20px; box-shadow: 0 0 0 1px var(--line); }
 .card h3 { margin: 0 0 6px; font-size: 17px; }
 .card p { margin: 0; color: var(--muted); font-size: 15px; }
@@ -170,9 +170,11 @@ footer p { margin: 4px 0; text-wrap: pretty; }
 @media (max-width: 640px) {
   .stage-scroll { margin: 0 -24px; max-width: none; }
   .stage { border-radius: 0; }
-  /* Only the right end of the stage is on screen, and opening the bar scrolls it
-     about 86px further left. Keep the hint inside the part that stays visible. */
-  .desk-hint { left: auto; right: 94px; max-width: calc(100vw - 130px); }
+  /* The notch cards are narrow here: drop the clock and shrink the notch so the items stay beside it. */
+  .mini .n { width: 56px; left: 32%; }
+  .mini .bar { gap: 5px; padding: 0 8px; }
+  .mini .bar span:last-child { display: none; }
+  .mini .pan { right: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

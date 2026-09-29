@@ -237,5 +237,13 @@ document.querySelectorAll("a.lang").forEach(a => {
 
 // On a phone the stage is wider than the screen; start at the right end, where the icon is.
 const scroller = document.querySelector(".stage-scroll");
+// Keep the desk hint inside the part of the stage that is on screen.
+function placeHint() {
+  $("deskHint").style.left = `${scroller.scrollLeft + 16}px`;
+  $("deskHint").style.width = `${Math.min(scroller.clientWidth, $("stage").offsetWidth) - 32}px`;
+}
+scroller.addEventListener("scroll", placeHint, { passive: true });
+window.addEventListener("resize", placeHint);
 scroller.scrollLeft = scroller.scrollWidth;
 render();
+placeHint();
