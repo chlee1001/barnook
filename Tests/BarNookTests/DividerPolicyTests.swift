@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): the ordered hidden list and the menu bar order of the left split.
 import Foundation
 import Testing
 @testable import BarNook
@@ -5,7 +6,7 @@ import BarNookCore
 
 struct DividerPolicyTests {
     @Test func leftJoinsAndRightLeavesWhileShown() {
-        let result = DividerPolicy.hiddenSet(
+        let result = DividerPolicy.hiddenList(
             current: ["a", "b"], alwaysHidden: [], own: "me",
             left: ["c"], right: ["b"], isShown: true
         )
@@ -13,7 +14,7 @@ struct DividerPolicyTests {
     }
 
     @Test func rightStaysWhileHidden() {
-        let result = DividerPolicy.hiddenSet(
+        let result = DividerPolicy.hiddenList(
             current: ["a", "b"], alwaysHidden: [], own: "me",
             left: ["c"], right: ["b"], isShown: false
         )
@@ -21,7 +22,7 @@ struct DividerPolicyTests {
     }
 
     @Test func anItemOnEachSideHides() {
-        let result = DividerPolicy.hiddenSet(
+        let result = DividerPolicy.hiddenList(
             current: [], alwaysHidden: [], own: "me",
             left: ["a"], right: ["a"], isShown: true
         )
@@ -29,7 +30,7 @@ struct DividerPolicyTests {
     }
 
     @Test func alwaysHiddenAndSelfAreLeftAlone() {
-        let result = DividerPolicy.hiddenSet(
+        let result = DividerPolicy.hiddenList(
             current: [], alwaysHidden: ["x"], own: "me",
             left: ["x", "me", "a"], right: [], isShown: true
         )
@@ -37,11 +38,48 @@ struct DividerPolicyTests {
     }
 
     @Test func invisibleAppsKeepTheirMembership() {
-        let result = DividerPolicy.hiddenSet(
+        let result = DividerPolicy.hiddenList(
             current: ["gone"], alwaysHidden: [], own: nil,
             left: [], right: [], isShown: true
         )
         #expect(result == ["gone"])
+    }
+
+    @Test func newAppsJoinAtTheEndInMenuBarOrder() {
+        let result = DividerPolicy.hiddenList(
+            current: ["b"], alwaysHidden: [], own: nil,
+            left: ["z", "b", "a"], right: [], isShown: true
+        )
+        #expect(result == ["b", "z", "a"])
+    }
+
+    @Test func leavingKeepsTheOthersInOrder() {
+        let result = DividerPolicy.hiddenList(
+            current: ["c", "a", "b"], alwaysHidden: [], own: nil,
+            left: [], right: ["a"], isShown: true
+        )
+        #expect(result == ["c", "b"])
+    }
+
+    @Test func anAppOnBothSidesKeepsItsSlot() {
+        let result = DividerPolicy.hiddenList(
+            current: ["a", "b", "c"], alwaysHidden: [], own: nil,
+            left: ["b"], right: ["b"], isShown: true
+        )
+        #expect(result == ["a", "b", "c"])
+    }
+
+    @Test func sameSplitTwiceIsIdempotent() {
+        let once = DividerPolicy.hiddenList(
+            current: ["c", "a"], alwaysHidden: ["x"], own: "me",
+            left: ["z", "x", "me", "y"], right: ["a"], isShown: true
+        )
+        let twice = DividerPolicy.hiddenList(
+            current: once, alwaysHidden: ["x"], own: "me",
+            left: ["z", "x", "me", "y"], right: ["a"], isShown: true
+        )
+        #expect(once == ["c", "z", "y"])
+        #expect(twice == once)
     }
 }
 

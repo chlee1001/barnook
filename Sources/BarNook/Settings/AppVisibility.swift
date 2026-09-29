@@ -1,36 +1,49 @@
 import Foundation
 
 /// What BarNook does with one app's menu bar items: the app is in the hidden
-/// set, the always-hidden set, or neither.
+/// list, the always-hidden list, or neither.
 enum AppVisibility: CaseIterable, Hashable {
     case shown, hidden, alwaysHidden
 
     /// A line under the app's name.
     enum Note: Equatable { case notRunning, alwaysHiddenPaused }
 
-    /// An app in both sets (possible from an older imported file) counts as
-    /// always hidden, since that set wins when both are hidden.
-    static func of(_ id: String, hidden: Set<String>, alwaysHidden: Set<String>) -> AppVisibility {
-        if alwaysHidden.contains(id) { return .alwaysHidden }
-        if hidden.contains(id) { return .hidden }
+    /// An app in both lists counts as always hidden, the same rule as
+    /// `HiddenLists.normalized`.
+    static func of(_ id: String, in lists: HiddenLists) -> AppVisibility {
+        if lists.alwaysHidden.contains(id) { return .alwaysHidden }
+        if lists.hidden.contains(id) { return .hidden }
         return .shown
     }
 
-    /// The two sets after `id` takes `visibility`: it is in the matching set
-    /// only. Other ids are untouched.
-    static func apply(
-        _ visibility: AppVisibility, to id: String, hidden: Set<String>, alwaysHidden: Set<String>
-    ) -> (hidden: Set<String>, alwaysHidden: Set<String>) {
-        var hidden = hidden
-        var alwaysHidden = alwaysHidden
-        hidden.remove(id)
-        alwaysHidden.remove(id)
+    /// The lists after `id` takes `visibility`: an app that changes joins
+    /// the end of its new list and leaves the others; an app already there
+    /// keeps its place. Other ids keep their order.
+    static func apply(_ visibility: AppVisibility, to id: String, in lists: HiddenLists) -> HiddenLists {
+        guard of(id, in: lists) != visibility else { return lists }
+        var result = lists
+        result.hidden.removeAll { $0 == id }
+        result.alwaysHidden.removeAll { $0 == id }
         switch visibility {
         case .shown: break
-        case .hidden: hidden.insert(id)
-        case .alwaysHidden: alwaysHidden.insert(id)
+        case .hidden: result.hidden.append(id)
+        case .alwaysHidden: result.alwaysHidden.append(id)
         }
-        return (hidden, alwaysHidden)
+        return result
+    }
+
+    /// The listed apps in three groups. The hidden groups keep the lists'
+    /// order and skip ids that are not listed; shown keeps `listed` order.
+    static func groups(listed: [String], in lists: HiddenLists)
+        -> (hidden: [String], alwaysHidden: [String], shown: [String])
+    {
+        let listedSet = Set(listed)
+        let always = lists.alwaysHidden.filter { listedSet.contains($0) }
+        let alwaysSet = Set(always)
+        let hidden = lists.hidden.filter { listedSet.contains($0) && !alwaysSet.contains($0) }
+        let hiddenSet = Set(hidden)
+        let shown = listed.filter { !hiddenSet.contains($0) && !alwaysSet.contains($0) }
+        return (hidden, always, shown)
     }
 
     /// The choices a row offers when the user picks from the list.
@@ -50,17 +63,6 @@ enum AppVisibility: CaseIterable, Hashable {
         if !isRunning { return .notRunning }
         if visibility == .alwaysHidden, !alwaysHiddenEnabled { return .alwaysHiddenPaused }
         return nil
-    }
-
-    /// Counts over the listed apps only.
-    static func counts(ids: [String], hidden: Set<String>, alwaysHidden: Set<String>) -> (hidden: Int, always: Int) {
-        ids.reduce(into: (hidden: 0, always: 0)) { counts, id in
-            switch of(id, hidden: hidden, alwaysHidden: alwaysHidden) {
-            case .shown: break
-            case .hidden: counts.hidden += 1
-            case .alwaysHidden: counts.always += 1
-            }
-        }
     }
 
     /// Search ignores case and accents; an empty query matches every app.

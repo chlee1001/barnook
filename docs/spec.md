@@ -129,9 +129,9 @@ Hiding and showing work without either permission.
 
 Off by default ("From this list" in Settings › Apps). With "By position", the BarNook icon divides the menu bar like the Bartender and Ice icons do: Cmd-drag items across it. Needs the Accessibility permission: with it, the windows of `MenuBarAgent` expose every visible item with its frame and owner, and the icon's own window frame gives the split point.
 
-- A visible app left of the icon joins the hidden set. A visible app right of it leaves the set, but only while the set is shown: while it is hidden, a hidden app can still be on its way out.
-- An app with an item on each side hides. Hiding is per app.
-- Apps that are not visible keep their membership. The always-hidden set is never touched.
+- A visible app left of the icon joins the hidden set, at the end of its order; several join in menu bar order, left to right. A visible app right of it leaves the set, but only while the set is shown: while it is hidden, a hidden app can still be on its way out. The others keep their order.
+- An app with an item on each side hides, and a member keeps its place. Hiding is per app.
+- Apps that are not visible keep their membership and place. The always-hidden set is never touched.
 - BarNook reads the menu bar when position mode turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning position mode on hides whatever already sits left of the icon.
 - While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again.
 

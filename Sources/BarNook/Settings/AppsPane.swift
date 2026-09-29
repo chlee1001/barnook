@@ -11,8 +11,8 @@ struct AppsPane: View {
 
     var body: some View {
         @Bindable var state = state
-        let listed = apps.entries(including: sets.hidden.union(sets.alwaysHidden))
-        let counts = AppVisibility.counts(ids: listed.map(\.id), hidden: sets.hidden, alwaysHidden: sets.alwaysHidden)
+        let listed = apps.entries(including: Set(sets.hidden).union(sets.alwaysHidden))
+        let groups = AppVisibility.groups(listed: listed.map(\.id), in: sets.lists)
         let matching = listed.filter { AppVisibility.matches(name: $0.name, query: query) }
         Form {
             Section {
@@ -52,8 +52,8 @@ struct AppsPane: View {
                     TextField("Search apps", text: $query, prompt: Text("Search apps"))
                         .textFieldStyle(.roundedBorder)
                         .labelsHidden()
-                    CountBadge(text: "\(counts.hidden) hidden", color: .accentColor)
-                    CountBadge(text: "\(counts.always) always", color: .purple)
+                    CountBadge(text: "\(groups.hidden.count) hidden", color: .accentColor)
+                    CountBadge(text: "\(groups.alwaysHidden.count) always", color: .purple)
                         .opacity(state.isAlwaysHiddenEnabled ? 1 : 0.5)
                 }
             }
@@ -84,15 +84,8 @@ struct AppsPane: View {
 
     private func visibility(of id: String) -> Binding<AppVisibility> {
         Binding(
-            get: { AppVisibility.of(id, hidden: sets.hidden, alwaysHidden: sets.alwaysHidden) },
-            set: { new in
-                let result = AppVisibility.apply(new, to: id, hidden: sets.hidden, alwaysHidden: sets.alwaysHidden)
-                // Each assignment writes the defaults, so only a set that
-                // changed is assigned. An app moves between the sets in one
-                // main-actor turn; the menu bar code sees the final state.
-                if result.hidden != sets.hidden { sets.hidden = result.hidden }
-                if result.alwaysHidden != sets.alwaysHidden { sets.alwaysHidden = result.alwaysHidden }
-            }
+            get: { AppVisibility.of(id, in: sets.lists) },
+            set: { sets.update(AppVisibility.apply($0, to: id, in: sets.lists)) }
         )
     }
 }

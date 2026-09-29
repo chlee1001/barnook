@@ -2,29 +2,51 @@ import Testing
 @testable import BarNook
 
 struct AppVisibilityTests {
-    @Test func ofReadsTheSets() {
-        #expect(AppVisibility.of("a", hidden: [], alwaysHidden: []) == .shown)
-        #expect(AppVisibility.of("a", hidden: ["a"], alwaysHidden: []) == .hidden)
-        #expect(AppVisibility.of("a", hidden: [], alwaysHidden: ["a"]) == .alwaysHidden)
-        #expect(AppVisibility.of("a", hidden: ["a"], alwaysHidden: ["a"]) == .alwaysHidden)
+    @Test func ofReadsTheLists() {
+        #expect(AppVisibility.of("a", in: HiddenLists()) == .shown)
+        #expect(AppVisibility.of("a", in: HiddenLists(hidden: ["a"])) == .hidden)
+        #expect(AppVisibility.of("a", in: HiddenLists(alwaysHidden: ["a"])) == .alwaysHidden)
+        #expect(AppVisibility.of("a", in: HiddenLists(hidden: ["a"], alwaysHidden: ["a"])) == .alwaysHidden)
     }
 
     @Test(arguments: AppVisibility.allCases, AppVisibility.allCases)
-    func applyLeavesTheAppInOneSetAndOthersAlone(from: AppVisibility, to: AppVisibility) {
-        var hidden: Set = ["other"]
-        var always: Set = ["another"]
-        (hidden, always) = AppVisibility.apply(from, to: "a", hidden: hidden, alwaysHidden: always)
-        (hidden, always) = AppVisibility.apply(to, to: "a", hidden: hidden, alwaysHidden: always)
+    func applyLeavesTheAppInOneListAndOthersInOrder(from: AppVisibility, to: AppVisibility) {
+        var lists = HiddenLists(hidden: ["p", "q"], alwaysHidden: ["r", "s"])
+        lists = AppVisibility.apply(from, to: "a", in: lists)
+        lists = AppVisibility.apply(to, to: "a", in: lists)
 
-        #expect(AppVisibility.of("a", hidden: hidden, alwaysHidden: always) == to)
-        #expect(!(hidden.contains("a") && always.contains("a")))
-        #expect(hidden.subtracting(["a"]) == ["other"])
-        #expect(always.subtracting(["a"]) == ["another"])
+        #expect(AppVisibility.of("a", in: lists) == to)
+        #expect(!(lists.hidden.contains("a") && lists.alwaysHidden.contains("a")))
+        #expect(lists.hidden.filter { $0 != "a" } == ["p", "q"])
+        #expect(lists.alwaysHidden.filter { $0 != "a" } == ["r", "s"])
     }
 
-    @Test func shownClearsAnAppInBothSets() {
-        let result = AppVisibility.apply(.shown, to: "a", hidden: ["a"], alwaysHidden: ["a"])
+    @Test func applyAppendsToTheEnd() {
+        let result = AppVisibility.apply(.hidden, to: "x", in: HiddenLists(hidden: ["a", "b"], alwaysHidden: []))
+        #expect(result.hidden == ["a", "b", "x"])
+    }
+
+    @Test func applyToTheCurrentStateKeepsTheSlot() {
+        let lists = HiddenLists(hidden: ["a", "x", "b"], alwaysHidden: ["c"])
+        #expect(AppVisibility.apply(.hidden, to: "x", in: lists) == lists)
+        #expect(AppVisibility.apply(.alwaysHidden, to: "c", in: lists) == lists)
+    }
+
+    @Test func shownClearsAnAppInBothLists() {
+        let result = AppVisibility.apply(.shown, to: "a", in: HiddenLists(hidden: ["a"], alwaysHidden: ["a"]))
         #expect(result.hidden.isEmpty && result.alwaysHidden.isEmpty)
+    }
+
+    @Test func groupsFollowTheListsAndSkipUnlisted() {
+        let none = AppVisibility.groups(listed: [], in: HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
+        #expect(none.hidden.isEmpty && none.alwaysHidden.isEmpty && none.shown.isEmpty)
+        let groups = AppVisibility.groups(
+            listed: ["a", "b", "c", "d"],
+            in: HiddenLists(hidden: ["c", "x", "a"], alwaysHidden: ["d"])
+        )
+        #expect(groups.hidden == ["c", "a"])
+        #expect(groups.alwaysHidden == ["d"])
+        #expect(groups.shown == ["b"])
     }
 
     @Test func listChoicesFollowTheAlwaysHiddenSwitch() {
@@ -44,13 +66,6 @@ struct AppVisibilityTests {
         #expect(AppVisibility.note(isRunning: true, visibility: .alwaysHidden, alwaysHiddenEnabled: false) == .alwaysHiddenPaused)
         #expect(AppVisibility.note(isRunning: true, visibility: .alwaysHidden, alwaysHiddenEnabled: true) == nil)
         #expect(AppVisibility.note(isRunning: true, visibility: .hidden, alwaysHiddenEnabled: false) == nil)
-    }
-
-    @Test func countsOnlyListedApps() {
-        #expect(AppVisibility.counts(ids: [], hidden: ["a"], alwaysHidden: ["b"]) == (0, 0))
-        let counts = AppVisibility.counts(ids: ["a", "b", "c"], hidden: ["a", "b", "x"], alwaysHidden: ["b", "y"])
-        #expect(counts.hidden == 1)
-        #expect(counts.always == 1)
     }
 
     @Test func searchIgnoresCaseAndAccents() {

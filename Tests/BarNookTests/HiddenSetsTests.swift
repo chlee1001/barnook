@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): ordered lists, normalization and the store contract.
 import Foundation
 import Testing
 @testable import BarNook
@@ -13,24 +14,21 @@ struct HiddenSetsTests {
 
     @Test func hiddenStateHidesBothSets() {
         let sets = HiddenSets(store: makeStore())
-        sets.hidden = ["a"]
-        sets.alwaysHidden = ["b"]
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
         sets.isHiddenSetShown = false
         #expect(sets.identifiersToHide(isAlwaysHiddenEnabled: true) == ["a", "b"])
     }
 
     @Test func shownStateHidesOnlyAlwaysHidden() {
         let sets = HiddenSets(store: makeStore())
-        sets.hidden = ["a"]
-        sets.alwaysHidden = ["b"]
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
         sets.isHiddenSetShown = true
         #expect(sets.identifiersToHide(isAlwaysHiddenEnabled: true) == ["b"])
     }
 
     @Test func disabledAlwaysHiddenIsNeverHidden() {
         let sets = HiddenSets(store: makeStore())
-        sets.hidden = ["a"]
-        sets.alwaysHidden = ["b"]
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
         sets.isHiddenSetShown = true
         #expect(sets.identifiersToHide(isAlwaysHiddenEnabled: false).isEmpty)
     }
@@ -38,14 +36,74 @@ struct HiddenSetsTests {
     @Test func persistsAcrossInstances() {
         let store = makeStore()
         let first = HiddenSets(store: store)
-        first.hidden = ["a", "b"]
-        first.alwaysHidden = ["c"]
+        first.update(HiddenLists(hidden: ["b", "a"], alwaysHidden: ["c"]))
         first.isHiddenSetShown = true
 
         let second = HiddenSets(store: store)
-        #expect(second.hidden == ["a", "b"])
+        #expect(second.hidden == ["b", "a"])
         #expect(second.alwaysHidden == ["c"])
         #expect(second.isHiddenSetShown)
+    }
+
+    @Test func normalizedDropsDuplicatesAndAlwaysWins() {
+        let lists = HiddenLists(hidden: ["a", "b", "a", "c"], alwaysHidden: ["c", "c"])
+        #expect(lists.normalized == HiddenLists(hidden: ["a", "b"], alwaysHidden: ["c"]))
+    }
+
+    @Test func storesTheOrderUnsorted() {
+        let store = makeStore()
+        HiddenSets(store: store).update(HiddenLists(hidden: ["b", "a"], alwaysHidden: []))
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["b", "a"])
+    }
+
+    @Test func loadWritesBackNormalizedOverlap() {
+        let store = makeStore()
+        store.set(["a", "b"], forKey: HiddenSets.Key.hidden)
+        store.set(["b"], forKey: HiddenSets.Key.alwaysHidden)
+        let sets = HiddenSets(store: store)
+        #expect(sets.lists == HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["a"])
+        #expect(store.stringArray(forKey: HiddenSets.Key.alwaysHidden) == ["b"])
+    }
+
+    @Test func reloadWritesBackWithoutDuplicates() {
+        let store = makeStore()
+        let sets = HiddenSets(store: store)
+        store.set(["c", "a", "c"], forKey: HiddenSets.Key.hidden)
+        sets.reload()
+        #expect(sets.hidden == ["c", "a"])
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["c", "a"])
+    }
+
+    @Test func reloadReadsTheStoredOrder() {
+        let store = makeStore()
+        let sets = HiddenSets(store: store)
+        store.set(["c", "a"], forKey: HiddenSets.Key.hidden)
+        sets.reload()
+        #expect(sets.hidden == ["c", "a"])
+    }
+
+    @Test func aCleanStoreStaysUnwritten() {
+        let store = makeStore()
+        _ = HiddenSets(store: store)
+        #expect(store.object(forKey: HiddenSets.Key.hidden) == nil)
+        #expect(store.object(forKey: HiddenSets.Key.alwaysHidden) == nil)
+    }
+
+    @Test func unchangedUpdateDoesNotWrite() {
+        let store = makeStore()
+        let sets = HiddenSets(store: store)
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: []))
+        store.set(["sentinel"], forKey: HiddenSets.Key.hidden)
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: []))
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["sentinel"])
+    }
+
+    @Test func updateNormalizes() {
+        let sets = HiddenSets(store: makeStore())
+        sets.update(HiddenLists(hidden: ["a", "b"], alwaysHidden: ["b"]))
+        #expect(sets.hidden == ["a"])
+        #expect(sets.alwaysHidden == ["b"])
     }
 }
 
@@ -56,8 +114,7 @@ struct AlwaysHiddenShownTests {
         let store = UserDefaults(suiteName: name)!
         store.removePersistentDomain(forName: name)
         let sets = HiddenSets(store: store)
-        sets.hidden = ["a"]
-        sets.alwaysHidden = ["b"]
+        sets.update(HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
         return sets
     }
 
