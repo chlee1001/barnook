@@ -173,7 +173,7 @@ footer p { margin: 4px 0; text-wrap: pretty; }
   /* The notch cards are narrow here: drop the clock and shrink the notch so the items stay beside it. */
   .mini .n { width: 56px; left: 32%; }
   .mini .bar { gap: 5px; padding: 0 8px; }
-  .mini .bar span:last-child { display: none; }
+  .mini .clk { display: none; }
   .mini .pan { right: 8px; }
 }
 
