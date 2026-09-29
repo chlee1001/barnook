@@ -170,6 +170,9 @@ footer p { margin: 4px 0; text-wrap: pretty; }
 @media (max-width: 640px) {
   .stage-scroll { margin: 0 -24px; max-width: none; }
   .stage { border-radius: 0; }
+  /* Only the right end of the stage is on screen, and opening the bar scrolls it
+     about 86px further left. Keep the hint inside the part that stays visible. */
+  .desk-hint { left: auto; right: 94px; max-width: calc(100vw - 130px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

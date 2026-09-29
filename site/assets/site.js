@@ -23,7 +23,7 @@ const STRINGS = {
     moreTitle: "macOS가 메뉴 막대에 다 넣지 못한 항목",
     pinTitle: (name, pinned) => `${name} — 클릭하면 ${pinned ? "고정을 풉니다" : "메뉴 막대에 고정합니다"}`,
     hintIdle: opt => `메뉴 막대의 <b>BarNook 아이콘</b>을 클릭하세요${opt ? " (Option 키를 누른 상태라 항상 숨김 앱도 함께 나옵니다)" : ""}.`,
-    hintCountdown: s => `<b>${s}초</b> 뒤 다시 숨김 · 데스크탑을 클릭하면 바로 숨깁니다`,
+    hintCountdown: s => `<b>${s}초</b> 뒤에 다시 숨깁니다 · 바로 숨기려면 데스크탑을 클릭하세요`,
     captionCollapsed: n => `macOS가 항목 ${n}개와 BarNook 아이콘을 « 뒤로 접었습니다. 아이콘을 클릭하려면 먼저 « 버튼을 열어야 합니다. 노치가 있는 화면에서는 "아래 막대에 표시"를 고르면 이런 일이 생기지 않습니다.`,
     captionEscalated: "고정한 항목이 노치 옆에 다 들어가지 않아서, 고정이 풀릴 때까지 BarNook이 나머지 앱을 모두 숨겼습니다. 아이콘을 클릭하면 막대가 다시 열리고, 한 번 더 클릭하면 전부 숨겨집니다.",
     captionPinned: names => `고정한 앱: ${names.join(", ")}. 메뉴 막대에서 해당 항목을 평소처럼 클릭해 쓰면 됩니다. 앱을 다시 숨기면 고정도 풀립니다.`,
@@ -103,6 +103,7 @@ function ensureVisible(el) {
 }
 
 function render() {
+  const focusKey = stageFocusKey();
   $("stage").classList.toggle("plain", display === "plain");
   const L = layout();
   const visible = new Set(L.items.filter(i => i.app).map(i => i.app.id));
@@ -144,21 +145,21 @@ function render() {
   document.querySelectorAll("#displaySeg button").forEach(b => b.classList.toggle("on", b.dataset.v === display));
   document.querySelectorAll("#placementSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === placement)));
   document.querySelectorAll("#placementSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === placement));
-  restoreFocus();
+  restoreFocus(focusKey);
 }
 
 // render() rebuilds the menu bar and panel, which drops keyboard focus to the page.
-// Put it back on the same control, or on the BarNook icon if that control is gone.
-let stageFocus = null;
-$("stage").addEventListener("focusin", e => {
-  const el = e.target;
-  stageFocus = el.id ? `#${el.id}` : el.dataset.pin ? `[data-pin="${el.dataset.pin}"]` : null;
-});
-$("stage").addEventListener("focusout", e => { if (e.relatedTarget && !$("stage").contains(e.relatedTarget)) stageFocus = null; });
-function restoreFocus() {
-  if (!stageFocus || document.activeElement !== document.body) return;
+// Only when focus was inside the demo, put it back on the same control,
+// or on the BarNook icon if that control is gone.
+function stageFocusKey() {
+  const el = document.activeElement;
+  if (!el || el === document.body || !$("stage").contains(el)) return null;
+  return el.id ? `#${el.id}` : el.dataset.pin ? `[data-pin="${el.dataset.pin}"]` : "";
+}
+function restoreFocus(key) {
+  if (key === null || document.activeElement !== document.body) return;
   const usable = el => el && !el.closest("[inert]");
-  const target = [document.querySelector(`#stage ${stageFocus}`), $("bnIcon"), $("moreBtn")].find(usable);
+  const target = [key && document.querySelector(`#stage ${key}`), $("bnIcon"), $("moreBtn")].find(usable);
   if (target) target.focus({ preventScroll: true });
 }
 
