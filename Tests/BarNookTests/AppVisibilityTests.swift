@@ -54,11 +54,16 @@ struct AppVisibilityTests {
         #expect(AppVisibility.listSelectable(alwaysHiddenEnabled: false) == [.shown, .hidden])
     }
 
-    @Test func dividerToggleMovesInAndOutOfAlwaysHidden() {
-        #expect(AppVisibility.alwaysHiddenToggleTarget(current: .hidden, alwaysHiddenEnabled: false) == nil)
-        #expect(AppVisibility.alwaysHiddenToggleTarget(current: .alwaysHidden, alwaysHiddenEnabled: true) == .shown)
-        #expect(AppVisibility.alwaysHiddenToggleTarget(current: .shown, alwaysHiddenEnabled: true) == .alwaysHidden)
-        #expect(AppVisibility.alwaysHiddenToggleTarget(current: .hidden, alwaysHiddenEnabled: true) == .alwaysHidden)
+    @Test(arguments: [
+        (AppVisibility.alwaysHidden, false, AppVisibility?.some(.shown)),
+        (.hidden, false, nil),
+        (.shown, false, nil),
+        (.alwaysHidden, true, .shown),
+        (.hidden, true, .alwaysHidden),
+        (.shown, true, .alwaysHidden),
+    ])
+    func dividerToggle(current: AppVisibility, enabled: Bool, expected: AppVisibility?) {
+        #expect(AppVisibility.alwaysHiddenToggleTarget(current: current, alwaysHiddenEnabled: enabled) == expected)
     }
 
     @Test func notes() {

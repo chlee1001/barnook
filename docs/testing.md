@@ -2,7 +2,7 @@
 
 Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks and their results.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1e), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S31) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1e), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S32) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 "Pass (maintainer, a4631a4)" records one report from the maintainer that he ran the settings checks himself on BarNookDev built from a4631a4; the report gave no per-row detail.
 
@@ -72,6 +72,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | S29 | "By position": turn Always hidden on for an app left of the icon, then off. | On: a purple Always hidden capsule. Off: Shown until the next show or Cmd-drag, then Hidden by position. The list is never greyed out. | Pass (maintainer, a4631a4) |
 | S30 | Type part of an app name in the search field, then clear it. | Only matching apps show; the counts stay; no match shows "No apps with a menu bar item match." | Pass (maintainer, a4631a4) |
 | S31 | Quit a listed app. | "Not running"; it leaves the list once set to Shown. | Pass (maintainer, a4631a4) |
+| S32 | "By position", "Always-hidden apps" off. Click "Stop always hiding" on a paused always-hidden app. | The app leaves the set and reads Shown until the divider files it. On Hidden and Shown rows the always-hidden button is disabled. | |
 | D1 | Settings › Apps: choose "By position" (needs Accessibility). | Apps already left of the icon hide. Rows show read-only Shown/Hidden capsules; the list stays readable. | vm |
 | D2 | While the set is hidden, Cmd-drag the icon to the right of an item. | That app hides. | vm |
 | D3 | Show the set. Cmd-drag the icon to the far left. | Every app leaves the hidden set and stays when the set hides again. | vm |

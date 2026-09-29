@@ -52,11 +52,12 @@ enum AppVisibility: CaseIterable, Hashable {
     }
 
     /// When the icon's position decides hidden or shown, a row can still
-    /// move an app in or out of the always-hidden set. Nil while that set is
-    /// off. Leaving it shows the app until the divider files it again.
+    /// move an app in or out of the always-hidden set. Leaving it shows the
+    /// app until the divider files it again. While the set is off an app
+    /// can still leave it, as in the list, but none can join: nil.
     static func alwaysHiddenToggleTarget(current: AppVisibility, alwaysHiddenEnabled: Bool) -> AppVisibility? {
-        guard alwaysHiddenEnabled else { return nil }
-        return current == .alwaysHidden ? .shown : .alwaysHidden
+        if current == .alwaysHidden { return .shown }
+        return alwaysHiddenEnabled ? .alwaysHidden : nil
     }
 
     static func note(isRunning: Bool, visibility: AppVisibility, alwaysHiddenEnabled: Bool) -> Note? {

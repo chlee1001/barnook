@@ -96,7 +96,7 @@ An AppKit window with toolbar panes that host SwiftUI views:
 - Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
 - Apps (Settings › Apps): one list of running apps with Shown, Hidden or Always hidden per app, a search field and the count of each set. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running.
 - Choose hidden apps: "From this list" or "By position" (F7). "By position" needs the Accessibility permission.
-- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused.
+- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused. While Always hidden is off, apps can leave the set but none can join it.
 - Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
 - Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
 - Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing. A switch must be a property-list Boolean (`<true/>`/`<false/>`) and a number must not be one; export writes them that way.
@@ -133,7 +133,7 @@ Off by default ("From this list" in Settings › Apps). With "By position", the 
 - An app with an item on each side hides, and a member keeps its place. Hiding is per app.
 - Apps that are not visible keep their membership and place. The always-hidden set is never touched.
 - BarNook reads the menu bar when position mode turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning position mode on hides whatever already sits left of the icon.
-- While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again.
+- While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again. While Always hidden is off, apps can leave the set but none can join it.
 
 ### F8: The floating bar
 
