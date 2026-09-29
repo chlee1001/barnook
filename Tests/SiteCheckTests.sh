@@ -51,6 +51,9 @@ expect_failure '(f) site.css loads a third-party resource'
 printf '\n.x { background: URL(HTTPS://cdn.example.com/x.png); }\n' >> "$work/site/assets/site.css"
 expect_failure '(f) site.css loads a third-party resource'
 
+perl -0pi -e 's#https://github.com/chlee1001/barnook/releases/latest#https://github.com/chlee1001/barnook/releases#' "$work/site/ko/index.html"
+expect_failure '(d) the external links of the en and ko pages differ'
+
 perl -0pi -e 's# id="deskHint"##' "$work/site/index.html"; perl -0pi -e 's# id="deskHint"##' "$work/site/ko/index.html"
 expect_failure '(j) index.html lacks #deskHint'
 
@@ -72,4 +75,4 @@ expect_failure '(h) mockup leftovers'
 perl -0pi -e 's#</footer>#<img src="assets/missing.png" alt="">\n</footer>#' "$work/site/index.html"
 expect_failure '(e) index.html links to missing assets/missing.png'
 
-echo 'check-site passes the site and rejects all 17 broken copies.'
+echo 'check-site passes the site and rejects all 18 broken copies.'

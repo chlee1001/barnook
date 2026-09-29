@@ -10,7 +10,7 @@ dir="${dir%/}"
 en="$dir/index.html"
 ko="$dir/ko/index.html"
 css="$dir/assets/site.css"
-base="https://chlee1001.github.io/barnook/"
+base="https://devch.co.kr/barnook/"
 inline_script="document.documentElement.className='js'"
 font="$dir/assets/fonts/PretendardVariable.woff2"
 font_size=2057688
@@ -67,7 +67,7 @@ for marker in 'class="card"' 'class="btn'; do
 done
 
 # (d) Same external links in the same order.
-external() { scan 'href="(https?:[^"]+)"' "$1" | grep -v '^https://chlee1001\.github\.io/' || true; }
+external() { scan 'href="(https?:[^"]+)"' "$1" | grep -vF "$base" || true; }
 [[ "$(external "$en")" == "$(external "$ko")" ]] || fail "(d) the external links of the en and ko pages differ"
 
 # (e) Every local src/href resolves; url() in site.css resolves relative to assets/.
