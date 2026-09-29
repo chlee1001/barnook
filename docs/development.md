@@ -110,7 +110,7 @@ If the key is lost, create a new Ed25519 key and put its public half in `Resourc
 
 ## Website
 
-The landing page lives in `site/` and is published to <https://chlee1001.github.io/barnook/>. It is static HTML with no build step: `site/index.html` (English) and `site/ko/index.html` (Korean) share `site/assets/site.css` and `site/assets/site.js`. The two pages are edited by hand and keep the same structure; the demo's strings for both languages are in the `STRINGS` table in `site.js`. The idle demo is pre-rendered in the HTML, so the page reads correctly without JavaScript.
+The landing page lives in `site/` and is published to <https://devch.co.kr/barnook/>. It is static HTML with no build step: `site/index.html` (English) and `site/ko/index.html` (Korean) share `site/assets/site.css` and `site/assets/site.js`. The two pages are edited by hand and keep the same structure; the demo's strings for both languages are in the `STRINGS` table in `site.js`. The idle demo is pre-rendered in the HTML, so the page reads correctly without JavaScript.
 
 Preview it under the same `/barnook/` path that Pages uses:
 
