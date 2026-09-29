@@ -104,7 +104,7 @@ for page in "$en" "$ko"; do
   [[ "$(printf '%s' "$inline" | grep -c '')" == 1 ]] || fail "(f) $name must have exactly one inline script"
   [[ "$inline" == "$inline_script" ]] || fail "(f) $name has an unexpected inline script"
 done
-if perl -0ne 'exit((/url\(\s*["'"'"']?(?:https?:)?\/\// || /\@import/) ? 0 : 1)' "$css"; then
+if perl -0ne 'exit((/url\(\s*["'"'"']?(?:https?:)?\/\//i || /\@import/i) ? 0 : 1)' "$css"; then
   fail "(f) site.css loads a third-party resource"
 fi
 
