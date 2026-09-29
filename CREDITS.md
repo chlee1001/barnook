@@ -19,6 +19,13 @@ The `AppIcon` asset is a bar over a sheltered item on a gradient, drawn by
 The other menu bar icon choices are the SF Symbols `ellipsis`, `chevron.left`,
 `chevron.right`, `circle.fill` and `star.fill`, used under the Apple SDK licence.
 
+## Website
+
+The website in `site/` uses [Pretendard](https://github.com/orioncactus/pretendard)
+1.3.9 by Kil Hyung-jin, shipped unmodified as `PretendardVariable.woff2` under
+the SIL Open Font License 1.1 with Reserved Font Name. The license is in
+`site/assets/fonts/LICENSE.txt`. The site is not part of the application.
+
 ## Apple frameworks
 
 AppKit, SwiftUI, Observation and ServiceManagement are used under the Apple SDK
