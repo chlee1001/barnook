@@ -4,6 +4,8 @@ Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon check
 
 Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c, O1, O2), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6, G1 to G4) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
+"Pass (maintainer, a4631a4)" records one report from the maintainer that he ran the settings checks himself on BarNookDev built from a4631a4; the report gave no per-row detail. That record stands in for the per-commit S22 walks of the settings redesign.
+
 | # | Steps | Expect | Result |
 |---|---|---|---|
 | 1 | Fresh install, launch | Icon shows a nook. "Welcome to BarNook" lists Accessibility and Screen Recording, both not allowed; "0 of 2 allowed"; "Continue" is disabled with "Allow both permissions to continue." beside it. Hiding works. | Pass (maintainer, a4631a4) |
@@ -26,7 +28,7 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | 6 | Show the set. Click the desktop. | Set hides. | vm |
 | 6a | Show the set. Click another item in the menu bar. | Set stays. | vm |
 | 6b | Settings › Menu Bar: turn "When the front app or Space changes" on. Show the set. Cmd+Tab to another app. | Set hides. | vm |
-| 6c | Same setting on. Show the set. Right-click, "Settings…". | Set stays. BarNook coming to the front is not a focus change. | Pass (maintainer, a4631a4) |
+| 6c | Same setting on. Show the set. Right-click, "Settings…". | Set stays. BarNook coming to the front is not a focus change. |  |
 | 7 | Show the set. Open the menu of a shown item. Wait past the timeout. | Set stays while the menu is open. Hides right after the menu closes. | vm |
 | 7a | Show the set. Open the menu of a shown item. Pick a menu item. | Menu action runs. Set hides. | vm |
 | 8 | Menu-bar mode. While the set is hidden, move the pointer to the clock. Click. Move away. | Hidden items show near the clock. Notification Center opens. Items hide again after 0.5 s. | vm |
@@ -53,12 +55,12 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | W2 | Dark mode: every pane and the onboarding. | Every control, badge and glyph is readable. | Pass (maintainer, a4631a4) |
 | W3 | Keyboard only through every control; in each text field use Cmd-X/C/V/A. | Tab reaches every control; the four shortcuts work in every text field. | Pass (maintainer, a4631a4) |
 | W4 | VoiceOver over every pane and the onboarding. | Pane buttons and every control are read by name. | Pass (maintainer, a4631a4) |
-| W5 | Built-in 13-inch display at the default scale: open each pane, expand Menu Bar › Advanced, turn a permission off to show the General banner; drag the window to the bottom of the screen and switch to a taller pane; with Advanced open, drag the window from a taller display to the built-in one. | The window stays inside the visible screen; a pane taller than the screen scrolls inside and every row can be reached. | Pass (maintainer, a4631a4) |
+| W5 | Built-in 13-inch display at the default scale: open each pane, expand Menu Bar › Advanced, turn a permission off to show the General banner; drag the window to the bottom of the screen and switch to a taller pane; with Advanced open, drag the window from a taller display to the built-in one. | The window stays inside the visible screen; a pane taller than the screen scrolls inside and every row can be reached. | Maintainer reported the pane checks done on a4631a4; a 13-inch display and the cross-display step not stated |
 | G1 | Open General. Turn "Check for updates automatically" on, quit, relaunch; click "Check Now…". | Header with the icon, the version from Info.plist and "Permissions OK"; Launch at login; both permissions "Allowed"; Updates; Settings file; Quit at the bottom right; no scrolling. The switch stays on (`SUEnableAutomaticChecks` 1). Sparkle's check window opens; the button is disabled meanwhile. | Pass (maintainer, a4631a4) |
 | G2 | Window open: turn Screen Recording off in System Settings, come back; turn Accessibility off; turn both on (Screen Recording: relaunch). | Accessibility: a banner and "missing" in the header within about 1 s; its button opens the list. Screen Recording: either (a) the banner on return or (b) nothing until a relaunch, then the onboarding; record which. On again: the banners go. | Pass (maintainer, a4631a4; Screen Recording branch a/b not recorded) |
 | G3 | Quit. `defaults delete com.chlee1001.BarNookDev <key>` for the 12 settings keys. Launch the new build. Import a file exported by an earlier build. Before reopening Settings, `defaults read` the 12 keys. | All 12 equal the file; each shows in its new place; no alert. `clockZoneWidth` may be measured again when Settings opens with Accessibility. | Pass (maintainer, a4631a4) |
 | G4 | Window open: turn BarNook off in System Settings › Login Items, come back; turn it on there, come back. | "Waiting for approval in System Settings" with "Open Login Items"; then the switch follows without reopening the window. | Pass (maintainer, a4631a4) |
-| M1 | Reset the settings on a Mac without a notch and on a notch MacBook; open Menu Bar. | No notch: no Recommended, "In the menu bar" chosen. Notch: Recommended on the bar card only, the bar chosen. | Pass (maintainer, a4631a4) |
+| M1 | Reset the settings on a Mac without a notch and on a notch MacBook; open Menu Bar. | No notch: no Recommended, "In the menu bar" chosen. Notch: Recommended on the bar card only, the bar chosen. | Pass on the notch display only (maintainer, a4631a4); no-notch Mac not stated |
 | M2 | Pick the same icon for both states, then change one. | The warning shows and the choice is saved; the warning goes. | Pass (maintainer, a4631a4) |
 | M3 | Timeout field: 0, 999, abc, 42 and Return; the stepper to both ends; turn the switch off. | 1, 300, the previous value, 42; 1–300; the field and stepper disabled. | Pass (maintainer, a4631a4) |
 | M4 | Expand and collapse Advanced. With Accessibility off, "Click the Clock…". | Collapsed by default; the clock zone texts and buttons as before; width = distance + 30; Reset returns 300. | Pass (maintainer, a4631a4) |
