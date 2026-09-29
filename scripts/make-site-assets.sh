@@ -23,8 +23,8 @@ og() {
   local port
   port="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$root" >/dev/null 2>&1 &
-  local server=$!
-  trap 'kill "$server" 2>/dev/null || true' EXIT
+  og_server=$!
+  trap 'kill "$og_server" 2>/dev/null || true' EXIT
   local tries=0
   until curl -fs -o /dev/null "http://127.0.0.1:$port/scripts/og-card.html"; do
     tries=$((tries + 1))

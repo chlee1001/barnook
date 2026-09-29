@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- Open Graph card for the website. Rendered to site/assets/og/og-{en,ko}.png by
+     `scripts/make-site-assets.sh og`; open with ?lang=en or ?lang=ko. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BarNook OG card</title>
+<style>
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  src: url("../site/assets/fonts/PretendardVariable.woff2") format("woff2-variations"),
+       url("../site/assets/fonts/PretendardVariable.woff2") format("woff2");
+}
+html, body { margin: 0; }
+body {
+  width: 1200px; height: 630px; overflow: hidden; box-sizing: border-box;
+  padding: 96px 104px; display: flex; flex-direction: column; justify-content: space-between;
+  font-family: "Pretendard Variable", sans-serif; color: #f5efe4;
+  background: radial-gradient(900px 520px at 85% 0%, #24424f 0%, #0f1f27 62%);
+}
+.brand { display: flex; align-items: center; gap: 28px; }
+.brand img { width: 120px; height: 120px; border-radius: 27px; }
+.brand b { font-size: 76px; font-weight: 750; letter-spacing: -.025em; }
+h1 { margin: 0; font-size: 64px; line-height: 1.18; font-weight: 700; letter-spacing: -.025em; max-width: 960px; text-wrap: balance; }
+:lang(ko) h1 { letter-spacing: -.035em; word-break: keep-all; }
+.foot { display: flex; justify-content: space-between; align-items: baseline; font-size: 30px; color: #b9c6c9; }
+.foot .tag { color: #e9b67c; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="brand"><img src="../site/assets/icon-256.png" alt=""><b>BarNook</b></div>
+<h1 id="line"></h1>
+<div class="foot"><span class="tag" id="tag"></span><span>github.com/chlee1001/barnook</span></div>
+<script>
+const COPY = {
+  en: { line: "Hide the menu bar apps you don't use.", tag: "Free and open source · for macOS 27" },
+  ko: { line: "안 쓰는 메뉴 막대 앱은 숨겨 두세요", tag: "무료 오픈 소스 · macOS 27용" },
+};
+const lang = new URLSearchParams(location.search).get("lang") === "ko" ? "ko" : "en";
+document.documentElement.lang = lang;
+document.getElementById("line").textContent = COPY[lang].line;
+document.getElementById("tag").textContent = COPY[lang].tag;
+</script>
+</body>
+</html>
