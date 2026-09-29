@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): persisted menu bar icon choices.
+// Modified by Chaehyeon Lee (2026): persisted menu bar icon choices; the recommended placement for a display.
 import Foundation
 import Observation
 
@@ -41,15 +41,24 @@ final class AppState {
         Key.shownMenuBarIcon: MenuBarIcon.chevronLeft.rawValue,
     ]
 
-    /// `hasNotch` picks the placement default: a notch collapses shown items
-    /// that do not fit, so the bar is the default there. Registered, not
-    /// written, so a user who never chose follows the display at each launch.
-    static func registerDefaults(in store: UserDefaults = .standard, hasNotch: Bool = false) {
+    /// The placement default is `recommendedPlacement(hasNotch:)`. Registered,
+    /// not written, so a user who never chose follows the display at each launch.
+    static func registerDefaults(hasNotch: Bool) {
+        UserDefaults.standard.register(defaults: registeredDefaults(hasNotch: hasNotch))
+    }
+
+    /// The values `registerDefaults` registers. Registration is process-wide,
+    /// so tests read this instead.
+    static func registeredDefaults(hasNotch: Bool) -> [String: Any] {
         var defaults = defaults
-        if hasNotch {
-            defaults[Key.hiddenItemsPlacement] = HiddenItemsPlacement.floatingBar.rawValue
-        }
-        store.register(defaults: defaults)
+        defaults[Key.hiddenItemsPlacement] = recommendedPlacement(hasNotch: hasNotch).rawValue
+        return defaults
+    }
+
+    /// A notch collapses shown items that do not fit, so the bar suits it;
+    /// without one the items can return to the menu bar.
+    static func recommendedPlacement(hasNotch: Bool) -> HiddenItemsPlacement {
+        hasNotch ? .floatingBar : .menuBar
     }
 
     private let store: UserDefaults

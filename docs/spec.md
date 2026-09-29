@@ -1,6 +1,6 @@
 # BarNook — specification
 
-Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins and selectable menu bar icons.
+Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins, selectable menu bar icons and the toolbar settings panes.
 
 BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://github.com/ronny/ellipsis). It hides and shows menu bar items of other apps on macOS 27 (Golden Gate).
 
@@ -90,17 +90,16 @@ BarNook does not rehide while a menu from a shown item is open, or while the poi
 
 ### F4: Settings window
 
-A SwiftUI window with these controls:
+An AppKit window with toolbar panes that host SwiftUI views:
 
-- Launch at login (`SMAppService`).
-- Menu bar icon: separate pickers for the hidden and shown states; changes take effect immediately and are included in settings export/import.
-- Hidden set: a list of running apps with a checkbox per app. BarNook lists apps with a `.regular` or `.accessory` activation policy.
-- Always-hidden set: the same list, and a switch to enable the set.
-- "Hide apps left of the BarNook icon": a switch (F7). Off without the Accessibility permission.
-- Auto-rehide: three switches and the timeout value.
-- Clock zone: the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
-- Export and import: the sets and the options above as a property list file. Import ignores unknown keys and refuses a value of the wrong type.
-- Version number and a quit button.
+- General: the app icon, name and version with a permission summary; a banner at the top while a permission is missing; launch at login (`SMAppService`); each permission's state with "Allow…" or "Relaunch BarNook"; update options (Sparkle); the settings file; a quit button.
+- Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
+- Apps (Settings › Apps): one list of running apps with Shown, Hidden or Always hidden per app, a search field and the count of each set. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running.
+- Choose hidden apps: "From this list" or "By position" (F7). "By position" needs the Accessibility permission.
+- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused.
+- Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
+- Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
+- Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing. A switch must be a property-list Boolean (`<true/>`/`<false/>`) and a number must not be one; export writes them that way.
 
 Open the window from a right-click menu on the BarNook icon. The same menu has "Show always-hidden items", "Settings…", and "Quit".
 
@@ -115,26 +114,26 @@ Open the window from a right-click menu on the BarNook icon. The same menu has "
 
 BarNook requires two permissions:
 
-- Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the pickers (F4) list only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
-- Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory.
+- Accessibility: BarNook asks each app over Accessibility (`AXExtrasMenuBar`) whether it has a menu bar item, so the Apps list (F4) shows only those apps. It reads the menu bar layout from `MenuBarAgent`, fits the clock zone to the clock, and clicks the clock in bar mode (F8).
+- Screen Recording: In bar mode the restriction lifts while the pointer rests on the clock and for a click on it. BarNook covers every menu bar left of the clock with a picture of itself during that time, so hidden items do not appear on screen (`docs/notification-center-clock.md`). The picture stays in memory and is discarded when the cover comes off; the onboarding says so under "What does BarNook capture?".
 
 Hiding and showing work without either permission.
 
-- While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions with their state and a "Grant…" button each. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
-- Screen Recording takes effect after a relaunch. Once it was requested, the window offers "Relaunch BarNook".
-- "Continue" opens Settings once both are granted. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state.
+- While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions as steps, each with its state and an "Allow…" button, a progress bar ("n of 2 allowed") and, next to Continue, what is left to do. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
+- Screen Recording changes take effect after a relaunch. Once it was requested, the Screen Recording step offers "Relaunch BarNook"; after a revoke, Settings may show it as allowed until the relaunch.
+- "Continue" opens Settings once both are allowed. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state, and a banner at the top of the pane while one is missing.
 - BarNook re-reads Accessibility 0.5 s after the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
 - For VM tests, `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
 
 ### F7: The icon as divider
 
-Off by default. When on, the BarNook icon divides the menu bar like the Bartender and Ice icons do: Cmd-drag items across it. Needs the Accessibility permission: with it, the windows of `MenuBarAgent` expose every visible item with its frame and owner, and the icon's own window frame gives the split point.
+Off by default ("From this list" in Settings › Apps). With "By position", the BarNook icon divides the menu bar like the Bartender and Ice icons do: Cmd-drag items across it. Needs the Accessibility permission: with it, the windows of `MenuBarAgent` expose every visible item with its frame and owner, and the icon's own window frame gives the split point.
 
 - A visible app left of the icon joins the hidden set. A visible app right of it leaves the set, but only while the set is shown: while it is hidden, a hidden app can still be on its way out.
 - An app with an item on each side hides. Hiding is per app.
 - Apps that are not visible keep their membership. The always-hidden set is never touched.
-- BarNook reads the menu bar when the switch turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning the switch on hides whatever already sits left of the icon.
-- While the switch is on, the Hidden picker in Settings is read-only.
+- BarNook reads the menu bar when position mode turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning position mode on hides whatever already sits left of the icon.
+- While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again.
 
 ### F8: The floating bar
 
@@ -142,7 +141,7 @@ A notch splits the menu bar. `MenuBarAgent` never pushes an item off-screen: it 
 
 No image of an item is available. On macOS 27 the window server has no window per item, so the ScreenCaptureKit method of Ice (capture each item window) does not work. A capture of the menu bar region needs the Screen Recording permission, and it cannot capture an item that is not drawn. So the bar shows the app icon (`NSRunningApplication.icon`) of each hidden app. Hiding is per app, so one icon per app is the same granularity.
 
-- Settings › General has "Show hidden items": "In the menu bar" or "In a bar below the menu bar". Until the user picks one, the default is the bar when a screen has a notch at launch (`NSScreen.safeAreaInsets.top` is more than zero), and the menu bar otherwise.
+- Settings › Menu Bar has "Show hidden items": two cards, "In the menu bar" and "In a bar below the menu bar". The bar card is marked Recommended when a screen has a notch. Until the user picks one, the default is the bar when a screen has a notch at launch (`NSScreen.safeAreaInsets.top` is more than zero), and the menu bar otherwise. Recommended reads the screens when Settings opens, so after a notch display is connected or removed it can differ from the default chosen at launch.
 - In bar mode, a click on the icon shows the panel with one icon per app in the hidden set. An Option click adds the always-hidden set. The icon changes to the chevron as it does today.
 - The panel is a non-activating `NSPanel` at the status bar level, on every Space and next to full-screen apps. Its right edge is under the BarNook icon. Its top is at the bottom edge of the menu bar. The frontmost app keeps the focus.
 - Each icon has a tooltip with the app name. A hover highlights it.
@@ -163,7 +162,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 
 ## Acceptance criteria
 
-1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are granted; Screen Recording applies after the offered relaunch.
+1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are allowed; Screen Recording applies after the offered relaunch.
 2. Add an app to the hidden set. Its items disappear. Click the icon. The items return. Click again. The items disappear.
 3. Quit and relaunch. The hidden state and the sets are unchanged.
 4. Add an app to the always-hidden set. It stays hidden after a normal click. Option+click shows it.

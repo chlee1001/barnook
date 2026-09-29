@@ -1,10 +1,11 @@
+// Modified by Chaehyeon Lee (2026): rescan when the Accessibility permission changes.
 import AppKit
 import Observation
 
-/// The apps a picker can list: every running app with a regular or accessory
+/// The apps the Apps list can show: every running app with a regular or accessory
 /// activation policy. With the Accessibility permission, only the apps that
 /// have a menu bar item. An app in a set stays listed after it quits, so the
-/// user can still uncheck it.
+/// user can still set it to Shown.
 @MainActor
 @Observable
 final class RunningApps {
@@ -36,9 +37,10 @@ final class RunningApps {
                 self?.refresh()
             }
         }
+        observePermission()
     }
 
-    /// Entries for a picker: the running apps plus the apps in `selected` that
+    /// Entries for the Apps list: the running apps plus the apps in `selected` that
     /// are not running, sorted by name.
     func entries(including selected: Set<String>) -> [Entry] {
         let runningIDs = Set(running.map(\.id))
@@ -87,6 +89,20 @@ final class RunningApps {
             }
             let result = found
             await MainActor.run { self?.withMenuBarItem = result }
+        }
+    }
+
+    /// The Accessibility permission decides which apps are listed, so a
+    /// change rescans while Settings stays open.
+    private func observePermission() {
+        withObservationTracking {
+            _ = permission.isTrusted
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.refresh()
+                self.observePermission()
+            }
         }
     }
 

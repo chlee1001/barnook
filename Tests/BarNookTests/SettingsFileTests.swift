@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook status item key and icon choice coverage.
+// Modified by Chaehyeon Lee (2026): BarNook status item key and icon choice coverage; the key list and the timeout range.
 import Foundation
 import Testing
 @testable import BarNook
@@ -113,6 +113,95 @@ struct SettingsFileTests {
         }
     }
 
+    /// Written out by hand, not derived from `SettingsFile.keys`, so a key
+    /// that disappears or changes kind fails here.
+    @Test func settingsFileHasTheTwelveKeys() {
+        let expected: [String: String] = [
+            "isAlwaysHiddenEnabled": "bool", "rehideOnTimeout": "bool", "rehideOnClickOutside": "bool",
+            "rehideOnFocusChange": "bool", "rehideTimeout": "number 1...300", "clockZoneWidth": "number",
+            "hidesAppsLeftOfIcon": "bool", "hiddenItemsPlacement": "choice floatingBar,menuBar",
+            "hiddenMenuBarIcon": "choice chevronLeft,chevronRight,dot,ellipsis,nook,star",
+            "shownMenuBarIcon": "choice chevronLeft,chevronRight,dot,ellipsis,nook,star",
+            "hiddenBundleIdentifiers": "stringArray", "alwaysHiddenBundleIdentifiers": "stringArray",
+        ]
+        #expect(SettingsFile.keys.mapValues(describe) == expected)
+    }
+
+    @Test func allTwelveKeysRoundTrip() throws {
+        let values: [String: Any] = [
+            "isAlwaysHiddenEnabled": false, "rehideOnTimeout": false, "rehideOnClickOutside": false,
+            "rehideOnFocusChange": true, "rehideTimeout": 42.0, "clockZoneWidth": 180.0,
+            "hidesAppsLeftOfIcon": true, "hiddenItemsPlacement": "floatingBar",
+            "hiddenMenuBarIcon": "star", "shownMenuBarIcon": "dot",
+            "hiddenBundleIdentifiers": ["a"], "alwaysHiddenBundleIdentifiers": ["b"],
+        ]
+        let source = makeStore()
+        for (key, value) in values { source.set(value, forKey: key) }
+        let target = makeStore()
+
+        try SettingsFile.import(SettingsFile.export(from: source), into: target)
+
+        for (key, value) in values {
+            #expect(target.object(forKey: key) as? NSObject == value as? NSObject, "\(key)")
+        }
+    }
+
+    @Test(arguments: [0.0, 301, -5, .nan])
+    func importRefusesATimeoutOutOfRange(seconds: Double) throws {
+        let target = makeStore()
+        target.set(15.0, forKey: AppState.Key.rehideTimeout)
+        target.set(["kept"], forKey: HiddenSets.Key.hidden)
+        let data = try plist([HiddenSets.Key.hidden: ["a"], AppState.Key.rehideTimeout: seconds])
+
+        #expect(throws: SettingsFile.ImportError.self) {
+            try SettingsFile.import(data, into: target)
+        }
+        #expect(target.double(forKey: AppState.Key.rehideTimeout) == 15)
+        #expect(target.stringArray(forKey: HiddenSets.Key.hidden) == ["kept"])
+    }
+
+    @Test(arguments: [1.0, 300, 42])
+    func importAcceptsATimeoutInRange(seconds: Double) throws {
+        let target = makeStore()
+        try SettingsFile.import(try plist([AppState.Key.rehideTimeout: seconds]), into: target)
+        #expect(target.double(forKey: AppState.Key.rehideTimeout) == seconds)
+    }
+
+    @Test func booleanAndNumberStayApart() throws {
+        let target = makeStore()
+        #expect(throws: SettingsFile.ImportError.self) {
+            try SettingsFile.import(try plist([AppState.Key.rehideTimeout: true]), into: target)
+        }
+        #expect(throws: SettingsFile.ImportError.self) {
+            try SettingsFile.import(try plist([AppState.Key.rehideOnTimeout: 1.0]), into: target)
+        }
+        #expect(target.object(forKey: AppState.Key.rehideTimeout) == nil)
+        #expect(target.object(forKey: AppState.Key.rehideOnTimeout) == nil)
+    }
+
+    /// `registerDefaults` writes the process-wide registration domain, which
+    /// every suite store reads, so the test checks the values it registers.
+    @Test @MainActor func placementDefaultFollowsTheNotch() {
+        #expect(AppState.recommendedPlacement(hasNotch: true) == .floatingBar)
+        #expect(AppState.recommendedPlacement(hasNotch: false) == .menuBar)
+        let key = AppState.Key.hiddenItemsPlacement
+        #expect(AppState.registeredDefaults(hasNotch: true)[key] as? String == "floatingBar")
+        #expect(AppState.registeredDefaults(hasNotch: false)[key] as? String == "menuBar")
+        #expect(AppState.registeredDefaults(hasNotch: true).count == AppState.defaults.count)
+    }
+
+    /// A stored placement is read as is, not replaced by the fallback.
+    @Test @MainActor func aStoredPlacementIsRead() {
+        let store = makeStore()
+        store.set("floatingBar", forKey: AppState.Key.hiddenItemsPlacement)
+        #expect(AppState(store: store).hiddenItemsPlacement == .floatingBar)
+    }
+
+    @Test func outOfRangeErrorNamesTheRange() {
+        let error = SettingsFile.ImportError.outOfRange(key: "rehideTimeout", range: 1...300)
+        #expect(error.errorDescription == "The value of “rehideTimeout” is outside 1-300.")
+    }
+
     @Test func importRejectsAFileWithNoKnownKeys() throws {
         let data = try plist(["somethingElse": 1])
         #expect(throws: SettingsFile.ImportError.self) {
@@ -123,6 +212,16 @@ struct SettingsFileTests {
     @Test func importRejectsANonDictionary() {
         #expect(throws: SettingsFile.ImportError.self) {
             try SettingsFile.import(Data("not a plist".utf8), into: makeStore())
+        }
+    }
+
+    private func describe(_ kind: SettingsFile.ValueKind) -> String {
+        switch kind {
+        case .bool: "bool"
+        case .stringArray: "stringArray"
+        case .number(let range?): "number \(Int(range.lowerBound))...\(Int(range.upperBound))"
+        case .number(nil): "number"
+        case .choice(let values): "choice " + values.sorted().joined(separator: ",")
         }
     }
 

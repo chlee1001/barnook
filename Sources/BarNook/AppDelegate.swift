@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding.
+// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding; an Edit menu for text-field shortcuts; a shared notch check.
 import AppKit
 
 @MainActor
@@ -14,13 +14,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var divider: IconDivider?
 
     override init() {
-        AppState.registerDefaults(hasNotch: NSScreen.screens.contains { $0.safeAreaInsets.top > 0 })
+        AppState.registerDefaults(hasNotch: NSScreen.anyHasNotch)
         sets = HiddenSets()
         state = AppState()
         super.init()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.mainMenu = Self.editMenu()
         let restriction: MenuBarRestriction
         do {
             restriction = try MenuBarRestriction()
@@ -72,6 +73,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboarding?.show()
     }
 
+    /// An agent app shows no menu bar, but text fields find Cut, Copy, Paste
+    /// and Select All through the main menu's key equivalents. Without one
+    /// the Settings fields ignore Cmd-X/C/V/A.
+    private static func editMenu() -> NSMenu {
+        let edit = NSMenu(title: "Edit")
+        edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        // The first item is always the application menu; Edit follows it.
+        let main = NSMenu()
+        let app = NSMenuItem()
+        app.submenu = NSMenu()
+        main.addItem(app)
+        let item = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        item.submenu = edit
+        main.addItem(item)
+        return main
+    }
+
     private static func quit(with error: Error) {
         let alert = NSAlert()
         alert.messageText = "BarNook cannot run on this version of macOS"
@@ -82,4 +107,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
         NSApp.terminate(nil)
     }
+}
+
+extension NSScreen {
+    /// A screen with a camera housing reports a top safe-area inset.
+    static var anyHasNotch: Bool { screens.contains { $0.safeAreaInsets.top > 0 } }
 }

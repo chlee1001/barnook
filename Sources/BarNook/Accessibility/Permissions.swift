@@ -1,5 +1,6 @@
 // Modified by Chaehyeon Lee (2026): Accessibility and Screen Recording are
-// required; replaces the optional Accessibility permission.
+// required; replaces the optional Accessibility permission; a value that
+// says which step each permission is at.
 import AppKit
 import ApplicationServices
 import CoreGraphics
@@ -44,6 +45,14 @@ final class Permissions {
     private var poll: Task<Void, Never>?
 
     var areGranted: Bool { isTrusted && isScreenRecordingGranted }
+
+    var status: PermissionStatus {
+        PermissionStatus(
+            accessibility: isTrusted,
+            screenRecording: isScreenRecordingGranted,
+            hasRequestedScreenRecording: hasRequestedScreenRecording
+        )
+    }
 
     init() {
         isTrusted = AXIsProcessTrusted()
@@ -141,5 +150,47 @@ final class Permissions {
         var count: CFIndex = 0
         AXUIElementGetAttributeValueCount(bar as! AXUIElement, kAXChildrenAttribute as CFString, &count)
         return count > 0
+    }
+}
+
+/// Where each permission stands, for the onboarding and the General pane.
+/// Pure, so tests can cover every combination.
+struct PermissionStatus: Equatable {
+    var accessibility: Bool
+    var screenRecording: Bool
+    var hasRequestedScreenRecording: Bool
+
+    enum Step: Equatable {
+        case waiting
+        /// Screen Recording was requested but applies only after a relaunch.
+        case needsRelaunch
+        case allowed
+    }
+
+    /// What the user does next.
+    enum Hint: Equatable {
+        /// Allow these, in `Kind.allCases` order.
+        case allow([Permissions.Kind])
+        case relaunch
+        case ready
+    }
+
+    func step(_ kind: Permissions.Kind) -> Step {
+        switch kind {
+        case .accessibility:
+            accessibility ? .allowed : .waiting
+        case .screenRecording:
+            screenRecording ? .allowed : hasRequestedScreenRecording ? .needsRelaunch : .waiting
+        }
+    }
+
+    var allowedCount: Int { Permissions.Kind.allCases.filter { step($0) == .allowed }.count }
+
+    var missing: [Permissions.Kind] { Permissions.Kind.allCases.filter { step($0) != .allowed } }
+
+    var hint: Hint {
+        let waiting = Permissions.Kind.allCases.filter { step($0) == .waiting }
+        if !waiting.isEmpty { return .allow(waiting) }
+        return missing.isEmpty ? .ready : .relaunch
     }
 }
