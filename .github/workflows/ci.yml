@@ -16,8 +16,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
-      - run: shellcheck scripts/*.sh Tests/ReleaseGateTests.sh
+      - run: shellcheck scripts/*.sh Tests/ReleaseGateTests.sh Tests/SiteCheckTests.sh
       - run: bash Tests/ReleaseGateTests.sh
+
+  site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - run: bash scripts/check-site.sh
+      - run: bash Tests/SiteCheckTests.sh
 
   swift:
     runs-on: xcode-27
