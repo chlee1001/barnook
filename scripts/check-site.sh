@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Check the static website: en/ko structural parity, local links, no third-party loads,
-# page metadata, leftover mockup markers, and the pinned Pretendard font and license.
+# page metadata, leftover mockup markers, the pinned Pretendard font and license,
+# and the elements the demo script needs.
 # Usage: scripts/check-site.sh [site-dir]   (default: site/ next to this script's repo)
 set -euo pipefail
 
@@ -83,14 +84,26 @@ while IFS= read -r ref; do
 done < <(scan 'url\(\s*["'"'"']?([^"'"'"')]+)' "$css")
 
 # (f) Nothing loads from other hosts, and the only inline script is the js class swap.
+# An absolute (http:, https:) or protocol-relative (//) URL is another host.
 for page in "$en" "$ko"; do
   name="${page#"$dir"/}"
-  [[ "$(count 'src="http' "$page")" == 0 ]] || fail "(f) $name loads a third-party resource"
-  foreign="$(perl -0ne 'while (/<link\b[^>]*>/g) { my $t = $&; print "$t\n" if $t =~ /href="https?:/ && $t !~ /rel="(?:canonical|alternate)"/ }' "$page")"
+  foreign="$(perl -0ne '
+    my $abs = qr/=\s*["\x27]?(?:https?:)?\/\//i;
+    while (/<(?:script|img|iframe|source|video|audio|embed|object)\b[^>]*>/gi) { my $t = $&; print "$t\n" if $t =~ /\b(?:src|srcset|data)$abs/ }
+    while (/<link\b[^>]*>/gi) { my $t = $&; print "$t\n" if $t =~ /\bhref$abs/ && $t !~ /rel="(?:canonical|alternate)"/ }
+  ' "$page")"
   [[ -z "$foreign" ]] || fail "(f) $name loads a third-party resource: $foreign"
-  [[ "$(count '<script>' "$page")" == 1 ]] || fail "(f) $name must have exactly one inline script"
-  [[ "$(scan '<script>(.*?)</script>' "$page")" == "$inline_script" ]] ||
-    fail "(f) $name has an unexpected inline script"
+  inline="$(perl -0ne 'while (/<script\b([^>]*)>(.*?)<\/script>/gis) { print "$2\n" unless $1 =~ /\bsrc=/i }' "$page")"
+  [[ "$(printf '%s' "$inline" | grep -c '')" == 1 ]] || fail "(f) $name must have exactly one inline script"
+  [[ "$inline" == "$inline_script" ]] || fail "(f) $name has an unexpected inline script"
+done
+
+# (j) The elements site.js drives are on both pages.
+for page in "$en" "$ko"; do
+  for id in stage displaySeg placementSeg optBox mbApps panel overflow deskHint caption; do
+    grep -q "id=\"$id\"" "$page" || fail "(j) ${page#"$dir"/} lacks #$id, which site.js needs"
+  done
+  grep -q 'class="stage-scroll' "$page" || fail "(j) ${page#"$dir"/} lacks .stage-scroll, which site.js needs"
 done
 if perl -0ne 'exit((/url\(\s*["'"'"']?https?:/ || /\@import/) ? 0 : 1)' "$css"; then
   fail "(f) site.css loads a third-party resource"

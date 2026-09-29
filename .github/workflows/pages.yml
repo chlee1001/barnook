@@ -30,7 +30,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    # deploy-pages waits up to 10 minutes for the deployment; let it finish or fail on its own.
+    timeout-minutes: 15
     permissions:
       pages: write
       id-token: write

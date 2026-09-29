@@ -27,8 +27,17 @@ expect_failure '(b) the id sequences'
 perl -0pi -e 's#</head>#<script src="https://cdn.example.com/x.js"></script>\n</head>#' "$work/site/index.html"
 expect_failure '(f) index.html loads a third-party resource'
 
+perl -0pi -e "s#</head>#<img src='//cdn.example.com/x.png' alt=''>\n</head>#" "$work/site/ko/index.html"
+expect_failure '(f) ko/index.html loads a third-party resource'
+
 perl -0pi -e 's#</body>#<script>console.log(1)</script>\n</body>#' "$work/site/index.html"
 expect_failure '(f) index.html must have exactly one inline script'
+
+perl -0pi -e 's#</body>#<script type="module">console.log(1)</script>\n</body>#' "$work/site/index.html"
+expect_failure '(f) index.html must have exactly one inline script'
+
+perl -0pi -e 's# id="deskHint"##' "$work/site/index.html"; perl -0pi -e 's# id="deskHint"##' "$work/site/ko/index.html"
+expect_failure '(j) index.html lacks #deskHint'
 
 perl -0pi -e 's#<link rel="alternate" hreflang="x-default"[^>]*>\n##' "$work/site/index.html"
 expect_failure '(g) the alternate links of the en and ko pages differ'
@@ -48,4 +57,4 @@ expect_failure '(h) mockup leftovers'
 perl -0pi -e 's#</footer>#<img src="assets/missing.png" alt="">\n</footer>#' "$work/site/index.html"
 expect_failure '(e) index.html links to missing assets/missing.png'
 
-echo 'check-site passes the site and rejects all 9 broken copies.'
+echo 'check-site passes the site and rejects all 12 broken copies.'
