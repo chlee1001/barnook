@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>document.documentElement.className='js'</script>
-<title>BarNook — A quieter menu bar for macOS 27</title>
+<title>BarNook — Hide menu bar apps on macOS 27</title>
 <meta name="description" content="BarNook hides the menu bar apps you don't need right now and shows them with one click. Built for macOS 27 and MacBooks with a notch. Free and open source.">
 <link rel="canonical" href="https://chlee1001.github.io/barnook/">
 <link rel="alternate" hreflang="en" href="https://chlee1001.github.io/barnook/">
@@ -12,7 +12,7 @@
 <link rel="alternate" hreflang="x-default" href="https://chlee1001.github.io/barnook/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BarNook">
-<meta property="og:title" content="BarNook — A quieter menu bar for macOS 27">
+<meta property="og:title" content="BarNook — Hide menu bar apps on macOS 27">
 <meta property="og:description" content="Hide the menu bar apps you don't need right now, and show them with one click. Built for MacBooks with a notch. Free and open source.">
 <meta property="og:url" content="https://chlee1001.github.io/barnook/">
 <meta property="og:locale" content="en_US">
@@ -44,8 +44,8 @@
 <div class="hero">
   <div class="wrap">
     <img class="icon" src="assets/icon-256.png" alt="BarNook app icon" width="104" height="104">
-    <h1>A quieter menu bar<br>for macOS 27.</h1>
-    <p class="lede">BarNook hides the menu bar apps you don't need right now. Click its icon to bring them back. Click again, or wait, and they hide again. On a MacBook with a notch, they show up in a bar below the menu bar, so nothing gets lost behind «.</p>
+    <h1>Hide the menu bar apps<br>you don't use.</h1>
+    <p class="lede">Click the BarNook icon to show your hidden apps. Click it again, or wait 15 seconds, and they're hidden again. On a MacBook with a notch, they show up in a bar below the menu bar, so nothing gets lost behind «.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/chlee1001/barnook/releases/latest">
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m-3.5-3.5L8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -92,7 +92,7 @@
 <section id="notch">
   <div class="wrap">
     <p class="eyebrow">Built for the notch</p>
-    <h2>Hidden apps stay reachable, even next to the notch.</h2>
+    <h2>The notch doesn't swallow your apps.</h2>
     <p class="intro">macOS fills the menu bar from the right and collapses whatever doesn't fit behind a « button. The leftmost item goes first, and that's the BarNook icon, the one you'd click to hide everything again.</p>
     <div class="grid g2">
       <div class="card">
@@ -122,7 +122,7 @@
 <section id="how">
   <div class="wrap">
     <p class="eyebrow">Get started</p>
-    <h2>Three steps, no configuration files.</h2>
+    <h2>Install it, then pick what to hide.</h2>
     <div class="grid g3 steps">
       <div class="card">
         <h3>Move it to Applications</h3>
@@ -133,8 +133,8 @@
         <p>In Settings › Apps, set each app to Shown, Hidden or Always hidden. Or pick "By position" and <kbd>⌘</kbd>-drag items to the left of the BarNook icon.</p>
       </div>
       <div class="card">
-        <h3>Click to reveal</h3>
-        <p>Click the icon to show hidden apps. They hide again after 15 seconds, when you click elsewhere, or when you switch apps if you turn that on.</p>
+        <h3>Click to show</h3>
+        <p>Click the icon to show hidden apps. They're hidden again after 15 seconds, when you click elsewhere, or, if you turn it on, when you switch apps.</p>
       </div>
     </div>
   </div>
@@ -143,18 +143,18 @@
 <section id="features">
   <div class="wrap">
     <p class="eyebrow">Features</p>
-    <h2>Does one job, and stays out of the way.</h2>
-    <p class="intro">BarNook hides and shows whole apps. It never moves your items and doesn't restyle the menu bar.</p>
+    <h2>What BarNook does</h2>
+    <p class="intro">BarNook hides and shows whole menu bar apps. It doesn't reorder items or restyle the menu bar.</p>
     <div class="grid g3">
-      <div class="card"><div class="k" aria-hidden="true">1×</div><h3>One click</h3><p>Click the icon to show hidden apps. Click again to hide them.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">1×</div><h3>One click to toggle</h3><p>Click the icon to show hidden apps. Click it again to hide them.</p></div>
       <div class="card"><div class="k" aria-hidden="true">⌥</div><h3>Always hidden</h3><p>Apps you almost never need stay hidden after a normal click. <kbd>⌥</kbd>-click the icon to show them too.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">⏱</div><h3>Hides itself again</h3><p>After a timeout from 1 to 300 seconds, a click outside the menu bar, or a switch of app or Space. Never while a menu is open.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">⌘</div><h3>The icon as a divider</h3><p>With "By position", <kbd>⌘</kbd>-drag an item to the left of the icon to hide its app, and to the right to show it.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">⏱</div><h3>Automatic re-hide</h3><p>Apps are hidden again after a timeout you set (1–300 seconds), when you click outside the menu bar, or when you switch apps or Spaces. Never while a menu is open.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">⌘</div><h3>Split by the icon</h3><p>With "By position", <kbd>⌘</kbd>-drag an item to the left of the icon to hide its app, and to the right to show it.</p></div>
       <div class="card"><div class="k" aria-hidden="true">▭</div><h3>A bar for the notch</h3><p>Hidden apps appear under the icon on any display you choose. Pin up to three into the menu bar.</p></div>
       <div class="card"><div class="k" aria-hidden="true">◎</div><h3>The clock still works</h3><p>Clicking the clock opens Notification Center while apps are hidden.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">✦</div><h3>Your icon</h3><p>Pick a menu bar icon for each state: the nook, an ellipsis, arrows, a dot or a star.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">⇅</div><h3>Settings to go</h3><p>Export your hidden sets and options to a file and import them on another Mac.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">↻</div><h3>Stays up to date</h3><p>Launch at login, and signed updates from GitHub Releases through Sparkle.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">✦</div><h3>Choose the icon</h3><p>Pick separate icons for the hidden and shown states: the default nook, an ellipsis, arrows, a dot or a star.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">⇅</div><h3>Export and import settings</h3><p>Export your hidden sets and options to a file and import them on another Mac.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">↻</div><h3>Launch at login, automatic updates</h3><p>Starts when you log in, and installs signed updates from GitHub Releases through Sparkle.</p></div>
     </div>
   </div>
 </section>
@@ -162,12 +162,12 @@
 <section id="privacy" class="privacy">
   <div class="wrap">
     <p class="eyebrow">Permissions and privacy</p>
-    <h2>Two permissions, and what each one is for.</h2>
+    <h2>BarNook needs two permissions</h2>
     <p class="intro">Hiding and showing work from the first launch. The welcome window asks for both permissions, and Settings opens once they're allowed.</p>
     <div class="grid g2">
       <div class="card"><div class="k" aria-hidden="true">Ax</div><h3>Accessibility</h3><p>Reads the menu bar layout, so the Apps list shows only apps with a menu bar item, the icon can work as a divider, and the clock zone fits your clock.</p></div>
       <div class="card"><div class="k" aria-hidden="true">▣</div><h3>Screen Recording</h3><p>While you click the clock in bar mode, BarNook briefly covers the menu bar with a picture of it, so hidden items don't flash on screen. The picture stays in memory and is discarded when the cover comes off.</p></div>
-      <div class="card"><div class="k" aria-hidden="true">∅</div><h3>No analytics, no account</h3><p>BarNook connects only to GitHub, to check for updates. It sends no system profile, and you can turn automatic checks off in Settings › General.</p></div>
+      <div class="card"><div class="k" aria-hidden="true">∅</div><h3>No analytics or account</h3><p>BarNook connects only to GitHub, to check for updates. It sends no system profile, and you can turn automatic checks off in Settings › General.</p></div>
       <div class="card"><div class="k" aria-hidden="true">{ }</div><h3>Open source</h3><p>Read every line on GitHub, or build it yourself with SwiftPM. Licensed under Apache 2.0.</p></div>
     </div>
   </div>
@@ -176,8 +176,8 @@
 <section id="limits">
   <div class="wrap">
     <p class="eyebrow">Limits</p>
-    <h2>What BarNook can't do.</h2>
-    <p class="intro">macOS 27 decides a lot here. These limits come from the system, not from a setting.</p>
+    <h2>What BarNook can't do</h2>
+    <p class="intro">These limits come from how macOS 27 works, so no setting changes them.</p>
     <ul class="limits">
       <li><b>Whole apps, not single items.</b> An app with two menu bar items hides both.</li>
       <li><b>Focus and the camera/microphone indicator</b> are hidden too while any app is hidden. No setting brings them back.</li>
@@ -191,7 +191,7 @@
 <section id="faq">
   <div class="wrap">
     <p class="eyebrow">FAQ</p>
-    <h2>Questions.</h2>
+    <h2>Frequently asked questions</h2>
     <details>
       <summary>The BarNook icon doesn't show up in the menu bar.</summary>
       <p>Check that BarNook runs from <code>/Applications</code>. macOS matches BarNook's list against apps in that folder only, so a copy anywhere else hides its own icon.</p>
@@ -226,7 +226,7 @@
 <section class="final">
   <div class="wrap">
     <img src="assets/icon-256.png" alt="" width="72" height="72">
-    <h2>Give your menu bar some room.</h2>
+    <h2>Try it on macOS 27</h2>
     <div class="cta">
       <a class="btn primary" href="https://github.com/chlee1001/barnook/releases/latest">Download for macOS 27</a>
       <a class="btn ghost" href="https://github.com/chlee1001/barnook/releases">Release notes</a>
