@@ -1,8 +1,8 @@
 # Test checklist
 
-Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks and their results.
+Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon checks; settings window pane checks and their results; hidden app order checks.
 
-Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1e), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S32) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
+Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1e), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S42) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
 "Pass (maintainer, a4631a4)" records one report from the maintainer that he ran the settings checks himself on BarNookDev built from a4631a4; the report gave no per-row detail.
 
@@ -73,6 +73,16 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | S30 | Type part of an app name in the search field, then clear it. | Only matching apps show; the counts stay; no match shows "No apps with a menu bar item match." | Pass (maintainer, a4631a4) |
 | S31 | Quit a listed app. | "Not running"; it leaves the list once set to Shown. | Pass (maintainer, a4631a4) |
 | S32 | "By position", "Always-hidden apps" off. Click "Stop always hiding" on a paused always-hidden app. | The app leaves the set and reads Shown until the divider files it. On Hidden and Shown rows the always-hidden button is disabled. | |
+| S33 | "Show hidden items" in a bar. Drag an app within Hidden to a new place; click the icon; quit and relaunch BarNook, then click again. | The bar shows the hidden apps in the new list order, left to right, before and after the relaunch. | |
+| S34 | Drag a Shown app between two Hidden apps. Then in TextEdit select the bundle identifier of a listed app, and plain text, and drop each on a row, a group header and the empty-group placeholder. With BarNook and BarNookDev both running, drag a row from one's Settings into the other's. Watch Console for BarNookDev. | The app joins Hidden at that place and hides. The dropped text and the other app's row change no group, no order and no `defaults read` value; Console has no "expected to be declared and exported" UTType fault. | |
+| S35 | Click the Hidden button on a Shown app, with VoiceOver on; click it again. | The app joins the end of Hidden and is marked for a moment; VoiceOver reads the change. The second click keeps the order. | |
+| S36 | Type a search, then clear it. | One list by name with a state badge per app, nothing drags, the footer reads "Clear the search to reorder."; clearing brings the groups back. | |
+| S37 | "By position", "Show hidden items" in a bar. Drag between Hidden and Shown; reorder within Hidden; drag into and out of Always hidden. With the window open, Cmd-drag an item across the icon. | Hidden↔Shown drops change nothing; the reorder and the Always hidden moves take. The Cmd-dragged app changes group and the others keep their order. | |
+| S38 | "Show hidden items" in the menu bar. Drag within Hidden; drag from Hidden to Shown. | No order hint on Hidden or Always hidden; the drag within a group changes nothing; the drag to Shown shows the app. | |
+| S39 | "Always-hidden apps" off, with "From this list" and with "By position", both in a bar. Drag apps into and out of Always hidden; reorder within it; turn the switch on. | Nothing joins Always hidden; leaving follows spec F4/F7; the paused apps reorder, and the order stays after the switch is on. | |
+| S40 | Fold and unfold Shown; with it folded, drop a Hidden app on its "Drop an app here to show it" row. | Shown folds and unfolds; the dropped app becomes Shown. | |
+| S41 | "Show hidden items" in a bar. VoiceOver and keyboard only: "Move up" and "Move down" on a Hidden app; repeat S13 and S14. | Each action moves the app one place and reads "Hidden, n of m"; S13 and S14 still pass. | |
+| S42 | Reorder, export the settings, reorder again, import the file. Import an older file with sorted sets, and one with an app in both sets. | The import brings back the exported order. The older files import; the app in both sets stays Always hidden only. | |
 | D1 | Settings › Apps: choose "By position" (needs Accessibility). | Apps already left of the icon hide. Rows show read-only Shown/Hidden capsules; the list stays readable. | vm |
 | D2 | While the set is hidden, Cmd-drag the icon to the right of an item. | That app hides. | vm |
 | D3 | Show the set. Cmd-drag the icon to the far left. | Every app leaves the hidden set and stays when the set hides again. | vm |

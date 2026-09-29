@@ -46,6 +46,94 @@ enum AppVisibility: CaseIterable, Hashable {
         return (hidden, always, shown)
     }
 
+    /// The lists after `id` is dragged into `target`, before `anchor`: at
+    /// the end when the anchor is not in that list, unchanged when the
+    /// anchor is the app itself. Into Shown the app only leaves its list.
+    /// Other ids keep their order.
+    static func move(_ id: String, to target: AppVisibility, before anchor: String?, in lists: HiddenLists) -> HiddenLists {
+        guard anchor != id else { return lists }
+        var result = lists
+        result.hidden.removeAll { $0 == id }
+        result.alwaysHidden.removeAll { $0 == id }
+        func insert(into list: inout [String]) {
+            if let anchor, let index = list.firstIndex(of: anchor) {
+                list.insert(id, at: index)
+            } else {
+                list.append(id)
+            }
+        }
+        switch target {
+        case .shown: break
+        case .hidden: insert(into: &result.hidden)
+        case .alwaysHidden: insert(into: &result.alwaysHidden)
+        }
+        return result
+    }
+
+    /// The lists after `id` moves `offset` places within its own list.
+    /// Unchanged past either end, and for a shown app.
+    static func step(_ id: String, by offset: Int, in lists: HiddenLists) -> HiddenLists {
+        func stepped(_ list: [String]) -> [String]? {
+            guard let index = list.firstIndex(of: id) else { return nil }
+            let target = index + offset
+            guard list.indices.contains(target) else { return list }
+            var list = list
+            list.remove(at: index)
+            list.insert(id, at: target)
+            return list
+        }
+        var result = lists
+        if let list = stepped(lists.alwaysHidden) {
+            result.alwaysHidden = list
+        } else if let list = stepped(lists.hidden) {
+            result.hidden = list
+        }
+        return result
+    }
+
+    /// Whether a drag from one group into another (or within one) is taken.
+    /// Within a group only a reorder, never in Shown. Across groups the
+    /// same rules as the row's buttons: the divider's always-hidden toggle
+    /// by position, the list's choices otherwise.
+    static func canMove(
+        from: AppVisibility, to: AppVisibility, isDividerActive: Bool,
+        isAlwaysHiddenEnabled: Bool, canReorder: Bool
+    ) -> Bool {
+        if from == to { return to != .shown && canReorder }
+        if isDividerActive {
+            return to == alwaysHiddenToggleTarget(current: from, alwaysHiddenEnabled: isAlwaysHiddenEnabled)
+        }
+        return listSelectable(alwaysHiddenEnabled: isAlwaysHiddenEnabled).contains(to)
+    }
+
+    /// The lists after `ids` are dropped into `target` before `anchor`, in
+    /// drag order, and the last app that moved. An id not in `listed`, or
+    /// one `allowed` refuses, stays where it was; nil when none moved.
+    static func drop(
+        _ ids: [String], into target: AppVisibility, before anchor: String?, listed: Set<String>,
+        in lists: HiddenLists, allowed: (_ from: AppVisibility) -> Bool
+    ) -> (lists: HiddenLists, moved: String)? {
+        var result = lists
+        var moved: String?
+        for id in ids where listed.contains(id) && allowed(of(id, in: result)) {
+            result = move(id, to: target, before: anchor, in: result)
+            moved = id
+        }
+        guard let moved, result != lists else { return nil }
+        return (result, moved)
+    }
+
+    /// The app's place in its list, counted from 1, or nil for a shown app.
+    static func place(of id: String, in lists: HiddenLists) -> (index: Int, count: Int)? {
+        let list = switch of(id, in: lists) {
+        case .shown: [String]()
+        case .hidden: lists.hidden
+        case .alwaysHidden: lists.alwaysHidden
+        }
+        guard let index = list.firstIndex(of: id) else { return nil }
+        return (index + 1, list.count)
+    }
+
     /// The choices a row offers when the user picks from the list.
     static func listSelectable(alwaysHiddenEnabled: Bool) -> Set<AppVisibility> {
         alwaysHiddenEnabled ? [.shown, .hidden, .alwaysHidden] : [.shown, .hidden]

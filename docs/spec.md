@@ -1,6 +1,6 @@
 # BarNook — specification
 
-Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins, selectable menu bar icons and the toolbar settings panes.
+Modified by Chaehyeon Lee (2026): specified temporary floating-bar pins, selectable menu bar icons, the toolbar settings panes and the order of the hidden sets.
 
 BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://github.com/ronny/ellipsis). It hides and shows menu bar items of other apps on macOS 27 (Golden Gate).
 
@@ -20,7 +20,7 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 - User-supplied icons or profiles.
 - Per-display rules.
 - Global hotkeys (not in v1).
-- Item rearrangement. BarNook never moves an item.
+- Item rearrangement. BarNook never moves an item. The order of the hidden sets applies to the floating bar only (F8); `MenuBarAgent` places the items in the menu bar.
 - Hiding one item of an app while another item of the same app stays visible. macOS 27 cannot do this (see "How it hides").
 - macOS 26 or earlier.
 
@@ -30,8 +30,8 @@ BarNook is a macOS menu bar item manager based on [ronny/ellipsis](https://githu
 |---|---|
 | Item | One menu bar item from any app. |
 | App | The owner of one or more items, identified by its bundle identifier. |
-| Hidden set | Apps that BarNook hides until you click the BarNook icon. |
-| Always-hidden set | Apps that BarNook hides until you Option+click the BarNook icon. |
+| Hidden set | Apps that BarNook hides until you click the BarNook icon. An ordered list: the order is the floating bar's, left to right. |
+| Always-hidden set | Apps that BarNook hides until you Option+click the BarNook icon. An ordered list like the hidden set. |
 | Restriction | The macOS 27 assessment-mode allow-list that BarNook holds while it hides apps. |
 | BarNook icon | The clickable `NSStatusItem` that BarNook owns. Its glyph can be chosen separately for hidden and shown items. |
 
@@ -94,9 +94,13 @@ An AppKit window with toolbar panes that host SwiftUI views:
 
 - General: the app icon, name and version with a permission summary; a banner at the top while a permission is missing; launch at login (`SMAppService`); each permission's state with "Allow…" or "Relaunch BarNook"; update options (Sparkle); the settings file; a quit button.
 - Menu bar icon (Settings › Menu Bar): a palette for each state with a preview of both; the same icon for both states shows a warning. Changes take effect immediately and are included in settings export/import.
-- Apps (Settings › Apps): one list of running apps with Shown, Hidden or Always hidden per app, a search field and the count of each set. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running.
+- Apps (Settings › Apps): the running apps in three groups, Hidden, Always hidden and Shown, each with its count, plus a search field. BarNook lists apps with a `.regular` or `.accessory` activation policy, plus apps in a set that are not running; a hidden app that quit reads "Not running · keeps its place".
+  - Hidden and Always hidden keep their list order, which is the floating bar's (F8): the hidden apps left to right, and after an Option click the always-hidden apps left of them. Shown is by name and folds away.
+  - Drag an app within a group to reorder it, or into another group, between two apps, into an empty group or onto a folded Shown, to change its state. A drop on a group's header puts the app at the end of the group. Only rows dragged from the same BarNook process are taken. A button on the row changes the state too and puts the app at the end of its new group. The app that moved is marked for a moment and VoiceOver reads its new place. In bar mode, VoiceOver offers "Move up" and "Move down" on Hidden and Always hidden rows.
+  - The order means something only in bar mode, so with "In the menu bar" Hidden and Always hidden show no order hint and a drag within a group changes nothing; a drag into another group still changes the state.
+  - While the search field has text, the list is one list by name with each app's state, and nothing can be dragged.
 - Choose hidden apps: "From this list" or "By position" (F7). "By position" needs the Accessibility permission.
-- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused. While Always hidden is off, apps can leave the set but none can join it.
+- Always-hidden apps: a switch to enable the set. While it is off, the set is kept and its apps are marked paused. While Always hidden is off, apps can leave the set but none can join it; in bar mode the paused apps can still be reordered.
 - Hide again (Settings › Menu Bar): three switches and the timeout value, typed or stepped, whole seconds within 1–300.
 - Clock zone (Settings › Menu Bar › Advanced): the width, and without the Accessibility permission a "Click the Clock…" button that takes the width from the next click in the menu bar.
 - Export and import (Settings › General): the hidden sets and the Menu Bar and Apps options as a property list file. Import ignores unknown keys and refuses a value of the wrong type or a rehide timeout outside 1–300; a refused file changes nothing. A switch must be a property-list Boolean (`<true/>`/`<false/>`) and a number must not be one; export writes them that way.
@@ -133,7 +137,7 @@ Off by default ("From this list" in Settings › Apps). With "By position", the 
 - An app with an item on each side hides, and a member keeps its place. Hiding is per app.
 - Apps that are not visible keep their membership and place. The always-hidden set is never touched.
 - BarNook reads the menu bar when position mode turns on, when the set is shown, after a Cmd-drag ends, and after an app launches. Turning position mode on hides whatever already sits left of the icon.
-- While "By position" is on, Shown and Hidden in Settings › Apps are read-only; Always hidden stays editable. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again. While Always hidden is off, apps can leave the set but none can join it.
+- While "By position" is on, Shown and Hidden in Settings › Apps are read-only: a drag between them changes nothing. Always hidden stays editable, and in bar mode the order within Hidden and Always hidden can still be set. An app taken out of the always-hidden set shows until the next show, Cmd-drag or app launch files it by position again. While Always hidden is off, apps can leave the set but none can join it.
 
 ### F8: The floating bar
 
@@ -164,7 +168,7 @@ No image of an item is available. On macOS 27 the window server has no window pe
 
 1. A fresh install on macOS 27 shows the BarNook icon and the "Welcome to BarNook" window with both permissions. Settings opens only after both are allowed; Screen Recording applies after the offered relaunch.
 2. Add an app to the hidden set. Its items disappear. Click the icon. The items return. Click again. The items disappear.
-3. Quit and relaunch. The hidden state and the sets are unchanged.
+3. Quit and relaunch. The hidden state, the sets and their order are unchanged.
 4. Add an app to the always-hidden set. It stays hidden after a normal click. Option+click shows it.
 5. Show the set, wait for the timeout. The set hides itself.
 6. Show the set, click on the desktop. The set hides itself.
