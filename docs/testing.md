@@ -4,7 +4,7 @@ Modified by Chaehyeon Lee (2026): added floating-bar pin and menu bar icon check
 
 Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a test in `Tests/BarNookVMTests` that `mise run vm-test` runs in a Tart guest (see `docs/development.md`). The other rows are manual: run `scripts/run.sh` first and set the sets in Settings › Apps. They stay manual because they need the permission onboarding (1 to 1c, O1, O2), the right-click menu (4a, 6c), the Settings window (2a, 5a, 8a, S1 to S10, W1 to W5, M1 to M6, A1 to A6, G1 to G4) or the release scripts (10, 11). 8g, B8, B8h, B8p, F2a, F2b and F4a have no VM test yet.
 
-"Pass (maintainer, a4631a4)" records one report from the maintainer that he ran the settings checks himself on BarNookDev built from a4631a4; the report gave no per-row detail. That record stands in for the per-commit S22 walks of the settings redesign.
+"Pass (maintainer, a4631a4)" records one report from the maintainer that he ran the settings checks himself on BarNookDev built from a4631a4; the report gave no per-row detail. The plan for the settings redesign asked for a walk through all 22 settings in every commit; this one record against the final commit is offered in its place, for the maintainer to confirm when reviewing the pull request.
 
 | # | Steps | Expect | Result |
 |---|---|---|---|
