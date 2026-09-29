@@ -12,7 +12,7 @@ final class SettingsWindow {
     private let permission: Permissions
     private let clockZone: ClockZone
     private var keyObserver: NSObjectProtocol?
-    private var screenObserver: NSObjectProtocol?
+    private var screenObservers: [NSObjectProtocol] = []
 
     init(state: AppState, sets: HiddenSets, permission: Permissions, clockZone: ClockZone, updater: Updater) {
         self.permission = permission
@@ -24,7 +24,6 @@ final class SettingsWindow {
         )
         let tabs = SettingsTabViewController()
         tabs.tabStyle = .toolbar
-        self.tabs = tabs
         tabs.addPane("General", symbol: "gearshape", GeneralPane().modifier(environment))
         tabs.addPane("Menu Bar", symbol: "menubar.rectangle", MenuBarPane().modifier(environment))
         tabs.addPane("Apps", symbol: "square.grid.2x2", AppsPane().modifier(environment))
@@ -39,19 +38,21 @@ final class SettingsWindow {
         ) { [weak self] _ in
             Task { @MainActor in self?.refreshModels() }
         }
-        // Another screen, or a new resolution, has another height cap.
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didChangeScreenNotification, object: window, queue: .main
-        ) { [weak tabs] _ in
-            Task { @MainActor in tabs?.refit() }
+        // Another screen (the window moved) or a new resolution or
+        // arrangement (the app is told) has another height cap.
+        screenObservers = [
+            (NSWindow.didChangeScreenNotification, window as AnyObject?),
+            (NSApplication.didChangeScreenParametersNotification, nil),
+        ].map { name, object in
+            NotificationCenter.default.addObserver(forName: name, object: object, queue: .main) { [weak tabs] _ in
+                Task { @MainActor in tabs?.refit() }
+            }
         }
     }
 
-    private let tabs: SettingsTabViewController
-
     isolated deinit {
         if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
-        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
+        screenObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     func show() {
@@ -251,7 +252,7 @@ private struct CappedPane<Content: View>: View {
     }
 }
 
-/// The models every pane reads, injected into each pane's hosting controller.
+/// The models every pane reads, injected into each pane's hosting view.
 struct SettingsEnvironment: ViewModifier {
     let state: AppState
     let sets: HiddenSets

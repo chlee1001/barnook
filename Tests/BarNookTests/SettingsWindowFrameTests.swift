@@ -58,6 +58,14 @@ struct SettingsWindowFrameTests {
         #expect(frame == current)
     }
 
+    @Test func aWindowWiderThanTheScreenKeepsItsLeftEdgeOnScreen() throws {
+        let narrow = NSRect(x: 50, y: 100, width: 400, height: 1000)
+        let current = NSRect(x: 300, y: 400, width: 500, height: 548)
+        let frame = try #require(SettingsWindowFrame.fitted(
+            current: current, content: CGSize(width: 500, height: 300), chrome: chrome, visible: narrow))
+        #expect(frame.minX == narrow.minX)
+    }
+
     @Test func noFrameBeforeThePaneHasASize() {
         let current = NSRect(x: 0, y: 0, width: 500, height: 500)
         #expect(SettingsWindowFrame.fitted(current: current, content: .zero, chrome: chrome, visible: visible) == nil)
