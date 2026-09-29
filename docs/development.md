@@ -108,6 +108,26 @@ The fork uses its own Ed25519 private key file, not the original author's key or
 
 If the key is lost, create a new Ed25519 key and put its public half in `Resources/Info.plist`. Apps with the old key cannot install the next release. Users must download it by hand.
 
+## Website
+
+The landing page lives in `site/` and is published to <https://chlee1001.github.io/barnook/>. It is static HTML with no build step: `site/index.html` (English) and `site/ko/index.html` (Korean) share `site/assets/site.css` and `site/assets/site.js`. The two pages are edited by hand and keep the same structure; the demo's strings for both languages are in the `STRINGS` table in `site.js`. The idle demo is pre-rendered in the HTML, so the page reads correctly without JavaScript.
+
+Preview it under the same `/barnook/` path that Pages uses:
+
+```
+mkdir -p build/site-preview && ln -sfn ../../site build/site-preview/barnook
+python3 -m http.server 8765 --bind 127.0.0.1 --directory build/site-preview
+```
+
+Then open <http://127.0.0.1:8765/barnook/> and <http://127.0.0.1:8765/barnook/ko/>.
+
+- `scripts/make-site-assets.sh icons` rebuilds the site icons from `Resources/AppIcon.png`. Rerun it after `scripts/make-icon.sh`.
+- `scripts/make-site-assets.sh og` renders `scripts/og-card.html` to `site/assets/og/og-{en,ko}.png` (1200×630) in headless Chrome. Set `CHROME` if Chrome is not in `/Applications`.
+- `scripts/check-site.sh` checks en/ko parity, local links, third-party loads, page metadata, mockup leftovers, the font pins, and that both pages carry the demo elements `site.js` drives. `Tests/SiteCheckTests.sh` proves each check fails on a broken copy. CI runs both in the `site` job.
+- `.github/workflows/pages.yml` deploys `site/` when a push to `main` touches it. GitHub Pages must be set once to Settings › Pages › Source: GitHub Actions; until then the deploy job fails.
+
+The font is Pretendard Variable 1.3.9, shipped unmodified as `site/assets/fonts/PretendardVariable.woff2` with its OFL license in `site/assets/fonts/LICENSE.txt`. `check-site.sh` pins the size and sha256 of both. To upgrade, replace both files from the same upstream release, check them against the release archive, and update the four pins together. A subset or otherwise modified font must not keep the reserved name "Pretendard".
+
 ## Documentation
 
 - `docs/spec.md`: what BarNook does.

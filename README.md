@@ -2,6 +2,7 @@
 
 Modified by Chaehyeon Lee (2026): floating-bar pins, BarNook branding, an independent update channel, the settings panes and the hidden app order.
 Original project: [ronny/ellipsis](https://github.com/ronny/ellipsis).
+Website: [chlee1001.github.io/barnook](https://chlee1001.github.io/barnook/) ([한국어](https://chlee1001.github.io/barnook/ko/)).
 
 BarNook hides selected menu bar items on macOS 27. Click its icon to show them. Click again, or wait, to hide them again.
 

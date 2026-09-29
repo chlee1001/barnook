@@ -17,12 +17,14 @@ BarNook is a macOS 27 menu-bar item manager and an independent Apache 2.0 deriva
 - `Sources/BarNook/Accessibility/`: required-permission model and onboarding; `Sources/BarNook/Settings/`: persisted settings and UI.
 - `Sources/BarNookCore/`: reusable layout/geometry logic; `Tests/BarNookTests/`: in-process tests; `Tests/BarNookVMTests/`: Tart guest tests.
 - `Resources/`: app metadata, icon, entitlements; `scripts/`: bundling, development installation, VM, signing and release; `docs/`: specification, development and QA checklists.
+- `site/`: the static bilingual landing page (`index.html`, `ko/index.html`, shared `assets/`), deployed to GitHub Pages; see `docs/development.md` › Website.
 
 ## Development Commands
 
 - `swift build` or `mise run build`; `swift test` or `mise run test`; `swift build --build-tests` checks test compilation.
 - `mise run run` installs/launches a separate debug `BarNookDev.app` in `/Applications`; `scripts/run.sh [debug|release]` replaces the corresponding installed app and launches it. These are mutating commands, not read-only runs.
 - `shellcheck scripts/*.sh` checks shell scripts. See `mise.toml` and `docs/development.md` for bundling, installation and VM setup.
+- Website: `bash scripts/check-site.sh` and `bash Tests/SiteCheckTests.sh`; `scripts/make-site-assets.sh icons|og` regenerates site images. Keep the en and ko pages structurally identical, and never modify or re-subset the pinned Pretendard font.
 
 ## Code Conventions & Common Patterns
 
@@ -40,7 +42,7 @@ Use macOS 27, Xcode Command Line Tools with Swift 6.4, SwiftPM, and optional mis
 
 ## Testing & QA
 
-- Unit tests use Swift Testing (`@Test`, `#expect`) and isolated fixtures/UserDefaults suites. Run `swift test` and `swift build --build-tests`; hosted CI runs both on `xcode-27` and ShellCheck on Ubuntu.
+- Unit tests use Swift Testing (`@Test`, `#expect`) and isolated fixtures/UserDefaults suites. Run `swift test` and `swift build --build-tests`; hosted CI runs both on `xcode-27`, and ShellCheck and the `site` check job on Ubuntu. `.github/workflows/pages.yml` deploys `site/` from `main`.
 - VM tests require Tart, a prepared macOS guest, installed fixture/probe and `BARNOOK_VM`; run `mise run vm-test` (focused example: `mise run vm-test -- --filter RehideTests`). Bare `swift test` skips VM behavior. Report VM and manual permission/UI/release checks separately; use `docs/testing.md` for the checklist. No blanket coverage percentage is defined.
 - For release-script changes, perform a dry preflight, shell syntax checks and artifact inspection before publishing. Never claim unrun checks.
 
