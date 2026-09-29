@@ -123,7 +123,7 @@ Then open <http://127.0.0.1:8765/barnook/> and <http://127.0.0.1:8765/barnook/ko
 
 - `scripts/make-site-assets.sh icons` rebuilds the site icons from `Resources/AppIcon.png`. Rerun it after `scripts/make-icon.sh`.
 - `scripts/make-site-assets.sh og` renders `scripts/og-card.html` to `site/assets/og/og-{en,ko}.png` (1200×630) in headless Chrome. Set `CHROME` if Chrome is not in `/Applications`.
-- `scripts/check-site.sh` checks en/ko parity, local links, third-party loads, page metadata, mockup leftovers and the font pins. `Tests/SiteCheckTests.sh` proves each check fails on a broken copy. CI runs both in the `site` job.
+- `scripts/check-site.sh` checks en/ko parity, local links, third-party loads, page metadata, mockup leftovers, the font pins, and that both pages carry the demo elements `site.js` drives. `Tests/SiteCheckTests.sh` proves each check fails on a broken copy. CI runs both in the `site` job.
 - `.github/workflows/pages.yml` deploys `site/` when a push to `main` touches it. GitHub Pages must be set once to Settings › Pages › Source: GitHub Actions; until then the deploy job fails.
 
 The font is Pretendard Variable 1.3.9, shipped unmodified as `site/assets/fonts/PretendardVariable.woff2` with its OFL license in `site/assets/fonts/LICENSE.txt`. `check-site.sh` pins the size and sha256 of both. To upgrade, replace both files from the same upstream release, check them against the release archive, and update the four pins together. A subset or otherwise modified font must not keep the reserved name "Pretendard".
