@@ -120,9 +120,8 @@ BarNook requires two permissions:
 Hiding and showing work without either permission.
 
 - While one is missing, a "Welcome to BarNook" window shows at launch. It lists both permissions as steps, each with its state and an "Allow…" button, a progress bar ("n of 2 allowed") and, next to Continue, what is left to do. The button shows the system prompt and opens the permission's list in System Settings. The window re-reads the state every second.
-- Screen Recording takes effect after a relaunch. Once it was requested, the Screen Recording step offers "Relaunch BarNook".
+- Screen Recording changes take effect after a relaunch. Once it was requested, the Screen Recording step offers "Relaunch BarNook"; after a revoke, Settings may show it as allowed until the relaunch.
 - "Continue" opens Settings once both are allowed. Until then, the icon menu's "Settings…" opens the onboarding window instead. Settings › General shows both permissions' state, and a banner at the top of the pane while one is missing.
-- A Screen Recording change can take effect only after a relaunch; until then Settings may still show it as allowed.
 - BarNook re-reads Accessibility 0.5 s after the `com.apple.accessibility.api` distributed notification. Screen Recording is read when a window shows and before each covered clock click.
 - For VM tests, `skipsPermissionOnboarding` in the defaults keeps the window from showing at launch. The guest grants both permissions through the TCC database.
 
