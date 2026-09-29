@@ -41,9 +41,8 @@ final class AppState {
         Key.shownMenuBarIcon: MenuBarIcon.chevronLeft.rawValue,
     ]
 
-    /// `hasNotch` picks the placement default: a notch collapses shown items
-    /// that do not fit, so the bar is the default there. Registered, not
-    /// written, so a user who never chose follows the display at each launch.
+    /// The placement default is `recommendedPlacement(hasNotch:)`. Registered,
+    /// not written, so a user who never chose follows the display at each launch.
     static func registerDefaults(hasNotch: Bool) {
         UserDefaults.standard.register(defaults: registeredDefaults(hasNotch: hasNotch))
     }

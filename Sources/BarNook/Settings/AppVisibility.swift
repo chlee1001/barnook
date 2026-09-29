@@ -1,8 +1,7 @@
 import Foundation
 
-/// What BarNook does with one app's menu bar items. An app is in the hidden
-/// set, the always-hidden set, or neither; this names the three cases so a
-/// Settings row picks one instead of two checkboxes in two lists.
+/// What BarNook does with one app's menu bar items: the app is in the hidden
+/// set, the always-hidden set, or neither.
 enum AppVisibility: CaseIterable, Hashable {
     case shown, hidden, alwaysHidden
 

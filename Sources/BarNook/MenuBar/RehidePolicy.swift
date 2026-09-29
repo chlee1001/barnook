@@ -8,8 +8,8 @@ enum RehidePolicy {
     /// Seconds the rehide timeout may take (spec F3).
     static let timeoutRange: ClosedRange<Double> = 1...300
 
-    /// A whole number of seconds in `timeoutRange`, for a value that came
-    /// from outside Settings: a hand-edited default, or a typed number.
+    /// A whole number of seconds in `timeoutRange`, for a value nothing has
+    /// bounded yet: a hand-edited default, or a number typed in Settings.
     static func clampedTimeout(_ seconds: Double) -> Double {
         guard !seconds.isNaN else { return timeoutRange.lowerBound }
         return min(max(seconds.rounded(), timeoutRange.lowerBound), timeoutRange.upperBound)

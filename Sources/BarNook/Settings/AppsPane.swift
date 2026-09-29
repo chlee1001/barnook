@@ -104,13 +104,6 @@ private struct AppRow: View {
     let isDividerActive: Bool
     let isAlwaysHiddenEnabled: Bool
 
-    init(app: RunningApps.Entry, visibility: Binding<AppVisibility>, isDividerActive: Bool, isAlwaysHiddenEnabled: Bool) {
-        self.app = app
-        _visibility = visibility
-        self.isDividerActive = isDividerActive
-        self.isAlwaysHiddenEnabled = isAlwaysHiddenEnabled
-    }
-
     var body: some View {
         HStack(spacing: 10) {
             Image(nsImage: app.icon)

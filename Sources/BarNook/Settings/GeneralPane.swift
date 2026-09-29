@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook settings labels, export name and menu bar icon pickers; panes for the toolbar settings window; menu bar options and app lists moved to their own panes; General leads with app and permission status.
+// Modified by Chaehyeon Lee (2026): BarNook settings labels and export name; the General pane with app and permission status.
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -203,7 +203,7 @@ private struct PermissionRow: View {
 
 /// "Export…" writes the settings to a property list. "Import…" reads one
 /// back and the models reload from the store.
-struct SettingsFileSection: View {
+private struct SettingsFileSection: View {
     @Environment(AppState.self) private var state
     @Environment(HiddenSets.self) private var sets
 

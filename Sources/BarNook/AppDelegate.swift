@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding; one notch check.
+// Modified by Chaehyeon Lee (2026): BarNook launch alert; required-permission onboarding; an Edit menu for text-field shortcuts; a shared notch check.
 import AppKit
 
 @MainActor

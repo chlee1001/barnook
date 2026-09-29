@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): BarNook window title; toolbar panes that fit the window to the selected pane.
+// Modified by Chaehyeon Lee (2026): toolbar panes; the window title and height follow the selected pane.
 import AppKit
 import SwiftUI
 
@@ -38,8 +38,8 @@ final class SettingsWindow {
         ) { [weak self] _ in
             Task { @MainActor in self?.refreshModels() }
         }
-        // Another screen (the window moved) or a new resolution or
-        // arrangement (the app is told) has another height cap.
+        // The height cap depends on the window's screen: refit when the window
+        // moves to another screen or a screen's resolution or arrangement changes.
         screenObservers = [
             (NSWindow.didChangeScreenNotification, window as AnyObject?),
             (NSApplication.didChangeScreenParametersNotification, nil),
@@ -70,20 +70,7 @@ final class SettingsWindow {
 }
 
 /// Every pane has one width, so switching panes changes only the height.
-let settingsPaneWidth: CGFloat = 500
-
-/// The tallest a pane may be on the window's screen. A pane that wants more
-/// takes this height and scrolls inside.
-struct PaneHeightCapKey: EnvironmentKey {
-    static let defaultValue: CGFloat = .infinity
-}
-
-extension EnvironmentValues {
-    var paneHeightCap: CGFloat {
-        get { self[PaneHeightCapKey.self] }
-        set { self[PaneHeightCapKey.self] = newValue }
-    }
-}
+private let settingsPaneWidth: CGFloat = 500
 
 extension View {
     /// A Form pane that wants `height`: it gets that, or the screen's cap and
@@ -94,17 +81,16 @@ extension View {
 }
 
 private struct PaneHeight: ViewModifier {
-    @Environment(\.paneHeightCap) private var cap
+    @Environment(HeightCap.self) private var cap
     let ideal: CGFloat
 
     func body(content: Content) -> some View {
-        content.frame(width: settingsPaneWidth, height: min(ideal, cap))
+        content.frame(width: settingsPaneWidth, height: min(ideal, cap.value))
     }
 }
 
 /// Resizes the window to the selected pane, keeping it on the screen's
-/// visible area. Each pane reports its own size; the window follows it. The
-/// pane is told the screen's cap, so a tall one scrolls inside.
+/// visible area. Each pane reports its own size; the window follows it.
 private final class SettingsTabViewController: NSTabViewController {
     private var hasCentered = false
 
@@ -148,8 +134,9 @@ private final class SettingsTabViewController: NSTabViewController {
         guard let window = view.window, let pane = selected else { return }
         let visible = (window.screen ?? NSScreen.main)?.visibleFrame ?? .infinite
         let chrome = window.frame.height - window.contentLayoutRect.height
-        for case let other as PaneController in tabViewItems.map(\.viewController) {
-            other.heightCap = SettingsWindowFrame.heightCap(visible: visible, chrome: chrome)
+        let cap = SettingsWindowFrame.heightCap(visible: visible, chrome: chrome)
+        for case let item as PaneController in tabViewItems.map(\.viewController) {
+            item.heightCap = cap
         }
         guard let frame = SettingsWindowFrame.fitted(
             current: window.frame, content: pane.contentSize, chrome: chrome, visible: visible
@@ -194,7 +181,7 @@ enum SettingsWindowFrame {
 /// toolbar. It reports the size the view wants, not the size it is given.
 private final class PaneController: NSViewController {
     private(set) var contentSize: CGSize = .zero
-    /// The screen's cap, passed to the pane so a tall one scrolls inside.
+    /// The screen's cap, passed to the pane.
     var heightCap: CGFloat {
         get { cap.value }
         set { if cap.value != newValue { cap.value = newValue } }
@@ -207,7 +194,7 @@ private final class PaneController: NSViewController {
         super.init(nibName: nil, bundle: nil)
         host.sizingOptions = []
         host.rootView = AnyView(
-            CappedPane(cap: cap) { root }
+            root.environment(cap)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGSize.self, of: \.size) { [weak self] size in
                     guard let self, size != self.contentSize else { return }
@@ -237,23 +224,16 @@ private final class PaneController: NSViewController {
     }
 }
 
+/// The tallest a pane may be on the window's screen. A pane that wants more
+/// takes this height and scrolls inside.
 @MainActor
 @Observable
 private final class HeightCap {
     var value: CGFloat = .infinity
 }
 
-private struct CappedPane<Content: View>: View {
-    let cap: HeightCap
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        content.environment(\.paneHeightCap, cap.value)
-    }
-}
-
 /// The models every pane reads, injected into each pane's hosting view.
-struct SettingsEnvironment: ViewModifier {
+private struct SettingsEnvironment: ViewModifier {
     let state: AppState
     let sets: HiddenSets
     let apps: RunningApps

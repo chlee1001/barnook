@@ -204,7 +204,7 @@ private struct IconPalette: View {
     }
 }
 
-/// "After [n] seconds" with a switch. The value is typed or stepped and
+/// "After a timeout": the seconds, typed or stepped, and a switch. The value
 /// always stays a whole number within the timeout range.
 private struct TimeoutRow: View {
     @Binding var seconds: Double
@@ -244,7 +244,7 @@ private struct TimeoutRow: View {
 /// hidden items show while the pointer is in it, so that a clock click opens
 /// Notification Center; in bar mode it only pre-filters clock clicks for the
 /// covered lift. Measured from the clock item, or from one click on the clock.
-struct ClockZoneRow: View {
+private struct ClockZoneRow: View {
     @Environment(AppState.self) private var state
     @Environment(ClockZone.self) private var clockZone
 
