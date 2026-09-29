@@ -66,4 +66,28 @@ struct MenuBarLayoutSplitTests {
     @Test func noDisplayMeansNoSplit() {
         #expect(layout.appItems(splitAt: CGPoint(x: 5000, y: 15)) == nil)
     }
+
+    @Test func splitKeepsMenuBarOrderOnTheLeft() {
+        let layout = MenuBarLayout(displays: [
+            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 2000, height: 30), items: [
+                MenuBarLayout.Item(bundleIdentifier: "b", frame: CGRect(x: 1600, y: 0, width: 40, height: 30)),
+                MenuBarLayout.Item(bundleIdentifier: "a", frame: CGRect(x: 1500, y: 0, width: 40, height: 30)),
+                MenuBarLayout.Item(bundleIdentifier: "a", frame: CGRect(x: 1650, y: 0, width: 40, height: 30)),
+                MenuBarLayout.Item(bundleIdentifier: "c", frame: CGRect(x: 1800, y: 0, width: 40, height: 30)),
+            ]),
+        ])
+        let split = layout.appItems(splitAt: CGPoint(x: 1750, y: 15))
+        #expect(split?.left == ["a", "b"])
+        #expect(split?.right == ["c"])
+    }
+
+    @Test func equalMinXFallsBackToAXOrder() {
+        let layout = MenuBarLayout(displays: [
+            MenuBarLayout.Display(frame: CGRect(x: 0, y: 0, width: 2000, height: 30), items: [
+                MenuBarLayout.Item(bundleIdentifier: "q", frame: CGRect(x: 1500, y: 0, width: 40, height: 30)),
+                MenuBarLayout.Item(bundleIdentifier: "p", frame: CGRect(x: 1500, y: 0, width: 40, height: 30)),
+            ]),
+        ])
+        #expect(layout.appItems(splitAt: CGPoint(x: 1750, y: 15))?.left == ["q", "p"])
+    }
 }

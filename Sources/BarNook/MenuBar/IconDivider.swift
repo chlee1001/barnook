@@ -109,7 +109,7 @@ final class IconDivider {
                     current: self.sets.hidden,
                     alwaysHidden: self.sets.alwaysHidden,
                     own: own,
-                    left: split.left,
+                    left: Set(split.left),
                     right: split.right,
                     isShown: isShown
                 )

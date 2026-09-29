@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): fork overflow marker identity; clock hit test and hidden-owner check.
+// Modified by Chaehyeon Lee (2026): fork overflow marker identity; clock hit test and hidden-owner check; left split in menu bar order.
 import AppKit
 import ApplicationServices
 
@@ -104,15 +104,21 @@ public struct MenuBarLayout: Sendable, Codable {
     }
 
     /// The app items on the display that holds `point`, split by their left
-    /// edge against `point.x`. Accessibility coordinates.
-    public func appItems(splitAt point: CGPoint) -> (left: Set<String>, right: Set<String>)? {
+    /// edge against `point.x`. Accessibility coordinates. `left` lists each
+    /// app once, in menu bar order from left to right; items at the same x,
+    /// as collapsed items are, keep their Accessibility order.
+    public func appItems(splitAt point: CGPoint) -> (left: [String], right: Set<String>)? {
         guard let display = displays.first(where: { $0.frame.contains(point) }) else { return nil }
-        var left = Set<String>()
+        let ordered = display.items.enumerated().sorted {
+            ($0.element.frame.minX, $0.offset) < ($1.element.frame.minX, $1.offset)
+        }
+        var left: [String] = []
+        var seen = Set<String>()
         var right = Set<String>()
-        for item in display.items {
+        for (_, item) in ordered {
             guard let id = item.bundleIdentifier else { continue }
             if item.frame.minX < point.x {
-                left.insert(id)
+                if seen.insert(id).inserted { left.append(id) }
             } else {
                 right.insert(id)
             }
