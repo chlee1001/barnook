@@ -1,4 +1,5 @@
-// Modified by Chaehyeon Lee (2026): BarNook status item key and icon choice coverage; the key list and the timeout range.
+// Modified by Chaehyeon Lee (2026): BarNook status item key and icon choice coverage; the key list and the timeout range;
+// the hidden lists' order through export, import and reload.
 import Foundation
 import Testing
 @testable import BarNook
@@ -213,6 +214,45 @@ struct SettingsFileTests {
         #expect(throws: SettingsFile.ImportError.self) {
             try SettingsFile.import(Data("not a plist".utf8), into: makeStore())
         }
+    }
+
+    @Test @MainActor func exportKeepsTheListOrder() throws {
+        let source = makeStore()
+        HiddenSets(store: source).update(HiddenLists(hidden: ["b", "a"], alwaysHidden: ["d", "c"]))
+        let target = makeStore()
+        try SettingsFile.import(SettingsFile.export(from: source), into: target)
+        #expect(HiddenSets(store: target).lists == HiddenLists(hidden: ["b", "a"], alwaysHidden: ["d", "c"]))
+    }
+
+    @Test @MainActor func exportAfterLoadingAnOverlapIsNormalized() throws {
+        let store = makeStore()
+        store.set(["a", "b"], forKey: HiddenSets.Key.hidden)
+        store.set(["b"], forKey: HiddenSets.Key.alwaysHidden)
+        _ = HiddenSets(store: store)
+        let exported = try PropertyListSerialization.propertyList(
+            from: SettingsFile.export(from: store), format: nil
+        ) as? [String: Any]
+        #expect(exported?[HiddenSets.Key.hidden] as? [String] == ["a"])
+        #expect(exported?[HiddenSets.Key.alwaysHidden] as? [String] == ["b"])
+    }
+
+    @Test @MainActor func importingAnOverlapThenReloadWritesBack() throws {
+        let store = makeStore()
+        let sets = HiddenSets(store: store)
+        let data = try plist([HiddenSets.Key.hidden: ["a", "b"], HiddenSets.Key.alwaysHidden: ["b"]])
+        try SettingsFile.import(data, into: store)
+        sets.reload()
+        #expect(sets.lists == HiddenLists(hidden: ["a"], alwaysHidden: ["b"]))
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["a"])
+    }
+
+    @Test @MainActor func importingASortedFileKeepsItsOrder() throws {
+        let store = makeStore()
+        let sets = HiddenSets(store: store)
+        try SettingsFile.import(try plist([HiddenSets.Key.hidden: ["a", "b", "c"]]), into: store)
+        sets.reload()
+        #expect(sets.hidden == ["a", "b", "c"])
+        #expect(store.stringArray(forKey: HiddenSets.Key.hidden) == ["a", "b", "c"])
     }
 
     private func describe(_ kind: SettingsFile.ValueKind) -> String {

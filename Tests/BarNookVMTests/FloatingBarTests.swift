@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): cover floating-bar pin interactions.
+// Modified by Chaehyeon Lee (2026): cover floating-bar pin interactions; the bar follows the stored order.
 import BarNookCore
 import Foundation
 import Testing
@@ -110,10 +110,22 @@ struct FloatingBarTests {
         ])
         try guest.clickIcon()
         try guest.waitUntil("the bar shows A") { try guest.barButtons()?.map(\.name) == ["FixtureA"] }
+        let before = try #require(try guest.barButtons()?.first { $0.name == "FixtureA" }).frame
         try guest.clickIcon()
         try guest.waitUntil("the bar closes") { try guest.barButtons() == nil }
         try guest.clickIcon(option: true)
-        try guest.waitUntil("the bar shows A and B") { try guest.barButtons()?.map(\.name) == ["FixtureA", "FixtureB"] }
+        // The always-hidden app sits left of a separator; A keeps its place
+        // under the icon once the bar has settled.
+        try guest.waitUntil("the bar shows B, then A in its place") {
+            guard let buttons = try guest.barButtons(), buttons.map(\.name) == ["FixtureB", "FixtureA"] else { return false }
+            return abs(buttons[1].frame.midX - before.midX) <= 2
+        }
+    }
+
+    @Test func barFollowsTheStoredOrder() throws {
+        try launchInBarMode(["hiddenBundleIdentifiers": .strings([Fixture.c, Fixture.a, Fixture.b])])
+        try showBar()
+        #expect(try guest.barButtons()?.map(\.name) == ["FixtureC", "FixtureA", "FixtureB"])
     }
 
     @Test func rehideConditionsCloseTheBar() throws {

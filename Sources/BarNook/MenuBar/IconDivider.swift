@@ -1,3 +1,4 @@
+// Modified by Chaehyeon Lee (2026): writes the ordered hidden list through HiddenSets.update.
 import AppKit
 import BarNookCore
 import Observation
@@ -105,17 +106,16 @@ final class IconDivider {
             let split = MenuBarLayout.read()?.appItems(splitAt: point)
             await MainActor.run {
                 guard let self, let split, self.sets.isHiddenSetShown == isShown else { return }
-                let hidden = DividerPolicy.hiddenSet(
-                    current: self.sets.hidden,
-                    alwaysHidden: self.sets.alwaysHidden,
+                let lists = self.sets.lists
+                let hidden = DividerPolicy.hiddenList(
+                    current: lists.hidden,
+                    alwaysHidden: lists.alwaysHidden,
                     own: own,
                     left: split.left,
                     right: split.right,
                     isShown: isShown
                 )
-                if hidden != self.sets.hidden {
-                    self.sets.hidden = hidden
-                }
+                self.sets.update(HiddenLists(hidden: hidden, alwaysHidden: lists.alwaysHidden))
             }
         }
     }
