@@ -296,13 +296,11 @@ final class MenuBarManager {
                 self?.barClicked(id)
             }
         }
-        var shown = Set(sets.hidden)
-        if sets.isAlwaysHiddenSetShown {
-            shown.formUnion(sets.alwaysHidden)
-        }
+        let order = sets.barIdentifiers()
         let screen = icon.button?.window?.screen ?? NSScreen.main ?? NSScreen.screens[0]
         floatingBar?.show(
-            apps: FloatingBar.apps(for: shown),
+            leading: FloatingBar.apps(for: order.leading),
+            trailing: FloatingBar.apps(for: order.trailing),
             pinned: Set(pins),
             unreachable: MenuBarRestriction.unreachableRunningApps(),
             hint: permission.isTrusted ? nil : "the other items give way while it is pinned",

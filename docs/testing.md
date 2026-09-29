@@ -79,7 +79,8 @@ Numbers match the acceptance criteria in `docs/spec.md`. A row marked `vm` has a
 | D5 | Settings › Apps: choose "From this list". | The rows are editable. The set is unchanged. | vm |
 | F1 | A front app with a wide menu bar (or a notch). "In the menu bar" mode. Show the set. | macOS collapses what does not fit behind `«`. | vm |
 | F2 | Same, "In a bar below the menu bar" mode. Click the icon. | A bar under the icon lists the hidden apps. Nothing in the menu bar moves. Icon shows `‹`. | vm |
-| F3 | Option-click the icon in bar mode. | The bar adds the always-hidden apps. | vm |
+| F3 | Option-click the icon in bar mode. | The bar adds the always-hidden apps left of a separator, in their list order. The hidden apps keep their place under the icon (the bar fits on screen). | vm |
+| F3a | Bar mode. Store the hidden set as C, A, B. Click the icon. | The bar shows C, A, B from the left. | vm |
 | F4 | Bar mode. Each rehide condition. | The bar closes. A click in the bar does not close it. | vm |
 | F2a | Bar mode. Show the set. Quit. Relaunch. Click the icon. | The bar opens at launch; the click hides the set. | Host pass |
 | F2b | Bar mode. Pin an app, then unpin it from the reopened bar. | The icon reopens the bar and the set stays shown. | |

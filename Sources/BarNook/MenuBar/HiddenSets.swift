@@ -92,6 +92,12 @@ final class HiddenSets {
         isAlwaysHiddenSetShown = false
     }
 
+    /// The floating bar's apps, left to right: the always-hidden list first
+    /// while an Option-click shows it, then the hidden list.
+    func barIdentifiers() -> (leading: [String], trailing: [String]) {
+        (isAlwaysHiddenSetShown ? alwaysHidden : [], hidden)
+    }
+
     /// The bundle identifiers a restriction must hide right now.
     /// Empty means no restriction is necessary.
     func identifiersToHide(isAlwaysHiddenEnabled: Bool) -> Set<String> {

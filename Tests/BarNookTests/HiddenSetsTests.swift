@@ -125,6 +125,17 @@ struct AlwaysHiddenShownTests {
         #expect(sets.identifiersToHide(isAlwaysHiddenEnabled: true).isEmpty)
     }
 
+    @Test func barIdentifiersPutAlwaysHiddenFirstOnlyWhenShown() {
+        let sets = makeSets()
+        sets.update(HiddenLists(hidden: ["c", "a"], alwaysHidden: ["d", "b"]))
+        sets.show(includingAlwaysHidden: false)
+        #expect(sets.barIdentifiers().leading.isEmpty)
+        #expect(sets.barIdentifiers().trailing == ["c", "a"])
+        sets.show(includingAlwaysHidden: true)
+        #expect(sets.barIdentifiers().leading == ["d", "b"])
+        #expect(sets.barIdentifiers().trailing == ["c", "a"])
+    }
+
     @Test func alwaysHiddenShownIsNotPersisted() {
         let name = "AlwaysHiddenShownTests.\(UUID().uuidString)"
         let store = UserDefaults(suiteName: name)!

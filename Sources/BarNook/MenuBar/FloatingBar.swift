@@ -1,4 +1,4 @@
-// Modified by Chaehyeon Lee (2026): added pin indicators and reachability hints.
+// Modified by Chaehyeon Lee (2026): added pin indicators and reachability hints; list order and the always-hidden group.
 import AppKit
 import SwiftUI
 
@@ -40,18 +40,24 @@ final class FloatingBar {
     /// The panel's frame in screen coordinates while it is visible.
     var frame: NSRect? { panel.isVisible ? panel.frame : nil }
 
-    /// Shows `apps` under `iconFrame` (Cocoa coordinates), or at the right
-    /// edge of `screen` when the icon has no frame. `pinned` marks the apps
+    /// Shows `leading`, a separator when both groups have apps, then
+    /// `trailing`, left to right, under `iconFrame` (Cocoa coordinates), or
+    /// at the right edge of `screen` when the icon has no frame. The panel's
+    /// right edge sits under the icon, so `trailing` keeps its place when
+    /// `leading` appears, as long as the panel fits. `pinned` marks the apps
     /// already pinned, so a click on them unpins. `unreachable` marks the
     /// apps macOS keeps hidden whatever the allow-list says, so a pin
     /// cannot draw them. `hint` is added to every tooltip, for the state
     /// without the Accessibility permission.
     func show(
-        apps: [App], pinned: Set<String> = [], unreachable: Set<String> = [],
+        leading: [App], trailing: [App], pinned: Set<String> = [], unreachable: Set<String> = [],
         hint: String?, iconFrame: NSRect?, screen: NSScreen
     ) {
         let view = NSHostingView(
-            rootView: BarView(apps: apps, pinned: pinned, unreachable: unreachable, hint: hint, onClick: onClick)
+            rootView: BarView(
+                leading: leading, trailing: trailing, pinned: pinned,
+                unreachable: unreachable, hint: hint, onClick: onClick
+            )
         )
         view.sizingOptions = [.intrinsicContentSize]
         panel.contentView = view
@@ -75,19 +81,19 @@ final class FloatingBar {
         panel.orderOut(nil)
     }
 
-    /// The running apps among `identifiers`, in name order. An app that is
-    /// not running has no item to show.
-    static func apps(for identifiers: Set<String>) -> [App] {
+    /// The running apps among `identifiers`, in their order. An app that is
+    /// not running is skipped; the others keep their order.
+    static func apps(for identifiers: [String]) -> [App] {
         identifiers.compactMap { id -> App? in
             guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: id).first else { return nil }
             return App(id: id, name: app.localizedName ?? id, icon: app.icon ?? NSWorkspace.shared.icon(for: .applicationBundle))
         }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }
 
 private struct BarView: View {
-    let apps: [FloatingBar.App]
+    let leading: [FloatingBar.App]
+    let trailing: [FloatingBar.App]
     let pinned: Set<String>
     let unreachable: Set<String>
     let hint: String?
@@ -95,27 +101,37 @@ private struct BarView: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            if apps.isEmpty {
+            if leading.isEmpty, trailing.isEmpty {
                 Text("No hidden apps are running")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
             }
-            ForEach(apps) { app in
-                AppButton(
-                    app: app,
-                    isPinned: pinned.contains(app.id),
-                    isUnreachable: unreachable.contains(app.id),
-                    hint: hint,
-                    onClick: onClick
-                )
+            buttons(leading)
+            if !leading.isEmpty, !trailing.isEmpty {
+                Divider()
+                    .frame(height: 18)
+                    .padding(.horizontal, 2)
             }
+            buttons(trailing)
         }
         .padding(4)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .padding(2)
         .fixedSize()
+    }
+
+    private func buttons(_ apps: [FloatingBar.App]) -> some View {
+        ForEach(apps) { app in
+            AppButton(
+                app: app,
+                isPinned: pinned.contains(app.id),
+                isUnreachable: unreachable.contains(app.id),
+                hint: hint,
+                onClick: onClick
+            )
+        }
     }
 }
 
