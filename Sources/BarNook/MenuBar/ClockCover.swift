@@ -22,7 +22,7 @@ final class ClockCover {
         var local: CGRect
     }
 
-    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "clockCover")
+    private static let log = Logger(subsystem: "kr.co.devch.BarNook", category: "clockCover")
 
     private var windows: [NSWindow] = []
 

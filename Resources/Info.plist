@@ -10,7 +10,7 @@
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.chlee1001.BarNook</string>
+	<string>kr.co.devch.BarNook</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -41,7 +41,7 @@
 	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>com.chlee1001.BarNook.app-row</string>
+			<string>kr.co.devch.BarNook.app-row</string>
 			<key>UTTypeDescription</key>
 			<string>BarNook app row</string>
 			<key>UTTypeConformsTo</key>

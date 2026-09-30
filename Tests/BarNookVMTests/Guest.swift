@@ -10,7 +10,7 @@ struct Guest: Sendable {
     static let name = ProcessInfo.processInfo.environment["BARNOOK_VM"]
     static var isConfigured: Bool { name != nil }
 
-    static let appIdentifier = "com.chlee1001.BarNookDev"
+    static let appIdentifier = "kr.co.devch.BarNookDev"
     static let appName = "BarNookDev"
 
     struct CommandFailure: Error, CustomStringConvertible {
@@ -190,7 +190,7 @@ struct Guest: Sendable {
 
     /// Keeps BarNook's debug lines, such as a skipped assertion, in the log.
     func enableDebugLogs() throws {
-        try run("sudo log config --subsystem com.chlee1001.BarNook --mode 'level:debug,persist:debug'")
+        try run("sudo log config --subsystem kr.co.devch.BarNook --mode 'level:debug,persist:debug'")
     }
 
     /// The guest's clock, for `restrictionLog(since:)`, read a second after
@@ -350,9 +350,9 @@ struct Guest: Sendable {
 }
 
 enum Fixture {
-    static let a = "com.chlee1001.BarNookFixture.A"
-    static let b = "com.chlee1001.BarNookFixture.B"
-    static let c = "com.chlee1001.BarNookFixture.C"
+    static let a = "kr.co.devch.BarNookFixture.A"
+    static let b = "kr.co.devch.BarNookFixture.B"
+    static let c = "kr.co.devch.BarNookFixture.C"
     static let all = [a, b, c]
     /// A regular app with seven menus: frontmost, it leaves about 240
     /// points for status items on the guest's display. Room for the icon,
@@ -361,8 +361,8 @@ enum Fixture {
     /// Nine menus, about 113 points: room for the icon and one fixture
     /// (106), not for the app's own item as well (176).
     static let widerName = "FixtureV"
-    static let w = "com.chlee1001.BarNookFixture.W"
-    static let v = "com.chlee1001.BarNookFixture.V"
+    static let w = "kr.co.devch.BarNookFixture.W"
+    static let v = "kr.co.devch.BarNookFixture.V"
 
     static func name(_ identifier: String) -> String {
         "Fixture" + identifier.split(separator: ".").last!

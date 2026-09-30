@@ -30,8 +30,8 @@ final class MenuBarManager {
     /// the item in the menu bar; the icon brings it back for another pin.
     private var isBarOpen = false
     private var barPlacement: Task<Void, Never>?
-    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "pins")
-    private static let clockLog = Logger(subsystem: "com.chlee1001.BarNook", category: "clock")
+    private static let log = Logger(subsystem: "kr.co.devch.BarNook", category: "pins")
+    private static let clockLog = Logger(subsystem: "kr.co.devch.BarNook", category: "clock")
     private let openSettingsHandler: () -> Void
     private let icon = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var launchObserver: Task<Void, Never>?

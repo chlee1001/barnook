@@ -12,7 +12,7 @@ mise run test
 mise run run
 ```
 
-`mise run run` bundles a debug build as `BarNookDev.app` with the identifier `com.chlee1001.BarNookDev`, signs it with a local certificate (ad hoc without one), copies it to `/Applications` and opens it. A stable certificate keeps its Accessibility grant across rebuilds. The debug build has its own settings and its own row in the Accessibility list, so it runs next to a release `BarNook.app`. `mise run install` does the same with a release build as `BarNook.app`, signed but not notarized. Without mise, use `swift build`, `swift test`, `scripts/run.sh` and `scripts/run.sh release`.
+`mise run run` bundles a debug build as `BarNookDev.app` with the identifier `kr.co.devch.BarNookDev`, signs it with a local certificate (ad hoc without one), copies it to `/Applications` and opens it. A stable certificate keeps its Accessibility grant across rebuilds. The debug build has its own settings and its own row in the Accessibility list, so it runs next to a release `BarNook.app`. `mise run install` does the same with a release build as `BarNook.app`, signed but not notarized. Without mise, use `swift build`, `swift test`, `scripts/run.sh` and `scripts/run.sh release`.
 
 ## VM tests
 

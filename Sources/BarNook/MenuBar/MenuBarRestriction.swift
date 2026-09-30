@@ -24,7 +24,7 @@ enum MenuBarRestrictionError: LocalizedError {
 final class MenuBarRestriction {
     private static let frameworkPath =
         "/System/Library/PrivateFrameworks/MenuBarClientCore.framework/MenuBarClientCore"
-    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "restriction")
+    private static let log = Logger(subsystem: "kr.co.devch.BarNook", category: "restriction")
 
     /// MenuBarAgent takes system items as integer codes. 0–6 match the public
     /// `AEMenuBarItem` constants in order; 8 is Control Center. Codes past the
