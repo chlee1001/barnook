@@ -1,4 +1,5 @@
-// Modified by Chaehyeon Lee (2026): rescan when the Accessibility permission changes.
+// Modified by Chaehyeon Lee (2026): rescan when the Accessibility permission changes;
+// check every process of an app for its menu bar item.
 import AppKit
 import Observation
 
@@ -15,7 +16,9 @@ final class RunningApps {
         let name: String
         let icon: NSImage
         let isRunning: Bool
-        let pid: pid_t
+        /// Every process with this bundle identifier. An app such as espanso
+        /// runs several, and only one of them may own the menu bar item.
+        let pids: [pid_t]
 
         static func == (lhs: Entry, rhs: Entry) -> Bool { lhs.id == rhs.id }
         func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -53,21 +56,34 @@ final class RunningApps {
 
     func refresh() {
         let own = Bundle.main.bundleIdentifier
-        var seen = Set<String>()
-        running = NSWorkspace.shared.runningApplications.compactMap { app in
-            guard [.regular, .accessory].contains(app.activationPolicy),
-                  let id = app.bundleIdentifier, id != own,
-                  seen.insert(id).inserted
-            else { return nil }
+        let apps = NSWorkspace.shared.runningApplications.filter {
+            [.regular, .accessory].contains($0.activationPolicy) && $0.bundleIdentifier != own
+        }
+        let groups = Self.group(apps.map { ($0.bundleIdentifier, $0.processIdentifier) })
+        running = groups.compactMap { group in
+            guard let app = apps.first(where: { $0.processIdentifier == group.pids[0] }) else { return nil }
             return Entry(
-                id: id,
-                name: app.localizedName ?? id,
+                id: group.id,
+                name: app.localizedName ?? group.id,
                 icon: app.icon ?? Self.genericIcon,
                 isRunning: true,
-                pid: app.processIdentifier
+                pids: group.pids
             )
         }
         scanMenuBarItems()
+    }
+
+    /// The processes grouped by bundle identifier, in first-seen order.
+    /// Processes without an identifier are left out.
+    nonisolated static func group(_ processes: [(id: String?, pid: pid_t)]) -> [(id: String, pids: [pid_t])] {
+        var order: [String] = []
+        var pids: [String: [pid_t]] = [:]
+        for (id, pid) in processes {
+            guard let id else { continue }
+            if pids[id] == nil { order.append(id) }
+            pids[id, default: []].append(pid)
+        }
+        return order.map { ($0, pids[$0]!) }
     }
 
     /// Asks every running app over Accessibility whether it has a menu bar
@@ -78,13 +94,16 @@ final class RunningApps {
             withMenuBarItem = nil
             return
         }
-        let pids = running.map { ($0.id, $0.pid) }
+        let pids = running.map { ($0.id, $0.pids) }
         scan = Task.detached(priority: .userInitiated) { [weak self] in
             var found = Set<String>()
-            for (id, pid) in pids {
-                guard !Task.isCancelled else { return }
-                if Permissions.hasMenuBarItem(pid: pid) {
-                    found.insert(id)
+            for (id, appPIDs) in pids {
+                for pid in appPIDs {
+                    guard !Task.isCancelled else { return }
+                    if Permissions.hasMenuBarItem(pid: pid) {
+                        found.insert(id)
+                        break
+                    }
                 }
             }
             let result = found
@@ -111,14 +130,14 @@ final class RunningApps {
     /// Name and icon of an app that is not running, from LaunchServices.
     private static func lookUp(_ id: String) -> Entry {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else {
-            return Entry(id: id, name: id, icon: genericIcon, isRunning: false, pid: 0)
+            return Entry(id: id, name: id, icon: genericIcon, isRunning: false, pids: [])
         }
         return Entry(
             id: id,
             name: FileManager.default.displayName(atPath: url.path),
             icon: NSWorkspace.shared.icon(forFile: url.path),
             isRunning: false,
-            pid: 0
+            pids: []
         )
     }
 }
