@@ -6,7 +6,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Fixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.chlee1001.BarNookFixture</string>
+	<string>kr.co.devch.BarNookFixture</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

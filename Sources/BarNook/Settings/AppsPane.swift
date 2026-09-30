@@ -476,7 +476,7 @@ private struct DropSpot: Equatable {
 private extension UTType {
     /// A row of the Apps list being dragged. Declared in Info.plist; only
     /// BarNook makes it, so text dragged from another app never matches.
-    static let barNookAppRow = UTType(exportedAs: "com.chlee1001.BarNook.app-row")
+    static let barNookAppRow = UTType(exportedAs: "kr.co.devch.BarNook.app-row")
 }
 
 /// The app a dragged row stands for, and the process that made the drag:

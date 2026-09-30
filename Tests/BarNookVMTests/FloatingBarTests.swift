@@ -41,7 +41,7 @@ struct FloatingBarTests {
     }
 
     private func hasAccessibilityGrant() throws -> Bool {
-        let value = try guest.run("sudo sqlite3 -bail \"/Library/Application Support/com.apple.TCC/TCC.db\" \"SELECT auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = 'com.chlee1001.BarNookDev' LIMIT 1;\"")
+        let value = try guest.run("sudo sqlite3 -bail \"/Library/Application Support/com.apple.TCC/TCC.db\" \"SELECT auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = 'kr.co.devch.BarNookDev' LIMIT 1;\"")
         return value == "2"
     }
 

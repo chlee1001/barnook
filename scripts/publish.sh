@@ -17,7 +17,7 @@ for file in "$zip" "$appcast" "$commit_file" "$app/Contents/Resources/LICENSE" "
   [[ -s "$file" ]] || { echo "Missing release artifact: $file" >&2; exit 1; }
 done
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" == "$version" &&
-   "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" == com.chlee1001.BarNook &&
+   "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" == kr.co.devch.BarNook &&
    "$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$app/Contents/Info.plist")" == https://github.com/chlee1001/barnook/releases/latest/download/appcast.xml ]] || {
   echo "Bundle version, identifier or feed does not match this release." >&2; exit 1;
 }

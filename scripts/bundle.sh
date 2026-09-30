@@ -2,9 +2,9 @@
 # Modified by Chaehyeon Lee (2026): fork identity and bundled licenses.
 # Assemble the app bundle from the SwiftPM binary and sign it.
 # A debug build is build/BarNookDev.app with the identifier
-# com.chlee1001.BarNookDev, so it sits next to the release app in /Applications
+# kr.co.devch.BarNookDev, so it sits next to the release app in /Applications
 # and in the Accessibility list, with its own settings. A release build is
-# build/BarNook.app with com.chlee1001.BarNook; sign.sh signs it for release.
+# build/BarNook.app with kr.co.devch.BarNook; sign.sh signs it for release.
 # The signature here uses the first Developer ID Application identity in the
 # keychain, else the first Apple Development one, else ad hoc. An ad hoc
 # signature changes with every build, and macOS ties the Accessibility grant
@@ -21,7 +21,7 @@ bin="$(swift build -c "$config" --package-path "$root" --show-bin-path)/BarNook"
 
 name="BarNook"
 [[ "$config" == "release" ]] || name="BarNookDev"
-identifier="com.chlee1001.$name"
+identifier="kr.co.devch.$name"
 app="$root/build/$name.app"
 
 swift build -c "$config" --package-path "$root" >&2

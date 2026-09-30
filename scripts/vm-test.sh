@@ -66,10 +66,10 @@ fi
 set -e
 result="$(sudo sqlite3 -bail "/Library/Application Support/com.apple.TCC/TCC.db" \
   "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, indirect_object_identifier, flags)
-   VALUES ('kTCCServiceAccessibility', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0),
-          ('kTCCServiceScreenCapture', 'com.chlee1001.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0);
+   VALUES ('kTCCServiceAccessibility', 'kr.co.devch.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0),
+          ('kTCCServiceScreenCapture', 'kr.co.devch.BarNookDev', 0, 2, 0, 1, 'UNUSED', 0);
    SELECT COUNT(*) = 2 FROM access
-   WHERE service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture') AND client = 'com.chlee1001.BarNookDev'
+   WHERE service IN ('kTCCServiceAccessibility', 'kTCCServiceScreenCapture') AND client = 'kr.co.devch.BarNookDev'
      AND client_type = 0 AND auth_value = 2 AND auth_reason = 0 AND auth_version = 1
      AND indirect_object_identifier = 'UNUSED' AND flags = 0;
   ")"

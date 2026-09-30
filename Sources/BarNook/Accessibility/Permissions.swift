@@ -34,7 +34,7 @@ final class Permissions {
         }
     }
 
-    private static let log = Logger(subsystem: "com.chlee1001.BarNook", category: "permissions")
+    private static let log = Logger(subsystem: "kr.co.devch.BarNook", category: "permissions")
 
     private(set) var isTrusted: Bool
     private(set) var isScreenRecordingGranted: Bool
