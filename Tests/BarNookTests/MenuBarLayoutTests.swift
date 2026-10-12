@@ -38,6 +38,18 @@ struct MenuBarLayoutTests {
         ]
     }
 
+    /// The screens touch at x = 1512; the neighbor's menu bar is not on it.
+    @Test func onScreenKeepsOnlyThatScreensMenuBar() {
+        let external = twoBars.onScreen(CGRect(x: 1512, y: 982, width: 1920, height: 1080))
+        #expect(external.displays.map(\.frame.minX) == [1512])
+        let laptop = twoBars.onScreen(CGRect(x: 0, y: 0, width: 1512, height: 982))
+        #expect(laptop.displays.map(\.frame.minX) == [0])
+    }
+
+    @Test func onScreenWithNoMenuBarKeepsTheLayout() {
+        #expect(twoBars.onScreen(CGRect(x: -3000, y: 0, width: 100, height: 100)).displays.count == 2)
+    }
+
     @Test func aPointOnTheClockHitsIt() {
         #expect(twoBars.clock(at: CGPoint(x: 1400, y: 16)) != nil)
     }

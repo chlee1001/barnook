@@ -12,7 +12,7 @@ const STRINGS = {
     hintIdle: opt => `Click the <b>BarNook icon</b> in the menu bar${opt ? " (Option is held: always-hidden apps come too)" : ""}.`,
     hintCountdown: s => `Hiding again in <b>${s}s</b> · click the desktop to hide now`,
     captionCollapsed: n => `macOS collapsed ${n} items and the BarNook icon behind «. Open « to reach the icon. On a notch display, "Show in a bar below" avoids this.`,
-    captionEscalated: "A pin didn't fit next to the notch, so BarNook hid every other app while the pins are up. Click the icon to bring the bar back, and again to hide everything.",
+    captionEscalated: "A pin didn't fit next to the notch, so BarNook hid just enough apps, from the left, to make room while the pins are up. Click the icon to bring the bar back, and again to hide everything.",
     captionPinned: names => `Pinned ${names.join(", ")}. Click the item in the menu bar as you would any other. Pins stay until you hide the set.`,
     captionBar: "The menu bar stays as it is. Click an app in the bar to pin its item into the menu bar, up to three at once.",
     captionMenubar: "Hidden apps are back in the menu bar. They're hidden again when you click the icon, click the desktop, or wait 15 seconds.",
@@ -25,7 +25,7 @@ const STRINGS = {
     hintIdle: opt => `메뉴 막대의 <b>BarNook 아이콘</b>을 클릭하세요${opt ? " (Option 키를 누른 상태라 항상 숨김 앱도 함께 나옵니다)" : ""}.`,
     hintCountdown: s => `<b>${s}초</b> 뒤에 다시 숨깁니다 · 바로 숨기려면 데스크탑을 클릭하세요`,
     captionCollapsed: n => `macOS가 항목 ${n}개와 BarNook 아이콘을 « 뒤로 접었습니다. 아이콘을 클릭하려면 먼저 « 버튼을 열어야 합니다. 노치가 있는 화면에서는 "아래 막대에 표시"를 고르면 이런 일이 생기지 않습니다.`,
-    captionEscalated: "고정한 항목이 노치 옆에 다 들어가지 않아서, 고정이 풀릴 때까지 BarNook이 나머지 앱을 모두 숨겼습니다. 아이콘을 클릭하면 막대가 다시 열리고, 한 번 더 클릭하면 전부 숨겨집니다.",
+    captionEscalated: "고정한 항목이 노치 옆에 다 들어가지 않아서, 고정이 풀릴 때까지 BarNook이 왼쪽 앱부터 자리가 날 만큼만 숨겼습니다. 아이콘을 클릭하면 막대가 다시 열리고, 한 번 더 클릭하면 전부 숨겨집니다.",
     captionPinned: names => `고정한 앱: ${names.join(", ")}. 메뉴 막대에서 해당 항목을 평소처럼 클릭해 쓰면 됩니다. 앱을 다시 숨기면 고정도 풀립니다.`,
     captionBar: "메뉴 막대는 그대로입니다. 아래 막대에서 앱을 클릭하면 그 앱의 항목이 메뉴 막대에 고정됩니다(최대 3개).",
     captionMenubar: "숨긴 앱이 메뉴 막대에 다시 나타났습니다. 아이콘이나 데스크탑을 클릭하거나 15초가 지나면 다시 숨겨집니다.",
@@ -72,9 +72,12 @@ function layout() {
   const inMenuBar = set => set === "shown" || (shown && placement === "menubar" && (set === "hidden" || (set === "always" && withAlways)));
   let apps = APPS.filter(a => inMenuBar(a.set) || pins.includes(a.id));
   const cap = CAPACITY[display];
+  // A pin that doesn't fit hides the leftmost other apps, one at a time, until it does.
   let escalated = false;
-  if (pins.length && apps.length + 1 > cap) {
-    apps = apps.filter(a => pins.includes(a.id));
+  while (pins.length && apps.length + 1 > cap) {
+    const i = apps.findLastIndex(a => !pins.includes(a.id));
+    if (i < 0) break;
+    apps.splice(i, 1);
     escalated = true;
   }
   let items = [...apps.map(a => ({ app: a })), { icon: true }];

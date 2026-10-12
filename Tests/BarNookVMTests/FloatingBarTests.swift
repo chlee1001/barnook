@@ -201,9 +201,9 @@ struct FloatingBarTests {
         }
     }
 
-    /// A pin that does not fit hides every other app: the escalation from
-    /// the fit check, not macOS's own collapse. One pin fits next to the
-    /// icon with FixtureV frontmost; a second does not.
+    /// A pin that does not fit hides the apps it needs room from: the fit
+    /// check, not macOS's own collapse. One pin fits next to the icon with
+    /// FixtureV frontmost; a second does not.
     @Test func pinsHideTheOthersOnlyWhenTheyMust() throws {
         try launchInBarMode()
         guard try hasAccessibilityGrant() else {
@@ -215,12 +215,12 @@ struct FloatingBarTests {
         // One pin fits next to the icon; V's own item does not.
         #expect(try guest.isDrawn(Fixture.a))
         #expect(try !guest.isDrawn(Fixture.v))
-        // The second pin does not fit; the fit check hides every other app.
+        // The second pin does not fit; the fit check makes room for it.
         try guest.clickIcon()
         try guest.waitUntil("the bar reopens") { try guest.barButtons() != nil }
         let button = try #require(try guest.barButtons()?.first { $0.name == "FixtureB" })
         try guest.click(button.frame)
-        try guest.waitUntil("B is drawn once every other app hides") { try guest.isDrawn(Fixture.b) }
+        try guest.waitUntil("B is drawn once there is room") { try guest.isDrawn(Fixture.b) }
         #expect(try guest.isDrawn(Fixture.a))
         #expect(try !guest.isDrawn(Fixture.v))
         try hideViaIcon()

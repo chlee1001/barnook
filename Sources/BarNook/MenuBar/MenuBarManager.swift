@@ -1,5 +1,6 @@
 // Modified by Chaehyeon Lee (2026): added temporary floating-bar pins, fit checks and selectable icons;
-// the bar-mode clock opens Notification Center behind a cover instead of a hover lift; ordered hidden lists.
+// the bar-mode clock opens Notification Center behind a cover instead of a hover lift; ordered hidden lists;
+// a pin that does not fit hides only the apps it needs room from.
 import AppKit
 import BarNookCore
 import Observation
@@ -22,9 +23,17 @@ final class MenuBarManager {
     /// the restriction lets their items through, so the user clicks them in
     /// the menu bar as they would any other item. At most `PinPolicy.limit`.
     private var pins: [String] = []
-    /// Set once the pinned items turn out not to fit: every other app then
-    /// hides so they do.
-    private var pinsNeedRoom = false
+    /// The apps hidden to make room for pinned items that did not fit
+    /// (`PinPolicy.room`), on top of the hidden sets.
+    private var pinRoom: Set<String> = []
+    /// Without the Accessibility permission the fit cannot be read, so every
+    /// other app hides while a pin is up.
+    private var pinsHideEveryApp = false
+    /// The screen the last bar click was on, in Accessibility coordinates.
+    /// The fit check reads only its menu bar: the user works there, and a
+    /// pin that fits there hides nothing for another display, say a notch
+    /// display beside an external one.
+    private var pinScreen: CGRect?
     private var pinFit: Task<Void, Never>?
     /// Whether the floating bar is on screen. A pin closes it and leaves
     /// the item in the menu bar; the icon brings it back for another pin.
@@ -170,7 +179,8 @@ final class MenuBarManager {
         let inBar = state.hiddenItemsPlacement == .floatingBar
         if !sets.isHiddenSetShown || !inBar {
             pins = []
-            pinsNeedRoom = false
+            pinRoom = []
+            pinsHideEveryApp = false
             isBarOpen = false
         }
         var hidden: Set<String>
@@ -181,15 +191,10 @@ final class MenuBarManager {
             hidden = sets.identifiersToHide(isAlwaysHiddenEnabled: state.isAlwaysHiddenEnabled)
         }
         if !pins.isEmpty {
-            if pinsNeedRoom {
-                // The apps a picker lists. A list that also names background
-                // processes is ignored by MenuBarAgent as a whole.
-                let running = NSWorkspace.shared.runningApplications
-                    .filter { [.regular, .accessory].contains($0.activationPolicy) }
-                    .compactMap(\.bundleIdentifier)
-                hidden = Set(running).subtracting(pins + [Bundle.main.bundleIdentifier ?? ""])
+            if pinsHideEveryApp {
+                hidden = Self.hideableApps().subtracting(pins)
             } else {
-                hidden.subtract(pins)
+                hidden = hidden.union(pinRoom).subtracting(pins)
             }
         }
         hiddenNow = hidden
@@ -326,16 +331,22 @@ final class MenuBarManager {
     /// nothing can be read, so every other app hides at once, which is the
     /// one arrangement that always leaves the pinned item on screen. With
     /// the permission, the pins are checked against the layout once it
-    /// settles, and every other app hides only if a pinned item does not
-    /// fit. No rehide condition takes a pin away; the icon ends it.
+    /// settles, and a pinned item that does not fit hides only the apps it
+    /// needs room from. No rehide condition takes a pin away; the icon ends it.
     private func barClicked(_ id: String) {
+        // A grant made since the last read must count: the cached value
+        // would hide every other app for nothing.
+        permission.refresh()
         Self.log.info("bar click on \(id, privacy: .public); trusted: \(self.permission.isTrusted)")
+        let unpinned = pins.contains(id)
         pins = PinPolicy.toggling(id, in: pins)
-        if pins.isEmpty {
-            pinsNeedRoom = false
-        } else if !permission.isTrusted {
-            pinsNeedRoom = true
+        pinScreen = Self.accessibilityFrame(ofScreenAt: NSEvent.mouseLocation)
+        // An unpin gives room back; the fit check takes again only what the
+        // remaining pins need.
+        if pins.isEmpty || unpinned {
+            pinRoom = []
         }
+        pinsHideEveryApp = !pins.isEmpty && !permission.isTrusted
         isBarOpen = false
         // While a pin is up no rehide condition fires; the timeout starts
         // over once the last pin is gone.
@@ -353,6 +364,11 @@ final class MenuBarManager {
     /// every read, so a whole-layout settle never arrives and the check
     /// would either never run or run on an animation frame, where items
     /// overlap mid-flight and every pin reads as collapsed.
+    ///
+    /// A pin that does not fit hides the apps `PinPolicy.room` picks, and
+    /// the check reads again: the room is an estimate, so a pin still
+    /// collapsed takes one more round. Each round hides at least one more
+    /// app, so the rounds end.
     private func checkPinsFit() {
         pinFit?.cancel()
         guard permission.isTrusted, !pins.isEmpty, sets.isHiddenSetShown else { return }
@@ -361,7 +377,9 @@ final class MenuBarManager {
             // back, and animates for about a second after that.
             await self?.restriction.waitUntilActivated()
             var previousVerdict: Set<String>?
-            for _ in 0..<16 {
+            var reads = 0
+            while reads < 16 {
+                reads += 1
                 try? await Task.sleep(for: .milliseconds(250))
                 guard !Task.isCancelled, let self, !self.pins.isEmpty, self.sets.isHiddenSetShown else { return }
                 // A clock lift, and its restore, draw every hidden item: no
@@ -374,27 +392,80 @@ final class MenuBarManager {
                 let pins = self.pins.filter { !unreachable.contains($0) }
                 guard !pins.isEmpty else { return }
                 let layout = await Task.detached(priority: .userInitiated) { MenuBarLayout.read() }.value
+                // A newer click cancels this check while the read is out.
+                if Task.isCancelled { return }
                 guard let layout else { continue }
+                // The restriction has landed once every pin has an item and
+                // no app hidden for room still has one. A layout from before
+                // that would call a pin that is not there yet collapsed.
+                guard pins.allSatisfy({ layout.containsItem(ofAny: [$0]) }),
+                      !layout.containsItem(ofAny: self.pinRoom)
+                else {
+                    previousVerdict = nil
+                    continue
+                }
+                // Only the menu bar of the screen the user clicked on counts.
+                let seen = self.pinScreen.map(layout.onScreen) ?? layout
                 // `drawnItem`, not membership in the layout table: a
                 // collapsed item keeps a frame, stacked at the left end.
-                let drawn = Set(pins.filter { layout.drawnItem(of: $0) != nil })
-                defer { previousVerdict = drawn }
+                let drawn = Set(pins.filter { seen.drawnItem(of: $0) != nil })
                 // Two reads in a row that agree: the pins have stopped moving.
-                guard previousVerdict == drawn else { continue }
-                let fits = drawn.count == pins.count
-                if !fits, !self.pinsNeedRoom {
-                    Self.log.info("a pinned item is collapsed; hiding every other app")
-                    self.pinsNeedRoom = true
-                    self.applyCurrentState()
-                } else if fits, self.pinsNeedRoom {
-                    Self.log.info("the pins fit again; letting the other apps back")
-                    self.pinsNeedRoom = false
-                    self.applyCurrentState()
+                guard previousVerdict == drawn else {
+                    previousVerdict = drawn
+                    continue
                 }
-                return
+                if drawn.count == pins.count { return }
+                let hideable = Self.hideableApps()
+                    .subtracting(self.pins)
+                    .subtracting(unreachable)
+                    .subtracting(self.pinRoom)
+                let room = PinPolicy.room(for: pins, in: seen, hideable: hideable)
+                guard !room.isEmpty else {
+                    Self.log.info("a pinned item is collapsed and no other app can make room")
+                    return
+                }
+                Self.log.info("a pinned item is collapsed; hiding \(room.sorted(), privacy: .public) in \(Self.describe(seen), privacy: .public)")
+                self.pinRoom.formUnion(room)
+                self.applyCurrentState()
+                await self.restriction.waitUntilActivated()
+                previousVerdict = nil
+                reads = 0
             }
             Self.log.info("the pins never held still; leaving them as they are")
         }
+    }
+
+    /// The frame of the screen under `point`, a Cocoa point, in
+    /// Accessibility coordinates: origin at the top left of the primary
+    /// screen, y down.
+    private static func accessibilityFrame(ofScreenAt point: NSPoint) -> CGRect? {
+        guard let primaryHeight = NSScreen.screens.first?.frame.maxY,
+              let frame = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) })?.frame
+        else { return nil }
+        return CGRect(x: frame.minX, y: primaryHeight - frame.maxY, width: frame.width, height: frame.height)
+    }
+
+    /// Each menu bar's items left to right as `id@x+width`, `*` when not
+    /// drawn, for the fit check's log.
+    private static func describe(_ layout: MenuBarLayout) -> String {
+        layout.displays.map { display in
+            let items = display.items.sorted { $0.frame.minX < $1.frame.minX }.map { item in
+                let id = item.bundleIdentifier ?? item.systemIdentifier ?? "?"
+                let mark = item.bundleIdentifier != nil && !display.isDrawn(item) ? "*" : ""
+                return "\(id)@\(Int(item.frame.minX))+\(Int(item.frame.width))\(mark)"
+            }
+            return "[\(Int(display.frame.minX))+\(Int(display.frame.width))] " + items.joined(separator: " ")
+        }.joined(separator: " | ")
+    }
+
+    /// The running apps the restriction may hide: the ones a picker lists.
+    /// A list that also names background processes is ignored by
+    /// MenuBarAgent as a whole. BarNook never hides its own icon.
+    private static func hideableApps() -> Set<String> {
+        let running = NSWorkspace.shared.runningApplications
+            .filter { [.regular, .accessory].contains($0.activationPolicy) }
+            .compactMap(\.bundleIdentifier)
+        return Set(running).subtracting([Bundle.main.bundleIdentifier ?? ""])
     }
 
     // MARK: Clock hover
