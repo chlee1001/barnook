@@ -59,6 +59,23 @@ public struct MenuBarLayout: Sendable, Codable {
             self.frame = frame
             self.items = items
         }
+
+        /// The `«` button, while macOS collapses items on this menu bar.
+        public var overflowButton: Item? {
+            items.first { $0.systemIdentifier == MenuBarLayout.overflowIdentifier }
+        }
+
+        /// Whether `item`, one of this menu bar's, is drawn: a collapsed item
+        /// overlaps another app's item, or starts left of the `«` button
+        /// (`MenuBarLayout.drawnItem(of:)`).
+        public func isDrawn(_ item: Item) -> Bool {
+            let overlapped = items.contains { other in
+                other.bundleIdentifier != item.bundleIdentifier
+                    && other.frame.intersection(item.frame).width > 2
+            }
+            let collapsed = overflowButton.map { item.frame.minX < $0.frame.minX } ?? false
+            return !overlapped && !collapsed
+        }
     }
 
     public var displays: [Display]
@@ -126,6 +143,13 @@ public struct MenuBarLayout: Sendable, Codable {
         return (left, right)
     }
 
+    /// The menu bars on the screen `screenFrame` covers, in Accessibility
+    /// coordinates; the whole layout when none is, as after the screen left.
+    public func onScreen(_ screenFrame: CGRect) -> MenuBarLayout {
+        let matching = displays.filter { $0.frame.intersects(screenFrame) }
+        return matching.isEmpty ? self : MenuBarLayout(displays: matching)
+    }
+
     /// The item of `bundleIdentifier`, if it is drawn. macOS 27 collapses
     /// the items that do not fit: they keep a frame, stacked on top of one
     /// another at the left end of the region, and the `«` button is drawn
@@ -135,13 +159,7 @@ public struct MenuBarLayout: Sendable, Codable {
     public func drawnItem(of bundleIdentifier: String) -> Item? {
         for display in displays {
             guard let item = display.items.first(where: { $0.bundleIdentifier == bundleIdentifier }) else { continue }
-            let overlapped = display.items.contains { other in
-                other.bundleIdentifier != bundleIdentifier
-                    && other.frame.intersection(item.frame).width > 2
-            }
-            let overflow = display.items.first { $0.systemIdentifier == Self.overflowIdentifier }
-            let collapsed = overflow.map { item.frame.minX < $0.frame.minX } ?? false
-            return overlapped || collapsed ? nil : item
+            return display.isDrawn(item) ? item : nil
         }
         return nil
     }
