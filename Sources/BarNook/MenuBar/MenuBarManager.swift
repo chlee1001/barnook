@@ -329,6 +329,9 @@ final class MenuBarManager {
     /// settles, and every other app hides only if a pinned item does not
     /// fit. No rehide condition takes a pin away; the icon ends it.
     private func barClicked(_ id: String) {
+        // A grant made since the last read must count: the cached value
+        // would hide every other app for nothing.
+        permission.refresh()
         Self.log.info("bar click on \(id, privacy: .public); trusted: \(self.permission.isTrusted)")
         pins = PinPolicy.toggling(id, in: pins)
         if pins.isEmpty {
